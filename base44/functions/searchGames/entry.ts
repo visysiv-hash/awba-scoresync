@@ -29,21 +29,24 @@ Deno.serve(async (req) => {
 
     const q = query.toLowerCase();
 
-    // Filter schedule rows matching query
+    // Filter schedule rows matching query - full word/name match only
     const matched = scheduleRows.filter(row => {
-      const team1 = String(row[2] || "").toLowerCase();
-      const team2 = String(row[3] || "").toLowerCase();
-      return team1.includes(q) || team2.includes(q);
+      const team1 = String(row[2] || "").toLowerCase().trim();
+      const team2 = String(row[3] || "").toLowerCase().trim();
+      // Split teams by " / " or "," and check if any individual name matches exactly
+      const names1 = team1.split(/[/,]/).map(n => n.trim());
+      const names2 = team2.split(/[/,]/).map(n => n.trim());
+      const allNames = [...names1, ...names2];
+      return allNames.some(name => name === q) || team1 === q || team2 === q;
     });
 
-    // Build results with score data if available
+    // Build results with score data if available, sorted by game number
     const results = matched.map(row => {
       const net = String(row[0]).trim();
       const game = String(row[1]).trim();
       const team1 = row[2];
       const team2 = row[3];
 
-      // Find matching score row
       const scoreRow = scoresRows.find(s =>
         String(s[0]).trim() === net && String(s[1]).trim() === game
       );
@@ -63,7 +66,7 @@ Deno.serve(async (req) => {
       }
 
       return { net, game, team1, team2, submitted: false };
-    });
+    }).sort((a, b) => Number(a.game) - Number(b.game));
 
     return Response.json({ results });
   } catch (error) {
