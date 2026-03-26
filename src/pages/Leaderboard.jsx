@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Loader2, Trophy } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const GROUP_NAMES = [
   "Group 1 Leaderboard",
@@ -44,6 +44,11 @@ export default function Leaderboard() {
   const playerData = selectedPlayer
     ? allPlayers.filter(p => p.player === selectedPlayer)
     : [];
+
+  // Stats from the selected chartGroup for the selected player
+  const playerInChartGroup = selectedPlayer
+    ? (groups[chartGroup] || []).find(r => r.player === selectedPlayer) || null
+    : null;
 
   // Chart: players in chartGroup who have played, sorted by ladder pts
   const chartGroupData = (groups[chartGroup] || [])
@@ -100,15 +105,16 @@ export default function Leaderboard() {
                 {selectedPlayer && playerData.length > 0 && (
                   <div className="space-y-4">
                     <div className="text-sm text-muted-foreground">
-                      Group: <span className="font-semibold">{playerData[0].group}</span> · Rank: <span className="font-bold text-blue-600">#{playerData[0].rank}</span>
+                      Showing stats for: <span className="font-semibold">{chartGroup}</span>
+                      {playerInChartGroup && <> · Rank: <span className="font-bold text-blue-600">#{playerInChartGroup.rank}</span></>}
                     </div>
                     <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
                       {[
-                        { label: "GP", value: playerData[0].gp },
-                        { label: "Wins", value: playerData[0].wins, color: "text-green-600" },
-                        { label: "Losses", value: playerData[0].losses, color: "text-red-500" },
-                        { label: "Draws", value: playerData[0].draws },
-                        { label: "Ladder Pts", value: playerData[0].ladderPts, color: "text-blue-600" },
+                        { label: "GP", value: playerInChartGroup?.gp ?? "—" },
+                        { label: "Wins", value: playerInChartGroup?.wins ?? "—", color: "text-green-600" },
+                        { label: "Losses", value: playerInChartGroup?.losses ?? "—", color: "text-red-500" },
+                        { label: "Draws", value: playerInChartGroup?.draws ?? "—" },
+                        { label: "Ladder Pts", value: playerInChartGroup?.ladderPts ?? "—", color: "text-blue-600" },
                       ].map(stat => (
                         <div key={stat.label} className="bg-slate-50 rounded-lg p-3 text-center">
                           <p className="text-xs text-muted-foreground">{stat.label}</p>
@@ -136,15 +142,15 @@ export default function Leaderboard() {
                         <p className="text-muted-foreground text-center py-4 text-sm">No games played in this group yet.</p>
                       ) : (
                         <ResponsiveContainer width="100%" height={250}>
-                          <LineChart data={chartGroupData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+                          <BarChart data={chartGroupData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
                             <YAxis tick={{ fontSize: 11 }} />
                             <Tooltip />
                             <Legend verticalAlign="top" />
-                            <Line type="monotone" dataKey="ladderPts" stroke="#2563eb" strokeWidth={2} dot={{ r: 4 }} name="Ladder Pts" />
-                            <Line type="monotone" dataKey="wins" stroke="#16a34a" strokeWidth={2} dot={{ r: 4 }} name="Wins" />
-                          </LineChart>
+                            <Bar dataKey="ladderPts" fill="#2563eb" name="Ladder Pts" />
+                            <Bar dataKey="wins" fill="#16a34a" name="Wins" />
+                          </BarChart>
                         </ResponsiveContainer>
                       )}
                     </div>
