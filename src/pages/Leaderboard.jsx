@@ -42,12 +42,12 @@ export default function Leaderboard() {
   );
   const uniquePlayerNames = [...new Set(allPlayers.map(p => p.player))].sort();
   const playerData = selectedPlayer
-    ? allPlayers.filter(p => p.player === selectedPlayer)
+    ? allPlayers.filter(p => p.player.toLowerCase().includes(selectedPlayer.toLowerCase()))
     : [];
 
   // Stats from the selected chartGroup for the selected player
   const playerInChartGroup = selectedPlayer
-    ? (groups[chartGroup] || []).find(r => r.player === selectedPlayer) || null
+    ? (groups[chartGroup] || []).find(r => r.player.toLowerCase().includes(selectedPlayer.toLowerCase())) || null
     : null;
 
   // Chart: players in chartGroup who have played, sorted by ladder pts
