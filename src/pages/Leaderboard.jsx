@@ -91,16 +91,12 @@ export default function Leaderboard() {
                 <CardTitle className="text-lg">My Results</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your name..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {uniquePlayerNames.map(name => (
-                      <SelectItem key={name} value={name}>{name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <input
+                  className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  placeholder="Search by player name..."
+                  value={selectedPlayer}
+                  onChange={e => setSelectedPlayer(e.target.value)}
+                />
 
                 {selectedPlayer && playerData.length > 0 && (
                   <div className="space-y-4">
