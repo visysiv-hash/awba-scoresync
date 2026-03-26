@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Trophy } from "lucide-react";
+import { ArrowLeft, Loader2, Trophy, Flame } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const GROUP_NAMES = [
@@ -15,8 +15,6 @@ const GROUP_NAMES = [
   "Group 5 Leaderboard",
   "Group 6 Leaderboard",
 ];
-
-const COLS = ["GP", "Wins", "Losses", "Draws", "Ladder Pts", "Pts For", "Pts Against", "Diff", "Rank Score", "Rank"];
 
 export default function Leaderboard() {
   const [groups, setGroups] = useState({});
@@ -40,17 +38,22 @@ export default function Leaderboard() {
   const allPlayers = Object.entries(groups).flatMap(([grp, rows]) =>
     rows.map(r => ({ ...r, group: grp }))
   );
-  const uniquePlayerNames = [...new Set(allPlayers.map(p => p.player))].sort();
   const playerData = selectedPlayer
     ? allPlayers.filter(p => p.player.toLowerCase().includes(selectedPlayer.toLowerCase()))
     : [];
 
-  // Stats from the selected chartGroup for the selected player
   const playerInChartGroup = selectedPlayer
     ? (groups[chartGroup] || []).find(r => r.player.toLowerCase().includes(selectedPlayer.toLowerCase())) || null
     : null;
 
-  // Chart: players in chartGroup who have played, sorted by ladder pts
+  const getStreak = (row) => {
+    if (!row) return null;
+    const w = Number(row.wins), l = Number(row.losses);
+    if (w - l >= 3) return { label: `${w - l} Win Streak`, color: "text-orange-500" };
+    if (l - w >= 3) return { label: `${l - w} Loss Streak`, color: "text-red-500" };
+    return null;
+  };
+
   const chartGroupData = (groups[chartGroup] || [])
     .filter(r => Number(r.gp) > 0)
     .sort((a, b) => Number(b.ladderPts) - Number(a.ladderPts))
@@ -89,7 +92,8 @@ export default function Leaderboard() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* My Results — at the top */}
+
+            {/* My Results */}
             <Card className="shadow-2xl">
               <CardHeader>
                 <CardTitle className="text-lg">My Results</CardTitle>
@@ -104,17 +108,25 @@ export default function Leaderboard() {
 
                 {selectedPlayer && playerData.length > 0 && (
                   <div className="space-y-4">
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-2">
                       Showing stats for: <span className="font-semibold">{chartGroup}</span>
                       {playerInChartGroup && <> · Rank: <span className="font-bold text-blue-600">#{playerInChartGroup.rank}</span></>}
+                      {playerInChartGroup && getStreak(playerInChartGroup) && (
+                        <span className={`inline-flex items-center gap-1 font-bold text-xs px-2 py-0.5 rounded-full bg-orange-50 ${getStreak(playerInChartGroup).color}`}>
+                          <Flame className="w-3 h-3" /> {getStreak(playerInChartGroup).label}
+                        </span>
+                      )}
                     </div>
-                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+
+                    {/* Stats grid */}
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
                       {[
                         { label: "GP", value: playerInChartGroup?.gp ?? "—" },
                         { label: "Wins", value: playerInChartGroup?.wins ?? "—", color: "text-green-600" },
                         { label: "Losses", value: playerInChartGroup?.losses ?? "—", color: "text-red-500" },
                         { label: "Draws", value: playerInChartGroup?.draws ?? "—" },
-                        { label: "Ladder Pts", value: playerInChartGroup?.ladderPts ?? "—", color: "text-blue-600" },
+                        { label: "Pts For", value: playerInChartGroup?.pointsFor ?? "—", color: "text-blue-600" },
+                        { label: "Pts Against", value: playerInChartGroup?.pointsAgainst ?? "—", color: "text-slate-500" },
                       ].map(stat => (
                         <div key={stat.label} className="bg-slate-50 rounded-lg p-3 text-center">
                           <p className="text-xs text-muted-foreground">{stat.label}</p>
@@ -123,7 +135,29 @@ export default function Leaderboard() {
                       ))}
                     </div>
 
-                    {/* Group leaderboard chart picker */}
+                    {/* Derived stats row */}
+                    {playerInChartGroup && (
+                      <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-between flex-wrap gap-3">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Point Diff: </span>
+                          <span className={`font-bold text-lg ${Number(playerInChartGroup.diff) >= 0 ? "text-green-600" : "text-red-500"}`}>
+                            {Number(playerInChartGroup.diff) >= 0 ? "+" : ""}{playerInChartGroup.diff}
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Win Rate: </span>
+                          <span className="font-bold text-lg text-purple-600">
+                            {Number(playerInChartGroup.gp) > 0 ? Math.round((Number(playerInChartGroup.wins) / Number(playerInChartGroup.gp)) * 100) : 0}%
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Rank Score: </span>
+                          <span className="font-bold text-lg text-amber-600">{playerInChartGroup.rankScore ?? "—"}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Chart group selector */}
                     <div className="border-t pt-4 space-y-3">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <p className="text-sm font-semibold">Group Leaderboard Chart</p>
@@ -142,28 +176,28 @@ export default function Leaderboard() {
                         <p className="text-muted-foreground text-center py-4 text-sm">No games played in this group yet.</p>
                       ) : (
                         <>
-                        <ResponsiveContainer width="100%" height={220}>
-                          <BarChart data={chartGroupData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
-                            <YAxis tick={{ fontSize: 11 }} />
-                            <Tooltip />
-                            <Legend verticalAlign="top" />
-                            <Bar dataKey="wins" fill="#16a34a" name="Wins" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                        <p className="text-sm font-semibold mt-4 mb-2">Win %</p>
-                        <ResponsiveContainer width="100%" height={220}>
-                          <BarChart data={chartGroupData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
-                            <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
-                            <Tooltip formatter={(val) => `${val}%`} />
-                            <Legend verticalAlign="top" />
-                            <Bar dataKey="winPct" fill="#7c3aed" name="Win %" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                        </>  
+                          <ResponsiveContainer width="100%" height={220}>
+                            <BarChart data={chartGroupData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
+                              <YAxis tick={{ fontSize: 11 }} />
+                              <Tooltip />
+                              <Legend verticalAlign="top" />
+                              <Bar dataKey="wins" fill="#16a34a" name="Wins" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                          <p className="text-sm font-semibold mt-4 mb-2">Win %</p>
+                          <ResponsiveContainer width="100%" height={220}>
+                            <BarChart data={chartGroupData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
+                              <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
+                              <Tooltip formatter={(val) => `${val}%`} />
+                              <Legend verticalAlign="top" />
+                              <Bar dataKey="winPct" fill="#7c3aed" name="Win %" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </>
                       )}
                     </div>
                   </div>
@@ -171,6 +205,79 @@ export default function Leaderboard() {
 
                 {selectedPlayer && playerData.length === 0 && (
                   <p className="text-muted-foreground text-center py-4">No results found for this player.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Full Group Standings Table */}
+            <Card className="shadow-2xl">
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <CardTitle className="text-lg">Group Standings</CardTitle>
+                  <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+                    <SelectTrigger className="w-52">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GROUP_NAMES.map(g => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {currentGroupData.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4 text-sm">No data for this group.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 pr-2 font-semibold text-muted-foreground">Rank</th>
+                          <th className="text-left py-2 pr-2 font-semibold text-muted-foreground">Player</th>
+                          <th className="text-center py-2 px-1 font-semibold text-muted-foreground">GP</th>
+                          <th className="text-center py-2 px-1 font-semibold text-green-600">W</th>
+                          <th className="text-center py-2 px-1 font-semibold text-red-500">L</th>
+                          <th className="text-center py-2 px-1 font-semibold text-muted-foreground">D</th>
+                          <th className="text-center py-2 px-1 font-semibold text-blue-600">Pts</th>
+                          <th className="text-center py-2 px-1 font-semibold text-muted-foreground">Diff</th>
+                          <th className="text-center py-2 px-1 font-semibold text-muted-foreground">🔥</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentGroupData.map((row, i) => {
+                          const streak = getStreak(row);
+                          const isTopThree = Number(row.rank) <= 3;
+                          return (
+                            <tr key={i} className={`border-b last:border-0 ${isTopThree ? "bg-amber-50" : ""}`}>
+                              <td className="py-2 pr-2">
+                                <span className={`font-bold ${
+                                  row.rank === "1" ? "text-yellow-500" :
+                                  row.rank === "2" ? "text-slate-400" :
+                                  row.rank === "3" ? "text-amber-600" : "text-slate-600"
+                                }`}>
+                                  {row.rank === "1" ? "🥇" : row.rank === "2" ? "🥈" : row.rank === "3" ? "🥉" : `#${row.rank}`}
+                                </span>
+                              </td>
+                              <td className="py-2 pr-2 font-medium">{row.player}</td>
+                              <td className="text-center py-2 px-1">{row.gp}</td>
+                              <td className="text-center py-2 px-1 text-green-600 font-semibold">{row.wins}</td>
+                              <td className="text-center py-2 px-1 text-red-500">{row.losses}</td>
+                              <td className="text-center py-2 px-1 text-muted-foreground">{row.draws}</td>
+                              <td className="text-center py-2 px-1 text-blue-600 font-bold">{row.ladderPts}</td>
+                              <td className={`text-center py-2 px-1 font-semibold ${
+                                Number(row.diff) > 0 ? "text-green-600" : Number(row.diff) < 0 ? "text-red-500" : "text-muted-foreground"
+                              }`}>{Number(row.diff) > 0 ? `+${row.diff}` : row.diff}</td>
+                              <td className="text-center py-2 px-1">
+                                {streak && <Flame className={`w-4 h-4 inline ${streak.color}`} />}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </CardContent>
             </Card>
