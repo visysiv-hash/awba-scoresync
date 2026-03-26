@@ -163,59 +163,6 @@ export default function Leaderboard() {
               </CardContent>
             </Card>
 
-            {/* Group Leaderboard Table */}
-            <Card className="shadow-2xl">
-              <CardHeader>
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <CardTitle className="text-lg">Group Standings</CardTitle>
-                  <Select value={selectedGroup} onValueChange={v => setSelectedGroup(v)}>
-                    <SelectTrigger className="w-52">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {GROUP_NAMES.map(g => (
-                        <SelectItem key={g} value={g}>{g}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {currentGroupData.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-6">No data available for this group.</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-2 font-semibold">Player</th>
-                          {COLS.map(c => (
-                            <th key={c} className="text-center py-2 px-2 font-semibold">{c}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {currentGroupData.map((row, i) => (
-                          <tr key={i} className={i % 2 === 0 ? "bg-slate-50" : "bg-white"}>
-                            <td className="py-2 px-2 font-medium">{row.player}</td>
-                            <td className="text-center py-2 px-2">{row.gp}</td>
-                            <td className="text-center py-2 px-2 text-green-600 font-semibold">{row.wins}</td>
-                            <td className="text-center py-2 px-2 text-red-500">{row.losses}</td>
-                            <td className="text-center py-2 px-2">{row.draws}</td>
-                            <td className="text-center py-2 px-2 font-bold text-blue-600">{row.ladderPts}</td>
-                            <td className="text-center py-2 px-2">{row.pointsFor}</td>
-                            <td className="text-center py-2 px-2">{row.pointsAgainst}</td>
-                            <td className="text-center py-2 px-2">{row.diff}</td>
-                            <td className="text-center py-2 px-2">{row.rankScore}</td>
-                            <td className="text-center py-2 px-2 font-bold">{row.rank}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         )}
       </div>
