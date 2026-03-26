@@ -30,9 +30,12 @@ Deno.serve(async (req) => {
     const rows = data.values || [];
 
     // Find matching row (skip header row 0)
+    // Sheet uses "Net 5" / "Game 1" format, so we match flexibly
     const match = rows.find((row, i) => {
       if (i === 0) return false;
-      return String(row[0]).trim() === String(netNumber) && String(row[1]).trim() === String(gameNumber);
+      const rowNet = String(row[0]).trim().replace(/^net\s*/i, "");
+      const rowGame = String(row[1]).trim().replace(/^game\s*/i, "");
+      return rowNet === String(netNumber) && rowGame === String(gameNumber);
     });
 
     if (!match) {
