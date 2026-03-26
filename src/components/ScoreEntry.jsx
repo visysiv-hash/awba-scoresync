@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import confetti from "canvas-confetti";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -88,6 +89,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
     if (res.data?.success) {
       toast.success("Scores submitted successfully!");
       setSubmitted(true);
+      confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ["#16a34a", "#2563eb", "#f59e0b", "#dc2626"] });
     } else {
       toast.error(res.data?.error || "Failed to submit scores. Please try again.");
     }
