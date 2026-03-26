@@ -1,0 +1,203 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Loader2, Trophy } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+
+const GROUP_NAMES = [
+  "Group 1 Leaderboard",
+  "Group 2 Leaderboard",
+  "Group 3 Leaderboard",
+  "Group 4 Leaderboard",
+  "Group 5 Leaderboard",
+  "Group 6 Leaderboard",
+];
+
+const COLS = ["GP", "Wins", "Losses", "Draws", "Ladder Pts", "Pts For", "Pts Against", "Diff", "Rank Score", "Rank"];
+
+export default function Leaderboard() {
+  const [groups, setGroups] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [selectedGroup, setSelectedGroup] = useState(GROUP_NAMES[0]);
+  const [selectedPlayer, setSelectedPlayer] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const res = await base44.functions.invoke("getStandings", {});
+      setGroups(res.data?.groups || {});
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const currentGroupData = groups[selectedGroup] || [];
+
+  // All players across all groups for "My Results"
+  const allPlayers = Object.entries(groups).flatMap(([grp, rows]) =>
+    rows.map(r => ({ ...r, group: grp }))
+  );
+  const uniquePlayerNames = [...new Set(allPlayers.map(p => p.player))].sort();
+  const playerData = selectedPlayer
+    ? allPlayers.filter(p => p.player === selectedPlayer)
+    : [];
+
+  // Build chart data: one point per stat for the player
+  const chartData = playerData.length > 0
+    ? [
+        { name: "Wins", value: Number(playerData[0].wins) },
+        { name: "Draws", value: Number(playerData[0].draws) },
+        { name: "Losses", value: Number(playerData[0].losses) },
+        { name: "Ladder Pts", value: Number(playerData[0].ladderPts) },
+        { name: "Pts For", value: Number(playerData[0].pointsFor) },
+        { name: "Pts Against", value: Number(playerData[0].pointsAgainst) },
+        { name: "Rank Score", value: Number(playerData[0].rankScore) },
+      ]
+    : [];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 p-4">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link to="/">
+            <Button variant="ghost" className="text-white hover:text-white hover:bg-white/10 gap-2">
+              <ArrowLeft className="w-4 h-4" /> Back
+            </Button>
+          </Link>
+          <div className="flex-1 text-center">
+            <img
+              src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png"
+              alt="Albury Wodonga Badminton"
+              className="mx-auto h-12 object-contain mb-1"
+            />
+            <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+              <Trophy className="w-6 h-6 text-yellow-400" /> League Leaderboard
+            </h1>
+          </div>
+          <div className="w-20" />
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-10 h-10 text-white animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Group Leaderboard */}
+            <Card className="shadow-2xl">
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <CardTitle className="text-lg">Group Standings</CardTitle>
+                  <Select value={selectedGroup} onValueChange={v => setSelectedGroup(v)}>
+                    <SelectTrigger className="w-52">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GROUP_NAMES.map(g => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {currentGroupData.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-6">No data available for this group.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-2 font-semibold">Player</th>
+                          {COLS.map(c => (
+                            <th key={c} className="text-center py-2 px-2 font-semibold">{c}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentGroupData.map((row, i) => (
+                          <tr key={i} className={i % 2 === 0 ? "bg-slate-50" : "bg-white"}>
+                            <td className="py-2 px-2 font-medium">{row.player}</td>
+                            <td className="text-center py-2 px-2">{row.gp}</td>
+                            <td className="text-center py-2 px-2 text-green-600 font-semibold">{row.wins}</td>
+                            <td className="text-center py-2 px-2 text-red-500">{row.losses}</td>
+                            <td className="text-center py-2 px-2">{row.draws}</td>
+                            <td className="text-center py-2 px-2 font-bold text-blue-600">{row.ladderPts}</td>
+                            <td className="text-center py-2 px-2">{row.pointsFor}</td>
+                            <td className="text-center py-2 px-2">{row.pointsAgainst}</td>
+                            <td className="text-center py-2 px-2">{row.diff}</td>
+                            <td className="text-center py-2 px-2">{row.rankScore}</td>
+                            <td className="text-center py-2 px-2 font-bold">{row.rank}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* My Results */}
+            <Card className="shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-lg">My Results</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your name..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {uniquePlayerNames.map(name => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {selectedPlayer && playerData.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                      Group: <span className="font-semibold">{playerData[0].group}</span> · Rank: <span className="font-bold text-blue-600">#{playerData[0].rank}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+                      {[
+                        { label: "GP", value: playerData[0].gp },
+                        { label: "Wins", value: playerData[0].wins, color: "text-green-600" },
+                        { label: "Losses", value: playerData[0].losses, color: "text-red-500" },
+                        { label: "Draws", value: playerData[0].draws },
+                        { label: "Ladder Pts", value: playerData[0].ladderPts, color: "text-blue-600" },
+                      ].map(stat => (
+                        <div key={stat.label} className="bg-slate-50 rounded-lg p-3 text-center">
+                          <p className="text-xs text-muted-foreground">{stat.label}</p>
+                          <p className={`text-xl font-bold ${stat.color || ""}`}>{stat.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <ResponsiveContainer width="100%" height={250}>
+                      <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{ r: 5 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {selectedPlayer && playerData.length === 0 && (
+                  <p className="text-muted-foreground text-center py-4">No results found for this player.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
