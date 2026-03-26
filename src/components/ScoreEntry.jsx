@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,17 +8,28 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import RoundScores from "./RoundScores";
 
-export default function ScoreEntry() {
+const emptyRounds = () => [{ score1: "", score2: "" }, { score1: "", score2: "" }];
+
+export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   const [netNumber, setNetNumber] = useState("");
   const [gameNumber, setGameNumber] = useState("");
   const [gameDetails, setGameDetails] = useState(null);
-  const [rounds, setRounds] = useState([
-    { score1: "", score2: "" },
-    { score1: "", score2: "" },
-  ]);
+  const [rounds, setRounds] = useState(emptyRounds());
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Load prefilled game from search
+  useEffect(() => {
+    if (prefilledGame) {
+      setNetNumber(String(prefilledGame.net));
+      setGameNumber(String(prefilledGame.game));
+      setGameDetails(prefilledGame);
+      setRounds(emptyRounds());
+      setSubmitted(false);
+      onPrefilledUsed?.();
+    }
+  }, [prefilledGame]);
 
   const handleFetchGame = async () => {
     if (!netNumber || !gameNumber) {
@@ -28,7 +38,7 @@ export default function ScoreEntry() {
     }
     setLoading(true);
     setGameDetails(null);
-    setRounds([{ score1: "", score2: "" }, { score1: "", score2: "" }]);
+    setRounds(emptyRounds());
     setSubmitted(false);
     const res = await base44.functions.invoke("getGameDetails", { netNumber, gameNumber });
     setLoading(false);
@@ -87,7 +97,7 @@ export default function ScoreEntry() {
     setNetNumber("");
     setGameNumber("");
     setGameDetails(null);
-    setRounds([{ score1: "", score2: "" }, { score1: "", score2: "" }]);
+    setRounds(emptyRounds());
     setSubmitted(false);
   };
 
@@ -139,12 +149,7 @@ export default function ScoreEntry() {
               </div>
             </div>
 
-            <RoundScores
-              rounds={rounds}
-              onChange={setRounds}
-              team1={gameDetails.team1}
-              team2={gameDetails.team2}
-            />
+            <RoundScores rounds={rounds} onChange={setRounds} team1={gameDetails.team1} team2={gameDetails.team2} />
 
             <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleSubmit} disabled={submitting}>
               {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}

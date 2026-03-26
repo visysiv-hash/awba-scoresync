@@ -7,6 +7,14 @@ import ScoreEntry from "../components/ScoreEntry";
 import GameSearch from "../components/GameSearch";
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState("entry");
+  const [prefilledGame, setPrefilledGame] = useState(null);
+
+  const handleSelectGame = (game) => {
+    setPrefilledGame(game);
+    setActiveTab("entry");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
@@ -15,16 +23,16 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-white">Score Entry</h1>
         </div>
 
-        <Tabs defaultValue="entry" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full mb-4">
             <TabsTrigger value="entry" className="flex-1">Enter Score</TabsTrigger>
             <TabsTrigger value="search" className="flex-1">Search Games</TabsTrigger>
           </TabsList>
           <TabsContent value="entry">
-            <ScoreEntry />
+            <ScoreEntry prefilledGame={prefilledGame} onPrefilledUsed={() => setPrefilledGame(null)} />
           </TabsContent>
           <TabsContent value="search">
-            <GameSearch />
+            <GameSearch onSelectGame={handleSelectGame} />
           </TabsContent>
         </Tabs>
 
