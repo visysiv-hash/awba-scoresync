@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { Loader2, Search, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,15 +10,6 @@ export default function GameSearch({ onSelectGame }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [names, setNames] = useState([]);
-  const [namesLoading, setNamesLoading] = useState(true);
-
-  useEffect(() => {
-    base44.functions.invoke("getPlayerNames", {}).then(res => {
-      setNames(res.data?.names || []);
-      setNamesLoading(false);
-    });
-  }, []);
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -39,16 +30,13 @@ export default function GameSearch({ onSelectGame }) {
     <Card className="shadow-2xl">
       <CardContent className="pt-6 space-y-4">
         <div className="flex gap-2">
-          <Select value={query} onValueChange={val => { setQuery(val); setResults(null); }} disabled={namesLoading}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder={namesLoading ? "Loading names..." : "Select your name..."} />
-            </SelectTrigger>
-            <SelectContent>
-              {names.map(name => (
-                <SelectItem key={name} value={name}>{name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <input
+            className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            placeholder="Search by player name..."
+            value={query}
+            onChange={e => { setQuery(e.target.value); setResults(null); }}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          />
           <Button onClick={handleSearch} disabled={loading || !query}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           </Button>
