@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PlayerStats from "../components/PlayerStats";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -156,6 +157,8 @@ export default function Leaderboard() {
                         </div>
                       </div>
                     )}
+
+                    <PlayerStats playerName={selectedPlayer} />
 
                     {/* Chart group selector */}
                     <div className="border-t pt-4 space-y-3">
