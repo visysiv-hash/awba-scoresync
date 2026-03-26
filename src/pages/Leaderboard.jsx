@@ -23,6 +23,7 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState(GROUP_NAMES[0]);
   const [selectedPlayer, setSelectedPlayer] = useState("");
+  const [chartGroup, setChartGroup] = useState(GROUP_NAMES[0]);
 
   useEffect(() => {
     async function load() {
@@ -36,7 +37,6 @@ export default function Leaderboard() {
 
   const currentGroupData = groups[selectedGroup] || [];
 
-  // All players across all groups for "My Results"
   const allPlayers = Object.entries(groups).flatMap(([grp, rows]) =>
     rows.map(r => ({ ...r, group: grp }))
   );
@@ -45,18 +45,11 @@ export default function Leaderboard() {
     ? allPlayers.filter(p => p.player === selectedPlayer)
     : [];
 
-  // Build chart data: one point per stat for the player
-  const chartData = playerData.length > 0
-    ? [
-        { name: "Wins", value: Number(playerData[0].wins) },
-        { name: "Draws", value: Number(playerData[0].draws) },
-        { name: "Losses", value: Number(playerData[0].losses) },
-        { name: "Ladder Pts", value: Number(playerData[0].ladderPts) },
-        { name: "Pts For", value: Number(playerData[0].pointsFor) },
-        { name: "Pts Against", value: Number(playerData[0].pointsAgainst) },
-        { name: "Rank Score", value: Number(playerData[0].rankScore) },
-      ]
-    : [];
+  // Chart: players in chartGroup who have played, sorted by ladder pts
+  const chartGroupData = (groups[chartGroup] || [])
+    .filter(r => Number(r.gp) > 0)
+    .sort((a, b) => Number(b.ladderPts) - Number(a.ladderPts))
+    .map(r => ({ name: r.player, ladderPts: Number(r.ladderPts), wins: Number(r.wins) }));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 p-4">
@@ -87,7 +80,84 @@ export default function Leaderboard() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Group Leaderboard */}
+            {/* My Results — at the top */}
+            <Card className="shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-lg">My Results</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your name..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {uniquePlayerNames.map(name => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {selectedPlayer && playerData.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                      Group: <span className="font-semibold">{playerData[0].group}</span> · Rank: <span className="font-bold text-blue-600">#{playerData[0].rank}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+                      {[
+                        { label: "GP", value: playerData[0].gp },
+                        { label: "Wins", value: playerData[0].wins, color: "text-green-600" },
+                        { label: "Losses", value: playerData[0].losses, color: "text-red-500" },
+                        { label: "Draws", value: playerData[0].draws },
+                        { label: "Ladder Pts", value: playerData[0].ladderPts, color: "text-blue-600" },
+                      ].map(stat => (
+                        <div key={stat.label} className="bg-slate-50 rounded-lg p-3 text-center">
+                          <p className="text-xs text-muted-foreground">{stat.label}</p>
+                          <p className={`text-xl font-bold ${stat.color || ""}`}>{stat.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Group leaderboard chart picker */}
+                    <div className="border-t pt-4 space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <p className="text-sm font-semibold">Group Leaderboard Chart</p>
+                        <Select value={chartGroup} onValueChange={setChartGroup}>
+                          <SelectTrigger className="w-52">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {GROUP_NAMES.map(g => (
+                              <SelectItem key={g} value={g}>{g}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {chartGroupData.length === 0 ? (
+                        <p className="text-muted-foreground text-center py-4 text-sm">No games played in this group yet.</p>
+                      ) : (
+                        <ResponsiveContainer width="100%" height={250}>
+                          <LineChart data={chartGroupData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
+                            <YAxis tick={{ fontSize: 11 }} />
+                            <Tooltip />
+                            <Legend verticalAlign="top" />
+                            <Line type="monotone" dataKey="ladderPts" stroke="#2563eb" strokeWidth={2} dot={{ r: 4 }} name="Ladder Pts" />
+                            <Line type="monotone" dataKey="wins" stroke="#16a34a" strokeWidth={2} dot={{ r: 4 }} name="Wins" />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {selectedPlayer && playerData.length === 0 && (
+                  <p className="text-muted-foreground text-center py-4">No results found for this player.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Group Leaderboard Table */}
             <Card className="shadow-2xl">
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-3">
@@ -137,61 +207,6 @@ export default function Leaderboard() {
                       </tbody>
                     </table>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* My Results */}
-            <Card className="shadow-2xl">
-              <CardHeader>
-                <CardTitle className="text-lg">My Results</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your name..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {uniquePlayerNames.map(name => (
-                      <SelectItem key={name} value={name}>{name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {selectedPlayer && playerData.length > 0 && (
-                  <div className="space-y-4">
-                    <div className="text-sm text-muted-foreground">
-                      Group: <span className="font-semibold">{playerData[0].group}</span> · Rank: <span className="font-bold text-blue-600">#{playerData[0].rank}</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
-                      {[
-                        { label: "GP", value: playerData[0].gp },
-                        { label: "Wins", value: playerData[0].wins, color: "text-green-600" },
-                        { label: "Losses", value: playerData[0].losses, color: "text-red-500" },
-                        { label: "Draws", value: playerData[0].draws },
-                        { label: "Ladder Pts", value: playerData[0].ladderPts, color: "text-blue-600" },
-                      ].map(stat => (
-                        <div key={stat.label} className="bg-slate-50 rounded-lg p-3 text-center">
-                          <p className="text-xs text-muted-foreground">{stat.label}</p>
-                          <p className={`text-xl font-bold ${stat.color || ""}`}>{stat.value}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <ResponsiveContainer width="100%" height={250}>
-                      <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 11 }} />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{ r: 5 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-
-                {selectedPlayer && playerData.length === 0 && (
-                  <p className="text-muted-foreground text-center py-4">No results found for this player.</p>
                 )}
               </CardContent>
             </Card>
