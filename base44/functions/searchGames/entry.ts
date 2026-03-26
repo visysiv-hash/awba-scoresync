@@ -34,8 +34,8 @@ Deno.serve(async (req) => {
       const team1 = String(row[2] || "").toLowerCase().trim();
       const team2 = String(row[3] || "").toLowerCase().trim();
       // Split teams by " / " or "," and check if any individual name matches exactly
-      const names1 = team1.split(/[/,]/).map(n => n.trim());
-      const names2 = team2.split(/[/,]/).map(n => n.trim());
+      const names1 = team1.split(/[/,&]/).map(n => n.trim());
+      const names2 = team2.split(/[/,&]/).map(n => n.trim());
       const allNames = [...names1, ...names2];
       return allNames.some(name => name === q) || team1 === q || team2 === q;
     });
