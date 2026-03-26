@@ -17,7 +17,16 @@ Deno.serve(async (req) => {
     const data = await response.json();
     const rows = (data.values || []).slice(1); // skip header
 
-    const results = rows.map(row => ({
+    // Filter to today's results (Australia/Sydney timezone)
+    const todayStr = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' });
+
+    const filtered = rows.filter(row => {
+      if (!row[10]) return false;
+      const rowDate = new Date(row[10]).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' });
+      return rowDate === todayStr;
+    });
+
+    const results = filtered.map(row => ({
       net: row[0],
       game: row[1],
       team1: row[2],
