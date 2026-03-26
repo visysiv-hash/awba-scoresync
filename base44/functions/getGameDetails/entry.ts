@@ -1,37 +1,52 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 Deno.serve(async (req) => {
-  const base44 = createClientFromRequest(req);
-  const { netNumber, gameNumber } = await req.json();
+  try {
+    const base44 = createClientFromRequest(req);
+    const { netNumber, gameNumber } = await req.json();
 
-  const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
-  const spreadsheetId = Deno.env.get("SPREADSHEET_ID");
+    const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
+    // Strip any extra URL parts if user pasted full URL
+    const rawId = Deno.env.get("SPREADSHEET_ID") || "";
+    const spreadsheetId = rawId.includes("/spreadsheets/d/")
+      ? rawId.split("/spreadsheets/d/")[1].split("/")[0].split("?")[0]
+      : rawId.split("/")[0].split("?")[0];
 
-  // Fetch all data from Sheet1 (schedule sheet)
-  const range = "Sheet1!A:D";
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
+    const range = "Sheet1!A:D";
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
 
-  const data = await response.json();
-  const rows = data.values || [];
+    const text = await response.text();
 
-  // Find matching row (skip header row 0)
-  const match = rows.find((row, i) => {
-    if (i === 0) return false; // skip header
-    return String(row[0]).trim() === String(netNumber) && String(row[1]).trim() === String(gameNumber);
-  });
+    if (!response.ok) {
+      console.error("Sheets API error:", text);
+      return Response.json({ error: "Failed to fetch from Google Sheets: " + text }, { status: 500 });
+    }
 
-  if (!match) {
-    return Response.json({ error: "Game not found for the selected Net and Game number." }, { status: 404 });
+    const data = JSON.parse(text);
+    const rows = data.values || [];
+
+    // Find matching row (skip header row 0)
+    const match = rows.find((row, i) => {
+      if (i === 0) return false;
+      return String(row[0]).trim() === String(netNumber) && String(row[1]).trim() === String(gameNumber);
+    });
+
+    if (!match) {
+      return Response.json({ error: `No game found for Net ${netNumber}, Game ${gameNumber}.` }, { status: 404 });
+    }
+
+    return Response.json({
+      net: match[0],
+      game: match[1],
+      team1: match[2],
+      team2: match[3],
+    });
+  } catch (error) {
+    console.error("Error:", error.message);
+    return Response.json({ error: error.message }, { status: 500 });
   }
-
-  return Response.json({
-    net: match[0],
-    game: match[1],
-    team1: match[2],
-    team2: match[3],
-  });
 });

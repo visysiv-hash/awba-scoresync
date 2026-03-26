@@ -5,7 +5,10 @@ Deno.serve(async (req) => {
   const { netNumber, gameNumber, team1, team2, score1, score2 } = await req.json();
 
   const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
-  const spreadsheetId = Deno.env.get("SPREADSHEET_ID");
+  const rawId = Deno.env.get("SPREADSHEET_ID") || "";
+  const spreadsheetId = rawId.includes("/spreadsheets/d/")
+    ? rawId.split("/spreadsheets/d/")[1].split("/")[0].split("?")[0]
+    : rawId.split("/")[0].split("?")[0];
 
   const timestamp = new Date().toISOString();
   const values = [[netNumber, gameNumber, team1, team2, score1, score2, timestamp]];
