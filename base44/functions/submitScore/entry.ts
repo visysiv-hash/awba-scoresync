@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
   if (!response.ok) {
     const err = await response.text();
-    return Response.json({ error: err }, { status: 500 });
+    return Response.json({ error: err });
   }
 
   return Response.json({ success: true });

@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       console.error("Sheets API error:", text);
-      return Response.json({ error: "Failed to fetch from Google Sheets: " + text }, { status: 500 });
+      return Response.json({ error: "Failed to fetch from Google Sheets: " + text });
     }
 
     const data = JSON.parse(text);
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     });
 
     if (!match) {
-      return Response.json({ error: `No game found for Net ${netNumber}, Game ${gameNumber}.` }, { status: 404 });
+      return Response.json({ error: `No game found for Net ${netNumber}, Game ${gameNumber}.` });
     }
 
     return Response.json({
@@ -47,6 +47,6 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("Error:", error.message);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message });
   }
 });
