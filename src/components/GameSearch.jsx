@@ -45,7 +45,7 @@ export default function GameSearch({ onSelectGame }) {
         {results !== null && (
           <div className="space-y-3">
             {results.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No games found.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No matches found.</p>
             ) : (
               results.map((g, i) => (
                 <div
@@ -56,7 +56,7 @@ export default function GameSearch({ onSelectGame }) {
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
                       <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                        <span>Net {g.net} · Game {g.game}</span>
+                        <span>Net {g.net} · Match {g.game}</span>
                         {g.submitted && <span className="text-green-600 font-medium">✓ Scored</span>}
                       </div>
                       <div className="flex items-center gap-2 font-semibold">
@@ -67,7 +67,7 @@ export default function GameSearch({ onSelectGame }) {
                       {g.submitted && (
                         <div className="text-xs text-muted-foreground space-y-0.5 pt-1 border-t mt-1">
                           {g.rounds?.map((r, ri) => (
-                            <p key={ri}>Round {ri + 1}: <b>{r.score1}</b> – <b>{r.score2}</b></p>
+                            <p key={ri}>Game {ri + 1}: <b>{r.score1}</b> – <b>{r.score2}</b></p>
                           ))}
                           <p className="font-semibold">Total: <b>{g.total1}</b> – <b>{g.total2}</b></p>
                         </div>

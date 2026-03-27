@@ -56,15 +56,15 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
       const s1 = Number(r.score1);
       const s2 = Number(r.score2);
       if (r.score1 === "" || r.score2 === "") {
-        toast.error(`Please enter scores for both teams in Round ${i + 1}.`);
+        toast.error(`Please enter scores for both teams in Game ${i + 1}.`);
         return false;
       }
       if (s1 > 21 || s2 > 21) {
-        toast.error(`Round ${i + 1}: Maximum score is 21.`);
+        toast.error(`Game ${i + 1}: Maximum score is 21.`);
         return false;
       }
       if (s1 === 21 && s2 === 21) {
-        toast.error(`Round ${i + 1}: Only one team can score 21.`);
+        toast.error(`Game ${i + 1}: Only one team can score 21.`);
         return false;
       }
     }
@@ -122,14 +122,14 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
             </Select>
           </div>
           <div className="space-y-1">
-            <Label>Game Number</Label>
+            <Label>Match Number</Label>
             <Select value={gameNumber} onValueChange={setGameNumber}>
               <SelectTrigger>
-                <SelectValue placeholder="Game..." />
+                <SelectValue placeholder="Match..." />
               </SelectTrigger>
               <SelectContent>
                 {[1, 2, 3].map(g => (
-                  <SelectItem key={g} value={String(g)}>Game {g}</SelectItem>
+                  <SelectItem key={g} value={String(g)}>Match {g}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -138,13 +138,13 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
 
         <Button className="w-full" onClick={handleFetchGame} disabled={loading}>
           {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-          {loading ? "Loading..." : "Find Game"}
+          {loading ? "Loading..." : "Find Match"}
         </Button>
 
         {gameDetails && !submitted && (
           <div className="space-y-5 border-t pt-5">
             <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Net {gameDetails.net} · Game {gameDetails.game}</p>
+              <p className="text-sm text-muted-foreground mb-1">Net {gameDetails.net} · Match {gameDetails.game}</p>
               <div className="flex items-center justify-center gap-4">
                 <span className="text-lg font-bold text-blue-600">{gameDetails.team1}</span>
                 <span className="text-muted-foreground font-semibold">VS</span>
@@ -166,7 +166,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
             <p className="text-green-600 font-semibold text-lg">✅ Scores Saved!</p>
             <div className="text-sm text-muted-foreground space-y-1">
               {rounds.map((r, i) => (
-                <p key={i}>Round {i + 1}: <span className="font-bold">{r.score1}</span> – <span className="font-bold">{r.score2}</span></p>
+                <p key={i}>Game {i + 1}: <span className="font-bold">{r.score1}</span> – <span className="font-bold">{r.score2}</span></p>
               ))}
               <p className="font-semibold mt-2">
                 Total: {gameDetails.team1} <span className="font-bold">{rounds.reduce((s, r) => s + Number(r.score1), 0)}</span>

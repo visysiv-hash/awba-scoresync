@@ -24,7 +24,7 @@ export default function RoundScores({ rounds, onChange, team1, team2 }) {
         const error = getRoundError(round.score1, round.score2);
         return (
           <div key={i} className={`border rounded-lg p-4 space-y-2 ${error ? "border-red-400 bg-red-50" : ""}`}>
-            <p className="text-sm font-semibold text-muted-foreground">Round {i + 1}</p>
+            <p className="text-sm font-semibold text-muted-foreground">Game {i + 1}</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label className="text-blue-600 text-xs truncate block">{team1}</Label>
