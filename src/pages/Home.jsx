@@ -21,6 +21,11 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-white">Score Entry</h1>
         </div>
 
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 space-y-1 mb-4">
+          <p><span className="font-semibold">Game:</span> A single play to 21 points; first to reach 21 wins.</p>
+          <p><span className="font-semibold">Match:</span> A contest against one opponent consisting of two games.</p>
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full mb-4">
             <TabsTrigger value="search" className="flex-1">Search Match</TabsTrigger>
