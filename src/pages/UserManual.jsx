@@ -8,6 +8,7 @@ const IMAGES = {
   scoreEntry: "https://media.base44.com/images/public/69c519111fbf9fefe3d69538/5e1e6a762_generated_image.png",
   results: "https://media.base44.com/images/public/69c519111fbf9fefe3d69538/d3e3e5691_generated_image.png",
   leaderboard: "https://media.base44.com/images/public/69c519111fbf9fefe3d69538/a80ad9935_generated_image.png",
+  playerStats: "https://media.base44.com/images/public/69c519111fbf9fefe3d69538/90a3b37b6_generated_image.png",
 };
 
 const sections = [
@@ -33,11 +34,16 @@ const sections = [
   },
   {
     title: "5. League Leaderboard",
-    content: `Tap "League Leaderboard" from the home screen. Select a group from the dropdown to see player rankings including wins, losses, games played, and ladder points. You can also search for a specific player to see their match history and performance charts.`,
+    content: `Tap "League Leaderboard" from the home screen. You will see a "My Results" section where you can search for any player by name.\n\nOnce found, your stats are displayed:\n• GP, Wins, Losses, Draws\n• Points For and Points Against\n• Point Difference and Win Rate\n• A streak indicator if you're on a win or loss run\n\nBelow the stats you'll also find group leaderboard bar charts showing wins and win percentage for all players in a selected group. Use the dropdown to switch between groups.`,
     image: IMAGES.leaderboard,
   },
   {
-    title: "6. Tips",
+    title: "6. Player Performance Stats",
+    content: `After searching for a player in the Leaderboard, a "Player Stats" section loads automatically showing:\n\n• Form Guide — the last 5 games shown as ✅ (Win), ❌ (Loss), or 🟡 (Draw), from oldest to newest.\n• W / L / D counts and total games from your full match history.\n• Points Scored vs Conceded chart — a bar chart comparing your points for (green) and points against (red) across your last 10 games. This helps identify scoring trends over time.`,
+    image: IMAGES.playerStats,
+  },
+  {
+    title: "7. Tips",
     content: `• Always search by your own name to find your games quickly.\n• If your game does not appear, check with the desk — the schedule may not be loaded yet.\n• Scores can only be submitted once per game. If there is an error, contact the desk.\n• The app works on any phone or computer — no app download required.`,
     image: null,
   },
