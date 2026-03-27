@@ -27,8 +27,8 @@ Deno.serve(async (req) => {
     };
 
     for (const row of rows) {
-      // Columns: [timestamp, net, game, team1, team2, r1s1, r1s2, r2s1, r2s2, total1, total2]
-      const [, , , team1, team2, r1s1, r1s2, r2s1, r2s2] = row;
+      // Columns: [net, game, team1, team2, r1s1, r1s2, r2s1, r2s2, total1, total2, timestamp]
+      const [, , team1, team2, r1s1, r1s2, r2s1, r2s2] = row;
       if (!team1 || !team2) continue;
 
       const t1players = tokenise(team1);
