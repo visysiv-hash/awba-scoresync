@@ -19,7 +19,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
-          <img src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png" alt="Albury Wodonga Badminton" className="mx-auto mb-2 h-16 object-contain" />
+          <img src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/14724ad56_image.png" alt="Albury Wodonga Badminton" className="mx-auto mb-2 h-16 object-contain" />
           <h1 className="text-3xl font-bold text-white">Score Entry</h1>
         </div>
 

@@ -76,7 +76,7 @@ export default function Leaderboard() {
           </Link>
           <div className="flex-1 text-center">
             <img
-              src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png"
+              src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/14724ad56_image.png"
               alt="Albury Wodonga Badminton"
               className="mx-auto h-12 object-contain mb-1"
             />
