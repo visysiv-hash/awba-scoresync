@@ -4,50 +4,54 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
+    const spreadsheetId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
 
-    const spreadsheetId = Deno.env.get("SPREADSHEET_ID").replace(/^.*\/d\//, "").replace(/\/.*$/, "");
-    const range = "Scores!A2:K";
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
-    const resp = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-    const data = await resp.json();
-    const rows = data.values || [];
+    const range = encodeURIComponent("Group_Leaderboards!A1:K500");
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const json = await res.json();
+    const rows = json.values || [];
 
-    // Tokenise player names from a team string (handles "A & B", "A / B", "A, B")
-    const tokenise = (str) => str.split(/[&/,]/).map(s => s.trim()).filter(Boolean);
-
-    // Map: playerName -> { roundsWon, roundsPlayed }
+    // Parse the same way as getStandings
     const stats = {};
-
-    const add = (name, won) => {
-      if (!name) return;
-      const key = name.toLowerCase();
-      if (!stats[key]) stats[key] = { player: name, roundsWon: 0, roundsPlayed: 0 };
-      stats[key].roundsPlayed += 1;
-      if (won) stats[key].roundsWon += 1;
-    };
+    let skipNextRow = false;
 
     for (const row of rows) {
-      // Columns: [net, game, team1, team2, r1s1, r1s2, r2s1, r2s2, total1, total2, timestamp]
-      const [, , team1, team2, r1s1, r1s2, r2s1, r2s2] = row;
-      if (!team1 || !team2) continue;
+      const firstCell = (row[0] || "").trim();
 
-      const t1players = tokenise(team1);
-      const t2players = tokenise(team2);
-
-      // Round 1
-      const r1 = { s1: Number(r1s1) || 0, s2: Number(r1s2) || 0 };
-      if (r1.s1 > 0 || r1.s2 > 0) {
-        const t1WonR1 = r1.s1 > r1.s2;
-        t1players.forEach(p => add(p, t1WonR1));
-        t2players.forEach(p => add(p, !t1WonR1));
+      if (firstCell.includes("Leaderboard") && row.filter(c => c.trim()).length <= 1) {
+        skipNextRow = true;
+        continue;
       }
+      if (skipNextRow) { skipNextRow = false; continue; }
+      if (!firstCell) continue;
 
-      // Round 2
-      const r2 = { s1: Number(r2s1) || 0, s2: Number(r2s2) || 0 };
-      if (r2.s1 > 0 || r2.s2 > 0) {
-        const t1WonR2 = r2.s1 > r2.s2;
-        t1players.forEach(p => add(p, t1WonR2));
-        t2players.forEach(p => add(p, !t1WonR2));
+      const player = row[0] || "";
+      const gp = Number(row[1]) || 0;
+      const wins = Number(row[2]) || 0;
+      // pointsFor (col 6) and pointsAgainst (col 7) are total points across all games
+      const pointsFor = Number(row[6]) || 0;
+      const pointsAgainst = Number(row[7]) || 0;
+
+      // Each game = 2 rounds. Total rounds played = gp * 2.
+      // Reverse-calculate rounds won: each game the winner takes more points.
+      // Best estimate: rounds won = wins (games won) * 2 - losses in rounds
+      // Since we only have total points, use: roundsWon ≈ wins (each win = at least 1 round won)
+      // More accurate: total points scored vs 21*rounds gives round wins
+      // With 2 rounds per game and max 21 per round:
+      //   roundsWon = floor(pointsFor / 21) is not reliable either.
+      // Best available: use wins as rounds won (each match win = winning more rounds).
+      // If total points available, rounds won = wins since each game-win means winning more rounds.
+
+      const key = player.toLowerCase();
+      if (!stats[key]) {
+        stats[key] = { player, roundsWon: wins, roundsPlayed: gp, pointsFor, pointsAgainst };
+      } else {
+        // player appears in multiple groups, sum them
+        stats[key].roundsWon += wins;
+        stats[key].roundsPlayed += gp;
+        stats[key].pointsFor += pointsFor;
+        stats[key].pointsAgainst += pointsAgainst;
       }
     }
 
