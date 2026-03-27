@@ -23,16 +23,11 @@ export default function Leaderboard() {
   const [selectedGroup, setSelectedGroup] = useState(GROUP_NAMES[0]);
   const [selectedPlayer, setSelectedPlayer] = useState("");
   const [chartGroup, setChartGroup] = useState(GROUP_NAMES[0]);
-  const [roundsStats, setRoundsStats] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [standingsRes, roundsRes] = await Promise.all([
-      base44.functions.invoke("getStandings", {}),
-      base44.functions.invoke("getRoundsWon", {}),
-    ]);
+    const standingsRes = await base44.functions.invoke("getStandings", {});
     setGroups(standingsRes.data?.groups || {});
-    setRoundsStats(roundsRes.data?.stats || {});
     setLoading(false);
   }, []);
 
@@ -215,45 +210,6 @@ export default function Leaderboard() {
                   <p className="text-muted-foreground text-center py-4">No results found for this player.</p>
                 )}
 
-                {/* Rounds Won Charts — always visible for selected group */}
-                {(() => {
-                  const roundsChartData = (groups[chartGroup] || [])
-                    .filter(r => r.player)
-                    .sort((a, b) => Number(b.ladderPts) - Number(a.ladderPts))
-                    .map(r => {
-                      const rs = Object.values(roundsStats).find(s => s.player.toLowerCase() === r.player.toLowerCase());
-                      const rw = rs?.roundsWon || 0;
-                      const rp = rs?.roundsPlayed || 0;
-                      return { name: r.player, roundsWon: rw, roundsWinPct: rp > 0 ? Math.round((rw / rp) * 100) : 0 };
-                    });
-                  if (roundsChartData.length === 0) return null;
-                  return (
-                    <div className="border-t pt-4 space-y-3">
-                      <p className="text-sm font-semibold">Rounds Won — {chartGroup}</p>
-                      <ResponsiveContainer width="100%" height={220}>
-                        <BarChart data={roundsChartData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
-                          <YAxis tick={{ fontSize: 11 }} />
-                          <Tooltip />
-                          <Legend verticalAlign="top" />
-                          <Bar dataKey="roundsWon" fill="#0ea5e9" name="Rounds Won" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                      <p className="text-sm font-semibold mt-4 mb-2">Round Win %</p>
-                      <ResponsiveContainer width="100%" height={220}>
-                        <BarChart data={roundsChartData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
-                          <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
-                          <Tooltip formatter={(val) => `${val}%`} />
-                          <Legend verticalAlign="top" />
-                          <Bar dataKey="roundsWinPct" fill="#f97316" name="Round Win %" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  );
-                })()}
               </CardContent>
             </Card>
 
