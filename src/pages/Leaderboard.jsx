@@ -218,17 +218,13 @@ export default function Leaderboard() {
                 {/* Rounds Won Charts — always visible for selected group */}
                 {(() => {
                   const roundsChartData = (groups[chartGroup] || [])
-                    .filter(r => Number(r.gp) > 0)
+                    .filter(r => r.player)
                     .sort((a, b) => Number(b.ladderPts) - Number(a.ladderPts))
                     .map(r => {
                       const rs = Object.values(roundsStats).find(s => s.player.toLowerCase() === r.player.toLowerCase());
                       const rw = rs?.roundsWon || 0;
                       const rp = rs?.roundsPlayed || 0;
-                      return {
-                        name: r.player,
-                        roundsWon: rw,
-                        roundsWinPct: rp > 0 ? Math.round((rw / rp) * 100) : 0,
-                      };
+                      return { name: r.player, roundsWon: rw, roundsWinPct: rp > 0 ? Math.round((rw / rp) * 100) : 0 };
                     });
                   if (roundsChartData.length === 0) return null;
                   return (
