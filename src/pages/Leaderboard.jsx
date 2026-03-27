@@ -23,11 +23,16 @@ export default function Leaderboard() {
   const [selectedGroup, setSelectedGroup] = useState(GROUP_NAMES[0]);
   const [selectedPlayer, setSelectedPlayer] = useState("");
   const [chartGroup, setChartGroup] = useState(GROUP_NAMES[0]);
+  const [roundsStats, setRoundsStats] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await base44.functions.invoke("getStandings", {});
-    setGroups(res.data?.groups || {});
+    const [standingsRes, roundsRes] = await Promise.all([
+      base44.functions.invoke("getStandings", {}),
+      base44.functions.invoke("getRoundsWon", {}),
+    ]);
+    setGroups(standingsRes.data?.groups || {});
+    setRoundsStats(roundsRes.data?.stats || {});
     setLoading(false);
   }, []);
 
@@ -200,6 +205,49 @@ export default function Leaderboard() {
                               <Bar dataKey="winPct" fill="#7c3aed" name="Win %" />
                             </BarChart>
                           </ResponsiveContainer>
+
+                          {/* Rounds Won Charts */}
+                          {(() => {
+                            const roundsChartData = (groups[chartGroup] || [])
+                              .filter(r => Number(r.gp) > 0)
+                              .sort((a, b) => Number(b.ladderPts) - Number(a.ladderPts))
+                              .map(r => {
+                                const rs = Object.values(roundsStats).find(s => s.player.toLowerCase() === r.player.toLowerCase());
+                                const rw = rs?.roundsWon || 0;
+                                const rp = rs?.roundsPlayed || 0;
+                                return {
+                                  name: r.player,
+                                  roundsWon: rw,
+                                  roundsWinPct: rp > 0 ? Math.round((rw / rp) * 100) : 0,
+                                };
+                              });
+                            return (
+                              <>
+                                <p className="text-sm font-semibold mt-4 mb-2">Rounds Won (per player)</p>
+                                <ResponsiveContainer width="100%" height={220}>
+                                  <BarChart data={roundsChartData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
+                                    <YAxis tick={{ fontSize: 11 }} />
+                                    <Tooltip />
+                                    <Legend verticalAlign="top" />
+                                    <Bar dataKey="roundsWon" fill="#0ea5e9" name="Rounds Won" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                                <p className="text-sm font-semibold mt-4 mb-2">Round Win %</p>
+                                <ResponsiveContainer width="100%" height={220}>
+                                  <BarChart data={roundsChartData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
+                                    <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
+                                    <Tooltip formatter={(val) => `${val}%`} />
+                                    <Legend verticalAlign="top" />
+                                    <Bar dataKey="roundsWinPct" fill="#f97316" name="Round Win %" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </>
+                            );
+                          })()}
                         </>
                       )}
                     </div>
