@@ -43,6 +43,13 @@ export default function Leaderboard() {
     ? allPlayers.filter(p => p.player.toLowerCase().includes(selectedPlayer.toLowerCase()))
     : [];
 
+  // Auto-select the group where player has most games played
+  useEffect(() => {
+    if (!selectedPlayer || playerData.length === 0) return;
+    const best = playerData.reduce((a, b) => Number(a.gp) >= Number(b.gp) ? a : b);
+    if (best?.group) setChartGroup(best.group);
+  }, [selectedPlayer, JSON.stringify(playerData)]);
+
   const playerInChartGroup = selectedPlayer
     ? (groups[chartGroup] || []).find(r => r.player.toLowerCase().includes(selectedPlayer.toLowerCase())) || null
     : null;
