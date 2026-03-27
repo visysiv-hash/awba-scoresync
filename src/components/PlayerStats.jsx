@@ -24,8 +24,6 @@ export default function PlayerStats({ playerName }) {
   useEffect(() => {
     if (!playerName) return;
     setData(null);
-    setSearchOpp("");
-    setOpponent("");
     load(playerName);
   }, [playerName]);
 
