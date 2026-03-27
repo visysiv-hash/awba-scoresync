@@ -107,6 +107,20 @@ export default function Leaderboard() {
                   onChange={e => setSelectedPlayer(e.target.value)}
                 />
 
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-muted-foreground whitespace-nowrap">Select Group:</label>
+                  <Select value={chartGroup} onValueChange={setChartGroup}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GROUP_NAMES.map(g => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {selectedPlayer && playerData.length > 0 && (
                   <div className="space-y-4">
                     <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-2">
@@ -157,21 +171,9 @@ export default function Leaderboard() {
 
                     <PlayerStats playerName={selectedPlayer} />
 
-                    {/* Chart group selector */}
+                    {/* Charts */}
                     <div className="border-t pt-4 space-y-3">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <p className="text-sm font-semibold">Group Leaderboard Chart</p>
-                        <Select value={chartGroup} onValueChange={setChartGroup}>
-                          <SelectTrigger className="w-52">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {GROUP_NAMES.map(g => (
-                              <SelectItem key={g} value={g}>{g}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <p className="text-sm font-semibold">Group Leaderboard Chart</p>
                       {chartGroupData.length === 0 ? (
                         <p className="text-muted-foreground text-center py-4 text-sm">No games played in this group yet.</p>
                       ) : (
