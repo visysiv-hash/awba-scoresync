@@ -151,10 +151,7 @@ export default function Leaderboard() {
                             {Number(playerInChartGroup.gp) > 0 ? Math.round((Number(playerInChartGroup.wins) / Number(playerInChartGroup.gp)) * 100) : 0}%
                           </span>
                         </div>
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Rank Score: </span>
-                          <span className="font-bold text-lg text-amber-600">{playerInChartGroup.rankScore ?? "—"}</span>
-                        </div>
+
                       </div>
                     )}
 
