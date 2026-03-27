@@ -107,6 +107,10 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   return (
     <Card className="shadow-2xl">
       <CardContent className="pt-6 space-y-5">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 space-y-1">
+          <p><span className="font-semibold">Game:</span> A single play to 21 points; first to reach 21 wins.</p>
+          <p><span className="font-semibold">Match:</span> A contest against one opponent consisting of two games.</p>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label>Net Number</Label>
