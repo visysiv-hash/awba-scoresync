@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PlayerStats from "../components/PlayerStats";
-import { Link } from "react-router-dom";
+import LeaderboardSkeleton from "../components/LeaderboardSkeleton";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Trophy, Flame } from "lucide-react";
+import { RefreshCw, Trophy, Flame } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const GROUP_NAMES = [
@@ -24,15 +24,14 @@ export default function Leaderboard() {
   const [selectedPlayer, setSelectedPlayer] = useState("");
   const [chartGroup, setChartGroup] = useState(GROUP_NAMES[0]);
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      const res = await base44.functions.invoke("getStandings", {});
-      setGroups(res.data?.groups || {});
-      setLoading(false);
-    }
-    load();
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await base44.functions.invoke("getStandings", {});
+    setGroups(res.data?.groups || {});
+    setLoading(false);
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const currentGroupData = groups[selectedGroup] || [];
 
@@ -76,11 +75,9 @@ export default function Leaderboard() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Link to="/">
-            <Button variant="ghost" className="text-white hover:text-white hover:bg-white/10 gap-2">
-              <ArrowLeft className="w-4 h-4" /> Back
-            </Button>
-          </Link>
+          <Button variant="ghost" onClick={load} className="text-white hover:text-white hover:bg-white/10">
+            <RefreshCw className="w-4 h-4" />
+          </Button>
           <div className="flex-1 text-center">
             <img
               src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png"
@@ -95,9 +92,7 @@ export default function Leaderboard() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-10 h-10 text-white animate-spin" />
-          </div>
+          <LeaderboardSkeleton />
         ) : (
           <div className="space-y-6">
 
@@ -172,7 +167,6 @@ export default function Leaderboard() {
                             {Number(playerInChartGroup.gp) > 0 ? Math.round((Number(playerInChartGroup.wins) / Number(playerInChartGroup.gp)) * 100) : 0}%
                           </span>
                         </div>
-
                       </div>
                     )}
 
@@ -217,7 +211,6 @@ export default function Leaderboard() {
                 )}
               </CardContent>
             </Card>
-
 
           </div>
         )}

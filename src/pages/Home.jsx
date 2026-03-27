@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import TodaysResults from "../components/TodaysResults";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart2, Trophy, BookOpen } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 import ScoreEntry from "../components/ScoreEntry";
 import GameSearch from "../components/GameSearch";
 
@@ -36,23 +35,7 @@ export default function Home() {
           </TabsContent>
         </Tabs>
 
-        <div className="mt-4 text-center flex flex-col gap-2 items-center">
-          <Link to="/dashboard">
-            <Button variant="ghost" className="text-white hover:text-white hover:bg-white/10 gap-2">
-              <BarChart2 className="w-4 h-4" /> View Results Dashboard
-            </Button>
-          </Link>
-          <Link to="/leaderboard">
-            <Button variant="ghost" className="text-white hover:text-white hover:bg-white/10 gap-2">
-              <Trophy className="w-4 h-4" /> League Leaderboard
-            </Button>
-          </Link>
-          <Link to="/manual">
-            <Button variant="ghost" className="text-white hover:text-white hover:bg-white/10 gap-2">
-              <BookOpen className="w-4 h-4" /> User Manual
-            </Button>
-          </Link>
-        </div>
+        <TodaysResults />
       </div>
     </div>
   );

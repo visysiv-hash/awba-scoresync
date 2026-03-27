@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
 import UserManual from './pages/UserManual';
+import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import Leaderboard from './pages/Leaderboard';
 import Dashboard from './pages/Dashboard';
@@ -36,14 +37,18 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Routes>
-      {/* Add your page Route elements here */}
-      <Route path="/" element={<Home />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/leaderboard" element={<Leaderboard />} />
-      <Route path="/manual" element={<UserManual />} />
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <>
+      <div className="pb-16">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/manual" element={<UserManual />} />
+          <Route path="*" element={<PageNotFound />} />
+        </Routes>
+      </div>
+      <BottomNav />
+    </>
   );
 };
 
