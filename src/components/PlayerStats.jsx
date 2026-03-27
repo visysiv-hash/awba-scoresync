@@ -19,27 +19,21 @@ function FormGuide({ games }) {
 export default function PlayerStats({ playerName }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [opponent, setOpponent] = useState("");
-  const [searchOpp, setSearchOpp] = useState("");
+
 
   useEffect(() => {
     if (!playerName) return;
     setData(null);
     setSearchOpp("");
     setOpponent("");
-    load(playerName, "");
+    load(playerName);
   }, [playerName]);
 
-  const load = async (player, opp) => {
+  const load = async (player) => {
     setLoading(true);
-    const res = await base44.functions.invoke("getPlayerHistory", { player, opponent: opp });
+    const res = await base44.functions.invoke("getPlayerHistory", { player, opponent: "" });
     setData(res.data);
     setLoading(false);
-  };
-
-  const handleH2HSearch = () => {
-    load(playerName, opponent);
-    setSearchOpp(opponent);
   };
 
   if (!playerName) return null;
@@ -90,48 +84,6 @@ export default function PlayerStats({ playerName }) {
         </div>
       )}
 
-      {/* Head-to-Head */}
-      <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-        <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Head-to-Head</p>
-        <div className="flex gap-2">
-          <input
-            className="flex-1 h-9 rounded-md border border-input bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            placeholder="Enter opponent name..."
-            value={opponent}
-            onChange={e => setOpponent(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleH2HSearch()}
-          />
-          <button
-            onClick={handleH2HSearch}
-            className="px-4 h-9 rounded-md bg-slate-800 text-white text-sm font-medium hover:bg-slate-700"
-          >
-            Search
-          </button>
-        </div>
-
-        {h2h && searchOpp && (
-          h2h.total === 0 ? (
-            <p className="text-sm text-muted-foreground">No head-to-head games found against "{searchOpp}".</p>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex gap-4 text-sm font-semibold">
-                <span className="text-green-600">{h2h.wins} W</span>
-                <span className="text-red-500">{h2h.losses} L</span>
-                <span className="text-muted-foreground">{h2h.draws} D</span>
-                <span className="text-slate-400 font-normal">({h2h.total} games)</span>
-              </div>
-              <div className="divide-y rounded-md border bg-white overflow-hidden text-sm">
-                {h2h.games.map((g, i) => (
-                  <div key={i} className="flex items-center justify-between px-3 py-2">
-                    <span>{DOT[g.result]} {g.opponent}</span>
-                    <span className="font-bold text-xs">{g.myScore} – {g.oppScore}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        )}
-      </div>
     </div>
   );
 }
