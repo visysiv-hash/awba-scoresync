@@ -1,5 +1,4 @@
 import { useState } from "react";
-import TodaysResults from "../components/TodaysResults";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import ScoreEntry from "../components/ScoreEntry";
@@ -35,7 +34,6 @@ export default function Home() {
           </TabsContent>
         </Tabs>
 
-        <TodaysResults />
       </div>
     </div>
   );
