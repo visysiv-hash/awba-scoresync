@@ -61,6 +61,14 @@ export default function Leaderboard() {
     return null;
   };
 
+  const chartGroupData = (groups[chartGroup] || [])
+    .filter(r => Number(r.gp) > 0)
+    .sort((a, b) => Number(b.ladderPts) - Number(a.ladderPts))
+    .map(r => ({
+      name: r.player,
+      winPct: Number(r.gp) > 0 ? Math.round((Number(r.wins) / Number(r.gp)) * 100) : 0
+    }));
+
 
 
   return (
@@ -164,6 +172,25 @@ export default function Leaderboard() {
                     )}
 
                     <PlayerStats playerName={selectedPlayer} />
+
+                    {/* Win% Chart */}
+                    <div className="border-t pt-4 space-y-3">
+                      <p className="text-sm font-semibold">Win % — {chartGroup}</p>
+                      {chartGroupData.length === 0 ? (
+                        <p className="text-muted-foreground text-center py-4 text-sm">No games played in this group yet.</p>
+                      ) : (
+                        <ResponsiveContainer width="100%" height={220}>
+                          <BarChart data={chartGroupData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
+                            <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
+                            <Tooltip formatter={(val) => `${val}%`} />
+                            <Legend verticalAlign="top" />
+                            <Bar dataKey="winPct" fill="#7c3aed" name="Win %" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
 
                   </div>
                 )}
