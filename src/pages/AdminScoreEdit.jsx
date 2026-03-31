@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,10 @@ import { toast } from "sonner";
 import RoundScores from "../components/RoundScores";
 
 export default function AdminScoreEdit() {
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState(false);
+  const [pinLoading, setPinLoading] = useState(false);
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingKey, setEditingKey] = useState(null);
@@ -16,13 +18,20 @@ export default function AdminScoreEdit() {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState("");
 
-  useEffect(() => {
-    base44.auth.me().then(u => {
-      setUser(u);
-      setAuthLoading(false);
-      if (u?.role === "admin") loadGames();
-    }).catch(() => setAuthLoading(false));
-  }, []);
+  const handlePinSubmit = async (e) => {
+    e.preventDefault();
+    setPinLoading(true);
+    setPinError(false);
+    const res = await base44.functions.invoke("verifyAdminPin", { pin });
+    setPinLoading(false);
+    if (res.data?.success) {
+      setPinUnlocked(true);
+      loadGames();
+    } else {
+      setPinError(true);
+      setPin("");
+    }
+  };
 
   const loadGames = async () => {
     setLoading(true);
@@ -59,19 +68,33 @@ export default function AdminScoreEdit() {
     }
   };
 
-  if (authLoading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-      <Loader2 className="w-8 h-8 animate-spin text-white" />
-    </div>
-  );
-
-  if (!user || user.role !== "admin") return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-      <Card className="max-w-sm w-full mx-4">
-        <CardContent className="pt-8 pb-8 text-center space-y-2">
-          <p className="text-2xl">🔒</p>
-          <p className="font-semibold text-lg">Admin Only</p>
-          <p className="text-sm text-muted-foreground">You don't have permission to access this page.</p>
+  if (!pinUnlocked) return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 p-4">
+      <Card className="max-w-sm w-full">
+        <CardHeader>
+          <CardTitle className="text-center text-lg">🔒 Admin Access</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handlePinSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground text-center">Enter the admin PIN to continue</p>
+              <input
+                type="password"
+                inputMode="numeric"
+                className={`w-full h-10 rounded-md border px-3 py-2 text-sm text-center tracking-widest text-lg focus:outline-none focus:ring-1 focus:ring-ring ${
+                  pinError ? "border-red-500 bg-red-50" : "border-input"
+                }`}
+                placeholder="••••"
+                value={pin}
+                onChange={e => { setPin(e.target.value); setPinError(false); }}
+                autoFocus
+              />
+              {pinError && <p className="text-red-500 text-xs text-center">Incorrect PIN. Try again.</p>}
+            </div>
+            <Button type="submit" className="w-full" disabled={pinLoading || !pin}>
+              {pinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Unlock"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
