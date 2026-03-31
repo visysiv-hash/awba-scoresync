@@ -98,6 +98,67 @@ export default function Leaderboard() {
         ) : (
           <div className="space-y-6">
 
+            {/* Group Standings Table */}
+            <Card className="shadow-2xl">
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <CardTitle className="text-lg">Group Standings</CardTitle>
+                  <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+                    <SelectTrigger className="w-52">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GROUP_NAMES.map(g => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {currentGroupData.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8 text-sm">No data for this group yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-slate-50">
+                          <th className="text-left px-4 py-2 font-semibold text-muted-foreground">#</th>
+                          <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Player</th>
+                          <th className="text-center px-2 py-2 font-semibold text-muted-foreground">GP</th>
+                          <th className="text-center px-2 py-2 font-semibold text-muted-foreground">W</th>
+                          <th className="text-center px-2 py-2 font-semibold text-muted-foreground">L</th>
+                          <th className="text-center px-2 py-2 font-semibold text-muted-foreground">D</th>
+                          <th className="text-center px-2 py-2 font-semibold text-muted-foreground">PF</th>
+                          <th className="text-center px-2 py-2 font-semibold text-muted-foreground">PA</th>
+                          <th className="text-center px-2 py-2 font-semibold text-muted-foreground">Diff</th>
+                          <th className="text-center px-2 py-2 font-semibold text-muted-foreground">Pts</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentGroupData.map((row, i) => (
+                          <tr key={i} className="border-b last:border-0 hover:bg-slate-50">
+                            <td className="px-4 py-2 text-muted-foreground">{row.rank || i + 1}</td>
+                            <td className="px-4 py-2 font-medium">{row.player}</td>
+                            <td className="text-center px-2 py-2">{row.gp}</td>
+                            <td className="text-center px-2 py-2 text-green-600 font-semibold">{row.wins}</td>
+                            <td className="text-center px-2 py-2 text-red-500">{row.losses}</td>
+                            <td className="text-center px-2 py-2">{row.draws}</td>
+                            <td className="text-center px-2 py-2 text-blue-600">{row.pointsFor}</td>
+                            <td className="text-center px-2 py-2 text-slate-500">{row.pointsAgainst}</td>
+                            <td className={`text-center px-2 py-2 font-semibold ${Number(row.diff) >= 0 ? "text-green-600" : "text-red-500"}`}>
+                              {Number(row.diff) >= 0 ? "+" : ""}{row.diff}
+                            </td>
+                            <td className="text-center px-2 py-2 font-bold">{row.ladderPts}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* My Results */}
             <Card className="shadow-2xl">
               <CardHeader>
