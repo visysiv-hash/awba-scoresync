@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
 import UserManual from './pages/UserManual';
+import AdminScoreEdit from './pages/AdminScoreEdit';
 import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import Leaderboard from './pages/Leaderboard';
@@ -44,6 +45,7 @@ const AuthenticatedApp = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/manual" element={<UserManual />} />
+          <Route path="/admin/scores" element={<AdminScoreEdit />} />
           <Route path="*" element={<PageNotFound />} />
         </Routes>
       </div>

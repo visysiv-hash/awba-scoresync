@@ -1,15 +1,22 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, BarChart2, Trophy, BookOpen } from "lucide-react";
-
-const tabs = [
-  { path: "/", label: "Home", icon: Home },
-  { path: "/dashboard", label: "Results", icon: BarChart2 },
-  { path: "/leaderboard", label: "Leaderboard", icon: Trophy },
-  { path: "/manual", label: "Manual", icon: BookOpen },
-];
+import { Home, BarChart2, Trophy, BookOpen, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { base44 } from "@/api/base44Client";
 
 export default function BottomNav() {
   const { pathname } = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
+  }, []);
+
+  const tabs = [
+    { path: "/", label: "Home", icon: Home },
+    { path: "/dashboard", label: "Results", icon: BarChart2 },
+    { path: "/leaderboard", label: "Leaderboard", icon: Trophy },
+    { path: "/manual", label: "Manual", icon: BookOpen },
+    ...(isAdmin ? [{ path: "/admin/scores", label: "Admin", icon: ShieldCheck }] : []),
+  ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-700 flex">
       {tabs.map(({ path, label, icon: Icon }) => {
