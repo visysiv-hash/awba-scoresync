@@ -24,7 +24,7 @@ export default function RoundStandingsChart({ playerName }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Build per-round data for the specific player
+  // Build per-round data for the specific player (all rounds)
   const playerChartData = rounds.map(round => {
     const rows = data[round] || [];
     const row = rows.find(r => (r.player || r.name || Object.values(r)[0] || "").toLowerCase().includes(playerName.toLowerCase()));
@@ -36,7 +36,13 @@ export default function RoundStandingsChart({ playerName }) {
       pointsAgainst: Number(row?.["points against"] || row?.pointsagainst || row?.["pts against"] || row?.pointsAgainst) || 0,
       diff: Number(row?.diff || row?.difference) || 0,
     };
-  }).filter(r => r.wins || r.losses || r.pointsFor || r.pointsAgainst || r.diff);
+  });
+
+  // Selected round detail stats
+  const selectedRoundRows = data[selectedRound] || [];
+  const selectedRoundPlayer = selectedRound
+    ? selectedRoundRows.find(r => (r.player || r.name || Object.values(r)[0] || "").toLowerCase().includes(playerName.toLowerCase()))
+    : null;
 
   const metricOptions = [
     { value: "wins", label: "Wins" },
@@ -60,15 +66,52 @@ export default function RoundStandingsChart({ playerName }) {
           <p className="text-muted-foreground text-center py-4 text-sm">No round data available.</p>
         ) : (
           <>
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-muted-foreground font-medium whitespace-nowrap">Metric</p>
-              <Select value={metric} onValueChange={setMetric}>
-                <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {metricOptions.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">Metric</p>
+                <Select value={metric} onValueChange={setMetric}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {metricOptions.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">Select Round</p>
+                <Select value={selectedRound} onValueChange={setSelectedRound}>
+                  <SelectTrigger><SelectValue placeholder="Select round" /></SelectTrigger>
+                  <SelectContent>
+                    {rounds.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            {/* Selected round detail stats */}
+            {selectedRound && (
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{selectedRound} — Stats</p>
+                {selectedRoundPlayer ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Wins", value: selectedRoundPlayer.wins ?? "—", color: "text-green-600" },
+                      { label: "Losses", value: selectedRoundPlayer.losses ?? "—", color: "text-red-500" },
+                      { label: "Pts For", value: selectedRoundPlayer["points for"] ?? selectedRoundPlayer.pointsFor ?? "—", color: "text-blue-600" },
+                      { label: "Pts Against", value: selectedRoundPlayer["points against"] ?? selectedRoundPlayer.pointsAgainst ?? "—", color: "text-slate-500" },
+                      { label: "Diff", value: selectedRoundPlayer.diff ?? "—", color: Number(selectedRoundPlayer.diff) >= 0 ? "text-green-600" : "text-red-500" },
+                      { label: "Rank", value: selectedRoundPlayer.rank ?? "—", color: "text-purple-600" },
+                    ].map(stat => (
+                      <div key={stat.label} className="text-center">
+                        <p className="text-xs text-muted-foreground">{stat.label}</p>
+                        <p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center">No data for this player in {selectedRound}.</p>
+                )}
+              </div>
+            )}
 
             {playerChartData.length === 0 ? (
               <p className="text-muted-foreground text-center py-4 text-sm">No round data found for this player.</p>
