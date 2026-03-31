@@ -203,7 +203,7 @@ export default function Leaderboard() {
               </CardContent>
             </Card>
 
-          <RoundStandingsChart />
+          {selectedPlayer && <RoundStandingsChart playerName={selectedPlayer} />}
 
           </div>
         )}

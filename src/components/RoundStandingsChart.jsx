@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Loader2 } from "lucide-react";
 
-export default function RoundStandingsChart() {
+export default function RoundStandingsChart({ playerName }) {
   const [loading, setLoading] = useState(true);
   const [rounds, setRounds] = useState([]);
   const [data, setData] = useState({});
@@ -24,16 +24,19 @@ export default function RoundStandingsChart() {
 
   useEffect(() => { load(); }, [load]);
 
-  const chartData = (data[selectedRound] || [])
-    .map(row => ({
-      name: row.player || row.name || Object.values(row)[0],
-      wins: Number(row.wins) || 0,
-      losses: Number(row.losses) || 0,
-      pointsFor: Number(row["points for"] || row.pointsfor || row["pts for"] || row.ptsfor || row.pointsFor) || 0,
-      pointsAgainst: Number(row["points against"] || row.pointsagainst || row["pts against"] || row.ptsagainst || row.pointsAgainst) || 0,
-      diff: Number(row.diff || row.difference) || 0,
-    }))
-    .filter(r => r.name);
+  // Build per-round data for the specific player
+  const playerChartData = rounds.map(round => {
+    const rows = data[round] || [];
+    const row = rows.find(r => (r.player || r.name || Object.values(r)[0] || "").toLowerCase().includes(playerName.toLowerCase()));
+    return {
+      name: round,
+      wins: Number(row?.wins) || 0,
+      losses: Number(row?.losses) || 0,
+      pointsFor: Number(row?.["points for"] || row?.pointsfor || row?.["pts for"] || row?.pointsFor) || 0,
+      pointsAgainst: Number(row?.["points against"] || row?.pointsagainst || row?.["pts against"] || row?.pointsAgainst) || 0,
+      diff: Number(row?.diff || row?.difference) || 0,
+    };
+  }).filter(r => r.wins || r.losses || r.pointsFor || r.pointsAgainst || r.diff);
 
   const metricOptions = [
     { value: "wins", label: "Wins" },
@@ -57,32 +60,21 @@ export default function RoundStandingsChart() {
           <p className="text-muted-foreground text-center py-4 text-sm">No round data available.</p>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium">Round</p>
-                <Select value={selectedRound} onValueChange={setSelectedRound}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {rounds.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium">Metric</p>
-                <Select value={metric} onValueChange={setMetric}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {metricOptions.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground font-medium whitespace-nowrap">Metric</p>
+              <Select value={metric} onValueChange={setMetric}>
+                <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {metricOptions.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
 
-            {chartData.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4 text-sm">No data for this round.</p>
+            {playerChartData.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4 text-sm">No round data found for this player.</p>
             ) : (
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 50 }}>
+                <BarChart data={playerChartData} margin={{ top: 5, right: 20, left: 0, bottom: 50 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
                   <YAxis tick={{ fontSize: 11 }} />
