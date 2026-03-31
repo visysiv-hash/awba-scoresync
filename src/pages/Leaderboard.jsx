@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import PlayerStats from "../components/PlayerStats";
+import RoundStandingsChart from "../components/RoundStandingsChart";
 import LeaderboardSkeleton from "../components/LeaderboardSkeleton";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -201,6 +202,8 @@ export default function Leaderboard() {
 
               </CardContent>
             </Card>
+
+          <RoundStandingsChart />
 
           </div>
         )}
