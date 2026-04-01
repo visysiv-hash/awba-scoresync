@@ -15,7 +15,7 @@ function winRate(row) {
   return gp > 0 ? Math.round((Number(row.wins) / gp) * 100) : 0;
 }
 
-function SwapExplainer({ pair, adjStats }) {
+function SwapExplainer({ pair, adjStats, sg }) {
   const [open, setOpen] = useState(false);
   const downAdj = adjStats?.[pair.moveDown.player];
   const upAdj = adjStats?.[pair.moveUp.player];
@@ -31,6 +31,14 @@ function SwapExplainer({ pair, adjStats }) {
       </button>
       {open && (
         <div className="mt-2 bg-slate-50 rounded-lg p-3 text-xs space-y-3 border">
+          <div className="bg-white border rounded-lg p-2">
+            <p className="font-semibold text-slate-900 mb-1">Why this swap?</p>
+            <p className="text-muted-foreground leading-relaxed">
+              <span className="font-semibold text-red-600">{pair.moveDown.player}</span> has won {pair.moveDown.wins}W out of {pair.moveDown.gp} matches in {sg.harderGroup.replace(" Leaderboard", "")} ({pair.wrCandidate}% win rate).
+              <span className="font-semibold text-green-600 ml-1">{pair.moveUp.player}</span> has won {pair.moveUp.wins}W out of {pair.moveUp.gp} matches in {sg.easierGroup.replace(" Leaderboard", "")} ({pair.wrChallenger}% win rate).
+              Swapping them could help balance the groups — the lower performer moves to an easier group, the higher performer moves to a harder one.
+            </p>
+          </div>
           <p className="text-muted-foreground text-center font-semibold">Adjusted WR = Raw WR − (Avg Partner WR − League Avg WR) × 0.5</p>
           {[{ label: pair.moveDown.player, adj: downAdj, raw: winRate(pair.moveDown), color: "text-red-500" },
             { label: pair.moveUp.player, adj: upAdj, raw: winRate(pair.moveUp), color: "text-green-600" }]
@@ -206,7 +214,7 @@ export default function OverallRankings({ groups }) {
                     <span className="text-red-500 font-semibold">{pair.moveDown.player}</span> ({pair.wrCandidate}% adj. WR) → {sg.easierGroup.replace(" Leaderboard", "")} ·{" "}
                     <span className="text-green-600 font-semibold">{pair.moveUp.player}</span> ({pair.wrChallenger}% adj. WR) → {sg.harderGroup.replace(" Leaderboard", "")}
                   </p>
-                  <SwapExplainer pair={pair} adjStats={adjStats} />
+                  <SwapExplainer pair={pair} adjStats={adjStats} sg={sg} />
                 </div>
               ))}
             </CardContent>
