@@ -9,6 +9,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ExplainerDownload from './pages/ExplainerDownload';
 import UserManual from './pages/UserManual';
 import AdminScoreEdit from './pages/AdminScoreEdit';
+import PlayerProfile from './pages/PlayerProfile';
 import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import Leaderboard from './pages/Leaderboard';
@@ -45,6 +46,7 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/player" element={<PlayerProfile />} />
           <Route path="/manual" element={<UserManual />} />
           <Route path="/explainer" element={<ExplainerDownload />} />
           <Route path="/admin/scores" element={<AdminScoreEdit />} />
