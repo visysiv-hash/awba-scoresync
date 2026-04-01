@@ -119,7 +119,7 @@ export default function OverallRankings({ groups }) {
   const groupRanked = {};
   GROUP_NAMES.forEach(name => {
     groupRanked[name] = (groups[name] || [])
-      .filter(r => (totalGP[r.player] || 0) >= MIN_MATCHES)
+      .filter(r => Number(r.gp) > 0 && (totalGP[r.player] || 0) >= MIN_MATCHES)
       .sort((a, b) => effectiveWR(b) - effectiveWR(a));
   });
 
