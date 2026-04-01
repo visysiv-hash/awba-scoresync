@@ -53,7 +53,7 @@ export default function RoundStandingsChart({ playerName }) {
     <div className="space-y-4">
       <Card className="shadow-2xl">
         <CardHeader>
-          <CardTitle className="text-lg">Round Standings</CardTitle>
+          <CardTitle className="text-lg">Weekly Standings</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {loading ? (
@@ -63,11 +63,11 @@ export default function RoundStandingsChart({ playerName }) {
           ) : (
             <>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium">Select Round</p>
+                <p className="text-xs text-muted-foreground font-medium">Select Week</p>
                 <Select value={selectedRound} onValueChange={setSelectedRound}>
                   <SelectTrigger><SelectValue placeholder="Select round" /></SelectTrigger>
                   <SelectContent>
-                    {rounds.map(r => <SelectItem key={r} value={r}>{r}{roundDateMap[r] ? ` (${roundDateMap[r]})` : ""}</SelectItem>)}
+                    {rounds.map(r => <SelectItem key={r} value={r}>Week {r}{roundDateMap[r] ? ` (${roundDateMap[r]})` : ""}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -75,7 +75,7 @@ export default function RoundStandingsChart({ playerName }) {
               {selectedRound && (
                 <div className="bg-slate-50 rounded-lg p-3">
                   <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                    Round {selectedRound} — Stats{roundDateMap[selectedRound] ? ` · ${roundDateMap[selectedRound]}` : ""}
+                    Week {selectedRound} — Stats{roundDateMap[selectedRound] ? ` · ${roundDateMap[selectedRound]}` : ""}
                   </p>
                   {player ? (
                     <div className="grid grid-cols-3 gap-2">
@@ -94,7 +94,7 @@ export default function RoundStandingsChart({ playerName }) {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center">No data for this player in Round {selectedRound}.</p>
+                    <p className="text-sm text-muted-foreground text-center">No data for this player in Week {selectedRound}.</p>
                   )}
                 </div>
               )}
@@ -107,13 +107,13 @@ export default function RoundStandingsChart({ playerName }) {
       {selectedRound && (
         <Card className="shadow-2xl">
           <CardHeader>
-            <CardTitle className="text-lg">Round {selectedRound} Games</CardTitle>
+            <CardTitle className="text-lg">Week {selectedRound} Games</CardTitle>
           </CardHeader>
           <CardContent>
             {gamesLoading ? (
               <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
             ) : games.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No games found for this player in Round {selectedRound}.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No games found for this player in Week {selectedRound}.</p>
             ) : (
               <div className="space-y-3">
                 {games.map((g, i) => {
