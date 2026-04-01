@@ -164,7 +164,7 @@ export default function Leaderboard() {
                   {/* Stats grid */}
                   <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
                     {[
-                      { label: "GP", value: playerInChartGroup?.gp ?? "—" },
+                      { label: "MP", value: playerInChartGroup?.gp ?? "—" },
                       { label: "Wins", value: playerInChartGroup?.wins ?? "—", color: "text-green-600" },
                       { label: "Losses", value: playerInChartGroup?.losses ?? "—", color: "text-red-500" },
                       { label: "Draws", value: playerInChartGroup?.draws ?? "—" },
