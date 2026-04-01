@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const DOT = { W: "✅", L: "❌", D: "🟡" };
 
 function FormGuide({ games }) {
-  const last5 = games.slice(0, 5).reverse();
+  const last5 = games.slice(0, 6).reverse();
   if (!last5.length) return <span className="text-muted-foreground text-sm">No games yet</span>;
   return (
     <span className="text-xl tracking-widest">
@@ -62,7 +62,7 @@ export default function PlayerStats({ playerName }) {
 
       {/* Form Guide */}
       <div className="bg-slate-50 rounded-lg p-4">
-        <p className="text-xs text-muted-foreground mb-2 font-semibold uppercase tracking-wide">Last 5 Games (oldest → newest)</p>
+        <p className="text-xs text-muted-foreground mb-2 font-semibold uppercase tracking-wide">Last 6 Games (oldest → newest)</p>
         <FormGuide games={games} />
         {games.length > 0 && (
           <div className="mt-2 flex gap-3 text-xs text-muted-foreground">
