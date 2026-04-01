@@ -245,20 +245,23 @@ export default function OverallRankings({ groups }) {
               });
             });
             
-            const usedPlayers = new Set(Object.keys(swapMap));
+            const globalUsedPlayers = new Set();
             
             return GROUP_NAMES.map(groupName => {
               const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => winRate(b) - winRate(a));
               if (all.length === 0) return null;
               
-              // Get top 4 and bottom 4, excluding players already used
-              const filtered = all.filter(r => !usedPlayers.has(r.player));
+              // Get top 4 and bottom 4, excluding players already used globally
+              const filtered = all.filter(r => !globalUsedPlayers.has(r.player));
               const top4 = filtered.slice(0, 4);
               const bottom4 = filtered.length > 4 ? filtered.slice(-4).reverse() : [];
               
-              // Also include swap players in the lists
-              const top4WithSwaps = all.slice(0, 4);
-              const bottom4WithSwaps = all.length > 4 ? all.slice(-4).reverse() : [];
+              // Add these players to global used set
+              top4.forEach(p => globalUsedPlayers.add(p.player));
+              bottom4.forEach(p => globalUsedPlayers.add(p.player));
+              
+              const top4WithSwaps = top4;
+              const bottom4WithSwaps = bottom4;
               
               return (
                 <div key={groupName} className="border rounded-lg p-3">
