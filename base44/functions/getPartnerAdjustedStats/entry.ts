@@ -89,28 +89,39 @@ Deno.serve(async (req) => {
       addPartner(g.team2[1], g.team2[0]);
     }
 
-    // Count games won/lost per player (score 42 = won both games, else 1 each, or 0 games won if lost)
+    // Count games won/lost per player: each match = 2 games
+    // A match with score 42 vs X means winner got 2 games (opponent 0)
+    // Any other split (non-42) means it went to 2nd game: winner got 1, loser got 1
     const gamesWon = {};
     for (const [name] of Object.entries(stats)) gamesWon[name] = { won: 0, lost: 0 };
 
     for (const g of games) {
-      const team1Score = Number(g.score1);
-      const team2Score = Number(g.score2);
+      const score1 = Number(g.score1);
+      const score2 = Number(g.score2);
       
-      let team1GamesWon, team1GamesLost, team2GamesWon, team2GamesLost;
-      if (team1Score === 42) {
-        team1GamesWon = 2; team1GamesLost = 0;
-        team2GamesWon = 0; team2GamesLost = 2;
-      } else if (team2Score === 42) {
-        team1GamesWon = 0; team1GamesLost = 2;
-        team2GamesWon = 2; team2GamesLost = 0;
+      let team1GamesWon, team2GamesWon;
+      if (score1 === 42) {
+        // Team 1 won both games (2-0)
+        team1GamesWon = 2;
+        team2GamesWon = 0;
+      } else if (score2 === 42) {
+        // Team 2 won both games (0-2)
+        team1GamesWon = 0;
+        team2GamesWon = 2;
       } else {
-        team1GamesWon = 1; team1GamesLost = 1;
-        team2GamesWon = 1; team2GamesLost = 1;
+        // Split (not 42-anything) — each team won 1 game (1-1)
+        team1GamesWon = 1;
+        team2GamesWon = 1;
       }
       
-      for (const p of g.team1) if (gamesWon[p]) { gamesWon[p].won += team1GamesWon; gamesWon[p].lost += team1GamesLost; }
-      for (const p of g.team2) if (gamesWon[p]) { gamesWon[p].won += team2GamesWon; gamesWon[p].lost += team2GamesLost; }
+      for (const p of g.team1) if (gamesWon[p]) {
+        gamesWon[p].won += team1GamesWon;
+        gamesWon[p].lost += (2 - team1GamesWon);
+      }
+      for (const p of g.team2) if (gamesWon[p]) {
+        gamesWon[p].won += team2GamesWon;
+        gamesWon[p].lost += (2 - team2GamesWon);
+      }
     }
 
     // Adjusted win rate: penalise if avg partner was strong, reward if weak
