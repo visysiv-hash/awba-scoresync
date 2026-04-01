@@ -236,12 +236,15 @@ export default function OverallRankings({ groups }) {
         </CardHeader>
         <CardContent className="space-y-4">
           {(() => {
-            // Build swap notation map: player name -> swap info
+            // Build swap notation map and exclude set
             const swapMap = {};
+            const swappedPlayers = new Set(); // Players being swapped out
             swapGroups.forEach(sg => {
               sg.pairs.forEach(pair => {
                 swapMap[pair.moveDown.player] = `↔ ${sg.easierGroup.replace(" Leaderboard", "")}`;
                 swapMap[pair.moveUp.player] = `↔ ${sg.harderGroup.replace(" Leaderboard", "")}`;
+                swappedPlayers.add(pair.moveDown.player);
+                swappedPlayers.add(pair.moveUp.player);
               });
             });
             
@@ -260,8 +263,8 @@ export default function OverallRankings({ groups }) {
                 .sort((a, b) => winRate(b) - winRate(a));
               if (all.length === 0) return null;
               
-              // For scheduling reference: filter out players already shown in better groups
-              const filtered = all.filter(r => !globalUsedPlayers.has(r.player));
+              // For scheduling reference: filter out players already shown in better groups AND players being swapped
+              const filtered = all.filter(r => !globalUsedPlayers.has(r.player) && !swappedPlayers.has(r.player));
               const top4 = filtered.slice(0, 4);
               
               // Get bottom 4: the 4 absolute lowest performers in filtered set
