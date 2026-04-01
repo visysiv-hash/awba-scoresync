@@ -267,6 +267,10 @@ export default function OverallRankings({ groups }) {
               const top4WithSwaps = top4;
               const bottom4WithSwaps = bottom4;
               
+              // Get all other players not in top/bottom 4 for this group
+              const usedInDisplay = new Set([...top4, ...bottom4].map(p => p.player));
+              const others = all.filter(r => !usedInDisplay.has(r.player));
+              
               return (
                 <div key={groupName} className="border rounded-lg p-3">
                   <p className="font-semibold text-sm mb-2 text-slate-700">{groupName}</p>
@@ -300,6 +304,14 @@ export default function OverallRankings({ groups }) {
                       </div>
                     </div>
                   </div>
+                  {others.length > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      <p className="text-xs font-semibold text-slate-500 mb-1">📋 Other players in {groupName}:</p>
+                      <p className="text-xs text-slate-500">
+                        {others.map(r => `${r.player} (${Number(r.gp)}MP, ${winRate(r)}%)`).join(' / ')}
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             });
