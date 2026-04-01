@@ -139,7 +139,7 @@ export default function Leaderboard() {
             {/* 4. Group standings - show all groups player played in */}
             {selectedPlayer && playerData.length > 0 && (
               <div className="space-y-6">
-                {playerData.map((playerInGroup) => {
+                {playerData.filter(p => Number(p.gp) > 0).map((playerInGroup) => {
                   const groupName = playerInGroup.group;
                   const gp = Number(playerInGroup.gp);
                   const wr = gp > 0 ? Math.round((Number(playerInGroup.wins) / gp) * 100) : 0;
