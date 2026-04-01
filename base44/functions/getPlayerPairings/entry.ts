@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
     const gamesData = await gamesRes.json();
     const rows = gamesData.values || [];
 
-    const partners = new Set();
-    const opponents = new Set();
+    const partnerCounts = {};
+    const opponentCounts = {};
 
     rows.slice(1).forEach(row => {
       // Column G is index 6, Column H is index 7
@@ -36,22 +36,30 @@ Deno.serve(async (req) => {
 
       if (playerInTeam1) {
         team1.forEach(p => {
-          if (p.toLowerCase() !== player.toLowerCase()) partners.add(p);
+          if (p.toLowerCase() !== player.toLowerCase()) {
+            partnerCounts[p] = (partnerCounts[p] || 0) + 1;
+          }
         });
-        team2.forEach(p => opponents.add(p));
+        team2.forEach(p => {
+          opponentCounts[p] = (opponentCounts[p] || 0) + 1;
+        });
       } else if (playerInTeam2) {
         team2.forEach(p => {
-          if (p.toLowerCase() !== player.toLowerCase()) partners.add(p);
+          if (p.toLowerCase() !== player.toLowerCase()) {
+            partnerCounts[p] = (partnerCounts[p] || 0) + 1;
+          }
         });
-        team1.forEach(p => opponents.add(p));
+        team1.forEach(p => {
+          opponentCounts[p] = (opponentCounts[p] || 0) + 1;
+        });
       }
     });
 
     return Response.json({
-      partners: Array.from(partners).sort(),
-      opponents: Array.from(opponents).sort(),
-      totalPartners: partners.size,
-      totalOpponents: opponents.size
+      partners: Object.entries(partnerCounts).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)),
+      opponents: Object.entries(opponentCounts).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)),
+      totalPartners: Object.keys(partnerCounts).length,
+      totalOpponents: Object.keys(opponentCounts).length
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

@@ -44,8 +44,8 @@ export default function PlayerPairingModal({ player, groupName, onClose }) {
             </p>
             <div className="space-y-1 bg-slate-50 rounded-lg p-3 max-h-40 overflow-y-auto">
               {data?.partners?.length > 0 ? (
-                data.partners.map((partner, i) => (
-                  <p key={i} className="text-sm text-slate-700">• {partner}</p>
+                data.partners.map((p, i) => (
+                  <p key={i} className="text-sm text-slate-700">• {p.name} <span className="text-xs text-muted-foreground">({p.count}x)</span></p>
                 ))
               ) : (
                 <p className="text-xs text-muted-foreground">No partners yet</p>
@@ -59,8 +59,8 @@ export default function PlayerPairingModal({ player, groupName, onClose }) {
             </p>
             <div className="space-y-1 bg-slate-50 rounded-lg p-3 max-h-40 overflow-y-auto">
               {data?.opponents?.length > 0 ? (
-                data.opponents.map((opponent, i) => (
-                  <p key={i} className="text-sm text-slate-700">• {opponent}</p>
+                data.opponents.map((o, i) => (
+                  <p key={i} className="text-sm text-slate-700">• {o.name} <span className="text-xs text-muted-foreground">({o.count}x)</span></p>
                 ))
               ) : (
                 <p className="text-xs text-muted-foreground">No opponents yet</p>
