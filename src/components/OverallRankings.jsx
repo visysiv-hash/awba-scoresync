@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpDown, ArrowUp, ArrowDown, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 
-const MIN_MATCHES = 9;
+const MIN_MATCHES = 6;
 
 function getGroupNumber(groupName) {
   const match = groupName.match(/\d+/);
