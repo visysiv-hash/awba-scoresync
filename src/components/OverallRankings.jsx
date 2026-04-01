@@ -278,7 +278,7 @@ export default function OverallRankings({ groups }) {
                     <div>
                       <p className="text-xs font-semibold text-green-600 mb-2">🏆 Top 4</p>
                       <div className="space-y-1">
-                        {top4WithSwaps.map((r, i) => {
+                        {top4.map((r, i) => {
                           const swapNote = swapMap[r.player];
                           return (
                             <p key={i} className="text-xs text-slate-600">
@@ -292,7 +292,7 @@ export default function OverallRankings({ groups }) {
                     <div>
                       <p className="text-xs font-semibold text-red-600 mb-2">📉 Bottom 4</p>
                       <div className="space-y-1">
-                        {bottom4WithSwaps.map((r, i) => {
+                        {bottom4.map((r, i) => {
                           const swapNote = swapMap[r.player];
                           return (
                             <p key={i} className="text-xs text-slate-600">
