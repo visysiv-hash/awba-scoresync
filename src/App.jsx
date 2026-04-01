@@ -13,6 +13,7 @@ import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import Leaderboard from './pages/Leaderboard';
 import Dashboard from './pages/Dashboard';
+import PairingTool from './pages/PairingTool';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -45,6 +46,7 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/pairing" element={<PairingTool />} />
           <Route path="/manual" element={<UserManual />} />
           <Route path="/explainer" element={<ExplainerDownload />} />
           <Route path="/admin/scores" element={<AdminScoreEdit />} />
