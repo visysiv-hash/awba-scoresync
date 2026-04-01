@@ -8,12 +8,14 @@ export default function RoundStandingsChart({ playerName }) {
   const [loading, setLoading] = useState(true);
   const [rounds, setRounds] = useState([]);
   const [data, setData] = useState({});
+  const [roundDateMap, setRoundDateMap] = useState({});
   const [selectedRound, setSelectedRound] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     const res = await base44.functions.invoke("getRoundStandings", {});
-    const { rounds: r, data: d } = res.data;
+    const { rounds: r, data: d, roundDateMap: rdm } = res.data;
+    setRoundDateMap(rdm || {});
     setRounds(r || []);
     setData(d || {});
     if (r && r.length > 0) setSelectedRound(r[0]);
@@ -44,7 +46,7 @@ export default function RoundStandingsChart({ playerName }) {
               <Select value={selectedRound} onValueChange={setSelectedRound}>
                 <SelectTrigger><SelectValue placeholder="Select round" /></SelectTrigger>
                 <SelectContent>
-                  {rounds.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  {rounds.map(r => <SelectItem key={r} value={r}>{r}{roundDateMap[r] ? ` (${roundDateMap[r]})` : ""}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
