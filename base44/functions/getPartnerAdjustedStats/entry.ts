@@ -89,6 +89,28 @@ Deno.serve(async (req) => {
       addPartner(g.team2[1], g.team2[0]);
     }
 
+    // Count games won/lost per player
+    const gamesWon = {}; // player -> { won, lost }
+    for (const [name] of Object.entries(stats)) gamesWon[name] = { won: 0, lost: 0 };
+
+    for (const g of games) {
+      const allPlayers = [...g.team1, ...g.team2];
+      const team1Result = g.team1Won ? 'W' : g.team2Won ? 'L' : 'D';
+      const team2Result = g.team2Won ? 'W' : g.team1Won ? 'L' : 'D';
+      for (const p of g.team1) {
+        if (gamesWon[p]) {
+          if (team1Result === 'W') gamesWon[p].won++;
+          else if (team1Result === 'L') gamesWon[p].lost++;
+        }
+      }
+      for (const p of g.team2) {
+        if (gamesWon[p]) {
+          if (team2Result === 'W') gamesWon[p].won++;
+          else if (team2Result === 'L') gamesWon[p].lost++;
+        }
+      }
+    }
+
     // Adjusted win rate: penalise if avg partner was strong, reward if weak
     // adjustedWR = rawWR - (avgPartnerWR - leagueAvgWR) * 0.5
     const adjusted = {};
@@ -99,12 +121,17 @@ Deno.serve(async (req) => {
         ? partnerWRs.reduce((a, b) => a + b, 0) / partnerWRs.length
         : leagueAvgWR;
       const adj = rwr - (avgPartnerWR - leagueAvgWR) * 0.5;
+      const gw = gamesWon[name];
+      const totalGames = gw.won + gw.lost;
       adjusted[name] = {
         player: name,
         gp: s.gp,
         wins: s.wins,
         losses: s.losses,
         draws: s.draws,
+        gamesWon: gw.won,
+        gamesLost: gw.lost,
+        gameWinPct: totalGames > 0 ? Math.round((gw.won / totalGames) * 100) : 0,
         rawWR: Math.round(rwr * 100),
         avgPartnerWR: Math.round(avgPartnerWR * 100),
         leagueAvgWR: Math.round(leagueAvgWR * 100),
