@@ -49,13 +49,13 @@ export default function PlayerStats({ playerName }) {
 
   // Games won per match: 42 = won both (2), opponent 42 = won 0, else each won 1
   const gamesChartData = games.slice(0, 10).reverse().map((g, i) => {
-    const myGamesWon = g.myScore === 42 ? 2 : g.oppScore === 42 ? 0 : 1;
+    const myGamesWon = Number(g.myScore) === 42 ? 2 : Number(g.oppScore) === 42 ? 0 : 1;
     const oppGamesWon = 2 - myGamesWon;
     return { name: `M${i + 1}`, "Games Won": myGamesWon, "Games Lost": oppGamesWon };
   });
 
-  const totalGamesWon = games.reduce((sum, g) => sum + (g.myScore === 42 ? 2 : g.oppScore === 42 ? 0 : 1), 0);
-  const totalGamesLost = games.reduce((sum, g) => sum + (g.oppScore === 42 ? 2 : g.myScore === 42 ? 0 : 1), 0);
+  const totalGamesWon = games.reduce((sum, g) => sum + (Number(g.myScore) === 42 ? 2 : Number(g.oppScore) === 42 ? 0 : 1), 0);
+  const totalGamesLost = games.reduce((sum, g) => sum + (Number(g.oppScore) === 42 ? 2 : Number(g.myScore) === 42 ? 0 : 1), 0);
 
   return (
     <div className="space-y-4 mt-4 border-t pt-4">
