@@ -172,7 +172,7 @@ export default function Leaderboard() {
                       </div>
                     )}
 
-                    <PlayerStats playerName={selectedPlayer} />
+
 
                     {/* Win% Chart */}
                     <div className="border-t pt-4 space-y-3">
@@ -204,6 +204,7 @@ export default function Leaderboard() {
             </Card>
 
           {selectedPlayer && <RoundStandingsChart playerName={selectedPlayer} />}
+          {selectedPlayer && playerData.length > 0 && <PlayerStats playerName={selectedPlayer} />}
 
           </div>
         )}
