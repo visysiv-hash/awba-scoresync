@@ -260,10 +260,9 @@ export default function OverallRankings({ groups }) {
               const bottom4 = filtered.length > 4 ? filtered.slice(-4).reverse() : [];
               
               // Add to global used set for next groups
-              top4.forEach(p => globalUsedPlayers.add(p.player));
-              bottom4.forEach(p => globalUsedPlayers.add(p.player));
+              [...top4, ...bottom4].forEach(p => globalUsedPlayers.add(p.player));
               
-              // Get other players (middle performers)
+              // Get other players (everything except top and bottom)
               const usedInDisplay = new Set([...top4, ...bottom4].map(p => p.player));
               const others = filtered.filter(r => !usedInDisplay.has(r.player));
               
