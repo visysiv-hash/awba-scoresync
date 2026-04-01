@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import PlayerStats from "../components/PlayerStats";
 import RoundStandingsChart from "../components/RoundStandingsChart";
 import OverallRankings from "../components/OverallRankings";
@@ -19,6 +20,7 @@ const GROUP_NAMES = [
 ];
 
 export default function Leaderboard() {
+  const navigate = useNavigate();
   const [groups, setGroups] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState("");
@@ -125,8 +127,8 @@ export default function Leaderboard() {
             {/* Player name header */}
             {selectedPlayer && playerData.length > 0 && (
               <div className="text-center py-2">
-                <h2 className="text-2xl font-bold text-white">{selectedPlayer}</h2>
-                <p className="text-slate-300 text-sm">Player Stats</p>
+                <h2 className="text-2xl font-bold text-white cursor-pointer hover:text-blue-300 transition-colors" onClick={() => navigate(`/player?name=${encodeURIComponent(selectedPlayer)}`)}>{selectedPlayer}</h2>
+                <p className="text-slate-300 text-sm">Click name to see full profile</p>
               </div>
             )}
 
