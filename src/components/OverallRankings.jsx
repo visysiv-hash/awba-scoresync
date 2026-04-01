@@ -36,17 +36,11 @@ function SwapExplainer({ pair, adjStats, sg }) {
             <div className="space-y-1.5 text-muted-foreground">
               <div>
                 <p className="font-semibold text-red-600 mb-0.5">{pair.moveDown.player} (Moving from {sg.harderGroup.replace(" Leaderboard", "")})</p>
-                <p className="text-xs mb-1">Matches: {pair.moveDown.gp} ({pair.moveDown.wins}W–{pair.moveDown.losses}L) | Point Diff: {Number(pair.moveDown.diff) >= 0 ? "+" : ""}{pair.moveDown.diff}</p>
-                {adjStats?.[pair.moveDown.player] && (
-                  <p className="text-xs">Games: {adjStats[pair.moveDown.player].gamesWon}W–{adjStats[pair.moveDown.player].gamesLost}L ({adjStats[pair.moveDown.player].gameWinPct}% Win %)</p>
-                )}
+                <p className="text-xs">Matches: {pair.moveDown.gp} ({pair.moveDown.wins}W–{pair.moveDown.losses}L) | Point Diff: {Number(pair.moveDown.diff) >= 0 ? "+" : ""}{pair.moveDown.diff}</p>
               </div>
               <div>
                 <p className="font-semibold text-green-600 mb-0.5">{pair.moveUp.player} (Moving from {sg.easierGroup.replace(" Leaderboard", "")})</p>
-                <p className="text-xs mb-1">Matches: {pair.moveUp.gp} ({pair.moveUp.wins}W–{pair.moveUp.losses}L) | Point Diff: {Number(pair.moveUp.diff) >= 0 ? "+" : ""}{pair.moveUp.diff}</p>
-                {adjStats?.[pair.moveUp.player] && (
-                  <p className="text-xs">Games: {adjStats[pair.moveUp.player].gamesWon}W–{adjStats[pair.moveUp.player].gamesLost}L ({adjStats[pair.moveUp.player].gameWinPct}% Win %)</p>
-                )}
+                <p className="text-xs">Matches: {pair.moveUp.gp} ({pair.moveUp.wins}W–{pair.moveUp.losses}L) | Point Diff: {Number(pair.moveUp.diff) >= 0 ? "+" : ""}{pair.moveUp.diff}</p>
               </div>
               <p className="text-xs pt-1 border-t">{pair.moveDown.player}'s performance decline in {sg.harderGroup.replace(" Leaderboard", "")} suggests a skill mismatch. Moving to {sg.easierGroup.replace(" Leaderboard", "")} allows for more competitive parity. Conversely, {pair.moveUp.player}'s consistent performance indicates readiness for higher competition.</p>
               <p className="text-xs pt-2 border-t text-blue-600 font-semibold">Note: Group assignments are reviewed every 6 matches (~2 weeks). Players will be reassessed and rebalanced if needed, ensuring fair competition for everyone.</p>
