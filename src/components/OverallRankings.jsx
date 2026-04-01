@@ -48,35 +48,32 @@ export default function OverallRankings({ groups }) {
       .sort((a, b) => winRate(b) - winRate(a));
   });
 
-  // Build swap suggestions between adjacent groups
-  const swaps = [];
+  // Build swap suggestions between adjacent groups (multiple per pair)
+  const swapGroups = [];
   for (let i = 0; i < GROUP_NAMES.length - 1; i++) {
-    const harderGroup = GROUP_NAMES[i];     // e.g. Group 1 (tougher)
-    const easierGroup = GROUP_NAMES[i + 1]; // e.g. Group 2 (easier)
+    const harderGroup = GROUP_NAMES[i];
+    const easierGroup = GROUP_NAMES[i + 1];
 
     const harderPlayers = groupRanked[harderGroup];
     const easierPlayers = groupRanked[easierGroup];
 
     if (harderPlayers.length === 0 || easierPlayers.length === 0) continue;
 
-    // Worst in harder group = last in sorted list
-    const worstInHarder = harderPlayers[harderPlayers.length - 1];
-    // Best in easier group = first in sorted list
-    const bestInEasier = easierPlayers[0];
+    const pairs = [];
+    // Compare from the bottom of harder group vs top of easier group
+    const maxPairs = Math.min(harderPlayers.length, easierPlayers.length);
+    for (let j = 0; j < maxPairs; j++) {
+      const candidate = harderPlayers[harderPlayers.length - 1 - j]; // worst first
+      const challenger = easierPlayers[j]; // best first
+      const wrCandidate = winRate(candidate);
+      const wrChallenger = winRate(challenger);
+      if (wrChallenger > wrCandidate) {
+        pairs.push({ moveDown: candidate, moveUp: challenger, wrCandidate, wrChallenger });
+      }
+    }
 
-    const wrWorse = winRate(worstInHarder);
-    const wrBetter = winRate(bestInEasier);
-
-    // Only suggest if the easier group top player is clearly outperforming the harder group bottom
-    if (wrBetter > wrWorse) {
-      swaps.push({
-        harderGroup,
-        easierGroup,
-        moveDown: worstInHarder, // moves from harder → easier
-        moveUp: bestInEasier,    // moves from easier → harder
-        wrWorse,
-        wrBetter,
-      });
+    if (pairs.length > 0) {
+      swapGroups.push({ harderGroup, easierGroup, pairs });
     }
   }
 
@@ -93,33 +90,40 @@ export default function OverallRankings({ groups }) {
         </CardHeader>
       </Card>
 
-      {swaps.length === 0 ? (
+      {swapGroups.length === 0 ? (
         <Card className="shadow-2xl">
           <CardContent className="py-8 text-center text-muted-foreground text-sm">
             No swap suggestions yet — not enough eligible players (need ≥{MIN_MATCHES} matches).
           </CardContent>
         </Card>
       ) : (
-        swaps.map((swap, i) => (
+        swapGroups.map((sg, i) => (
           <Card key={i} className="shadow-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground font-medium">
-                {swap.harderGroup} ↔ {swap.easierGroup}
+              <CardTitle className="text-sm font-semibold">
+                {sg.harderGroup.replace(" Leaderboard", "")} ↔ {sg.easierGroup.replace(" Leaderboard", "")}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex gap-3 items-center">
-                <PlayerCard player={swap.moveDown} groupName={swap.harderGroup} arrow="down" />
-                <div className="text-center shrink-0">
-                  <ArrowUpDown className="w-5 h-5 text-slate-400 mx-auto" />
-                  <p className="text-xs text-muted-foreground mt-1">Swap</p>
+            <CardContent className="space-y-3">
+              {sg.pairs.map((pair, j) => (
+                <div key={j}>
+                  {sg.pairs.length > 1 && (
+                    <p className="text-xs text-muted-foreground font-semibold mb-1">Swap {j + 1}</p>
+                  )}
+                  <div className="flex gap-3 items-center">
+                    <PlayerCard player={pair.moveDown} groupName={sg.harderGroup} arrow="down" />
+                    <div className="text-center shrink-0">
+                      <ArrowUpDown className="w-5 h-5 text-slate-400 mx-auto" />
+                      <p className="text-xs text-muted-foreground mt-1">Swap</p>
+                    </div>
+                    <PlayerCard player={pair.moveUp} groupName={sg.easierGroup} arrow="up" />
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    <span className="text-red-500 font-semibold">{pair.moveDown.player}</span> ({pair.wrCandidate}% WR) → {sg.easierGroup.replace(" Leaderboard", "")} ·{" "}
+                    <span className="text-green-600 font-semibold">{pair.moveUp.player}</span> ({pair.wrChallenger}% WR) → {sg.harderGroup.replace(" Leaderboard", "")}
+                  </p>
                 </div>
-                <PlayerCard player={swap.moveUp} groupName={swap.easierGroup} arrow="up" />
-              </div>
-              <p className="text-xs text-center text-muted-foreground mt-3">
-                <span className="text-red-500 font-semibold">{swap.moveDown.player}</span> ({swap.wrWorse}% WR) moves to {swap.easierGroup} ·{" "}
-                <span className="text-green-600 font-semibold">{swap.moveUp.player}</span> ({swap.wrBetter}% WR) moves to {swap.harderGroup}
-              </p>
+              ))}
             </CardContent>
           </Card>
         ))
