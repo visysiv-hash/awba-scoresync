@@ -21,9 +21,7 @@ Deno.serve(async (req) => {
         if (num >= 1 && num <= 6) {
           const groupKey = Object.keys(allGroups).find(k => getGroupNum(k) === num);
           if (groupKey) {
-            groupsToCheck[num] = allGroups[groupKey]
-              .filter(r => Number(r.gp) > 0)
-              .map(r => r.player);
+            groupsToCheck[num] = allGroups[groupKey].map(r => r.player);
           }
         }
       });
