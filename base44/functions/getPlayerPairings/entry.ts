@@ -10,9 +10,9 @@ Deno.serve(async (req) => {
     }
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
-    const sheetId = Deno.env.get('SPREADSHEET_ID');
+    const sheetId = '1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U';
     
-    const gamesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/raw_response!A:Z`;
+    const gamesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/games!A:Z`;
     const gamesRes = await fetch(gamesUrl, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
