@@ -31,7 +31,7 @@ function SwapExplainer({ pair, adjStats }) {
       </button>
       {open && (
         <div className="mt-2 bg-slate-50 rounded-lg p-3 text-xs space-y-3 border">
-          <p className="text-muted-foreground text-center font-semibold">Adjusted WR = Raw WR − (Avg Partner WR − League Avg WR)</p>
+          <p className="text-muted-foreground text-center font-semibold">Adjusted WR = Raw WR − (Avg Partner WR − League Avg WR) × 0.5</p>
           {[{ label: pair.moveDown.player, adj: downAdj, raw: winRate(pair.moveDown), color: "text-red-500" },
             { label: pair.moveUp.player, adj: upAdj, raw: winRate(pair.moveUp), color: "text-green-600" }]
             .map(({ label, adj, raw, color }) => (
