@@ -20,7 +20,11 @@ Deno.serve(async (req) => {
       [currentGroupNum - 1, currentGroupNum, currentGroupNum + 1].forEach(num => {
         if (num >= 1 && num <= 6) {
           const groupKey = Object.keys(allGroups).find(k => getGroupNum(k) === num);
-          if (groupKey) groupsToCheck[num] = allGroups[groupKey].map(r => r.player);
+          if (groupKey) {
+            groupsToCheck[num] = allGroups[groupKey]
+              .filter(r => Number(r.gp) > 0)
+              .map(r => r.player);
+          }
         }
       });
     }
@@ -79,11 +83,19 @@ Deno.serve(async (req) => {
     const missingPartners = {};
     const missingOpponents = {};
     Object.entries(groupsToCheck).forEach(([groupNum, players]) => {
-      const missing = players.filter(p => p.toLowerCase() !== player.toLowerCase() && !partnerCounts[p]);
+      const missing = players.filter(p => {
+        const lowerP = p.toLowerCase();
+        const lowerPlayer = player.toLowerCase();
+        return lowerP !== lowerPlayer && !Object.keys(partnerCounts).some(k => k.toLowerCase() === lowerP);
+      });
       if (missing.length > 0) missingPartners[groupNum] = missing;
     });
     Object.entries(groupsToCheck).forEach(([groupNum, players]) => {
-      const missing = players.filter(p => p.toLowerCase() !== player.toLowerCase() && !opponentCounts[p]);
+      const missing = players.filter(p => {
+        const lowerP = p.toLowerCase();
+        const lowerPlayer = player.toLowerCase();
+        return lowerP !== lowerPlayer && !Object.keys(opponentCounts).some(k => k.toLowerCase() === lowerP);
+      });
       if (missing.length > 0) missingOpponents[groupNum] = missing;
     });
 
