@@ -140,6 +140,8 @@ export default function OverallRankings({ groups }) {
     for (let j = 0; j < maxPairs; j++) {
       const candidate = harderPlayers[harderPlayers.length - 1 - j]; // worst first
       const challenger = easierPlayers[j]; // best first
+      // Only suggest swap if both played equal matches in their respective groups
+      if (Number(candidate.gp) !== Number(challenger.gp)) continue;
       const wrCandidate = effectiveWR(candidate);
       const wrChallenger = effectiveWR(challenger);
       if (wrChallenger > wrCandidate) {
