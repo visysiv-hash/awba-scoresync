@@ -235,39 +235,68 @@ export default function OverallRankings({ groups }) {
           <CardTitle className="text-base">📅 Scheduling Reference — Top 4 & Bottom 4 per Group</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {GROUP_NAMES.map(groupName => {
-            const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => winRate(b) - winRate(a));
-            if (all.length === 0) return null;
-            const top4 = all.slice(0, 4);
-            const bottom4 = all.length > 4 ? all.slice(-4).reverse() : [];
-            return (
-              <div key={groupName} className="border rounded-lg p-3">
-                <p className="font-semibold text-sm mb-2 text-slate-700">{groupName}</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs font-semibold text-green-600 mb-2">🏆 Top 4</p>
-                    <div className="space-y-1">
-                      {top4.map((r, i) => (
-                        <p key={i} className="text-xs text-slate-600">
-                          <span className="font-bold">{r.player}</span> ({Number(r.gp)} MP, {winRate(r)}%)
-                        </p>
-                      ))}
+          {(() => {
+            // Build swap notation map: player name -> swap info
+            const swapMap = {};
+            swapGroups.forEach(sg => {
+              sg.pairs.forEach(pair => {
+                swapMap[pair.moveDown.player] = `↔ ${sg.easierGroup.replace(" Leaderboard", "")}`;
+                swapMap[pair.moveUp.player] = `↔ ${sg.harderGroup.replace(" Leaderboard", "")}`;
+              });
+            });
+            
+            const usedPlayers = new Set(Object.keys(swapMap));
+            
+            return GROUP_NAMES.map(groupName => {
+              const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => winRate(b) - winRate(a));
+              if (all.length === 0) return null;
+              
+              // Get top 4 and bottom 4, excluding players already used
+              const filtered = all.filter(r => !usedPlayers.has(r.player));
+              const top4 = filtered.slice(0, 4);
+              const bottom4 = filtered.length > 4 ? filtered.slice(-4).reverse() : [];
+              
+              // Also include swap players in the lists
+              const top4WithSwaps = all.slice(0, 4);
+              const bottom4WithSwaps = all.length > 4 ? all.slice(-4).reverse() : [];
+              
+              return (
+                <div key={groupName} className="border rounded-lg p-3">
+                  <p className="font-semibold text-sm mb-2 text-slate-700">{groupName}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs font-semibold text-green-600 mb-2">🏆 Top 4</p>
+                      <div className="space-y-1">
+                        {top4WithSwaps.map((r, i) => {
+                          const swapNote = swapMap[r.player];
+                          return (
+                            <p key={i} className="text-xs text-slate-600">
+                              <span className="font-bold">{r.player}</span> ({Number(r.gp)} MP, {winRate(r)}%)
+                              {swapNote && <span className="text-orange-600 font-semibold ml-1">[{swapNote}]</span>}
+                            </p>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-red-600 mb-2">📉 Bottom 4</p>
-                    <div className="space-y-1">
-                      {bottom4.map((r, i) => (
-                        <p key={i} className="text-xs text-slate-600">
-                          <span className="font-bold">{r.player}</span> ({Number(r.gp)} MP, {winRate(r)}%)
-                        </p>
-                      ))}
+                    <div>
+                      <p className="text-xs font-semibold text-red-600 mb-2">📉 Bottom 4</p>
+                      <div className="space-y-1">
+                        {bottom4WithSwaps.map((r, i) => {
+                          const swapNote = swapMap[r.player];
+                          return (
+                            <p key={i} className="text-xs text-slate-600">
+                              <span className="font-bold">{r.player}</span> ({Number(r.gp)} MP, {winRate(r)}%)
+                              {swapNote && <span className="text-orange-600 font-semibold ml-1">[{swapNote}]</span>}
+                            </p>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </CardContent>
       </Card>
 
