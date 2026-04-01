@@ -245,22 +245,28 @@ export default function OverallRankings({ groups }) {
               });
             });
             
+            // For scheduling reference: deduplicate globally so each player appears in at most one group (their strongest)
             const globalUsedPlayers = new Set();
             
             return GROUP_NAMES.map(groupName => {
               const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => winRate(b) - winRate(a));
               if (all.length === 0) return null;
               
-              // Get top 4 from this group
-              const top4 = all.slice(0, 4);
+              // For scheduling reference: filter out players already shown in better groups
+              const filtered = all.filter(r => !globalUsedPlayers.has(r.player));
+              const top4 = filtered.slice(0, 4);
               
-              // Get bottom 4 from remaining players (lowest performers)
-              const remaining = all.slice(4);
+              // Get bottom 4 from remaining players (lowest performers in this filtered set)
+              const remaining = filtered.slice(4);
               const bottom4 = remaining.length > 0 ? remaining.slice(-4).reverse() : [];
+              
+              // Add to global used set for next groups
+              top4.forEach(p => globalUsedPlayers.add(p.player));
+              bottom4.forEach(p => globalUsedPlayers.add(p.player));
               
               // Get other players (middle performers)
               const usedInDisplay = new Set([...top4, ...bottom4].map(p => p.player));
-              const others = all.filter(r => !usedInDisplay.has(r.player));
+              const others = filtered.filter(r => !usedInDisplay.has(r.player));
               
               return (
                 <div key={groupName} className="border rounded-lg p-3">
