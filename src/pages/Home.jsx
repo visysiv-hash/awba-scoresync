@@ -29,7 +29,6 @@ export default function Home() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full mb-4">
             <TabsTrigger value="search" className="flex-1">Search Match</TabsTrigger>
-            <TabsTrigger value="entry" className="flex-1">Enter Score</TabsTrigger>
           </TabsList>
           <TabsContent value="search">
             <GameSearch onSelectGame={handleSelectGame} />
