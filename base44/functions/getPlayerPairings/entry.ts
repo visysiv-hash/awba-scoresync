@@ -23,11 +23,13 @@ Deno.serve(async (req) => {
     const opponents = new Set();
 
     rows.slice(1).forEach(row => {
-      const [, , , , team1Str, team2Str] = row;
+      // Column G is index 6, Column H is index 7
+      const team1Str = row[6];
+      const team2Str = row[7];
       if (!team1Str || !team2Str) return;
 
-      const team1 = team1Str.split(' & ').map(p => p.trim()) || [];
-      const team2 = team2Str.split(' & ').map(p => p.trim()) || [];
+      const team1 = team1Str.split(' & ').map(p => p.trim());
+      const team2 = team2Str.split(' & ').map(p => p.trim());
 
       const playerInTeam1 = team1.some(p => p.toLowerCase() === player.toLowerCase());
       const playerInTeam2 = team2.some(p => p.toLowerCase() === player.toLowerCase());
