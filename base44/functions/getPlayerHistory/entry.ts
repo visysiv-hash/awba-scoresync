@@ -6,44 +6,54 @@ Deno.serve(async (req) => {
     const { player, opponent } = await req.json();
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
-    const rawId = Deno.env.get("SPREADSHEET_ID") || "";
-    const spreadsheetId = rawId.includes("/spreadsheets/d/")
-      ? rawId.split("/spreadsheets/d/")[1].split("/")[0].split("?")[0]
-      : rawId.split("/")[0].split("?")[0];
+    const sid = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
+    const range = encodeURIComponent("Raw_Responses!A2:K2000");
 
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!A:K`;
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${range}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     const data = await response.json();
-    const rows = (data.values || []).slice(1);
+    const rows = data.values || [];
 
-    const includes = (str, name) => str && str.toLowerCase().includes(name.toLowerCase());
+    const playerLower = (player || "").toLowerCase();
 
-    // All games where the player participated
-    const playerGames = rows
-      .filter(row => includes(row[2], player) || includes(row[3], player))
-      .map(row => {
-        const isTeam1 = includes(row[2], player);
-        const myScore = isTeam1 ? Number(row[8]) : Number(row[9]);
-        const oppScore = isTeam1 ? Number(row[9]) : Number(row[8]);
-        const opponent = isTeam1 ? row[3] : row[2];
-        const result = myScore > oppScore ? "W" : myScore < oppScore ? "L" : "D";
-        return {
-          net: row[0],
-          game: row[1],
-          myTeam: isTeam1 ? row[2] : row[3],
-          opponent,
-          myScore,
-          oppScore,
-          result,
-          timestamp: row[10] || "",
-        };
-      })
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const playerGames = [];
+    for (const row of rows) {
+      const gameChoice = (row[1] || "").trim(); // "netId | P1 & P2 & P3 & P4"
+      const parts = gameChoice.split("|");
+      const teamsStr = (parts[1]?.trim() || gameChoice);
+      const players = teamsStr.split("&").map(p => p.trim());
 
-    // Head-to-head if opponent provided
+      // Exact name match (case-insensitive)
+      const myIdx = players.findIndex(p => p.toLowerCase() === playerLower);
+      if (myIdx === -1) continue;
+
+      const team1Score = Number(row[2] || 0);
+      const team2Score = Number(row[3] || 0);
+      const isTeam1 = myIdx < 2;
+      const myScore = isTeam1 ? team1Score : team2Score;
+      const oppScore = isTeam1 ? team2Score : team1Score;
+      const myTeam = isTeam1 ? players.slice(0, 2).join(" & ") : players.slice(2).join(" & ");
+      const oppTeam = isTeam1 ? players.slice(2).join(" & ") : players.slice(0, 2).join(" & ");
+      const result = myScore > oppScore ? "W" : myScore < oppScore ? "L" : "D";
+
+      playerGames.push({
+        net: parts[0]?.trim() || "",
+        myTeam,
+        opponent: oppTeam,
+        myScore,
+        oppScore,
+        result,
+        round: (row[10] || "").trim(),
+        timestamp: (row[0] || ""),
+      });
+    }
+
+    playerGames.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
     let h2h = null;
     if (opponent) {
-      const h2hGames = playerGames.filter(g => includes(g.opponent, opponent));
+      const h2hGames = playerGames.filter(g => g.opponent.toLowerCase().includes(opponent.toLowerCase()));
       const wins = h2hGames.filter(g => g.result === "W").length;
       const losses = h2hGames.filter(g => g.result === "L").length;
       const draws = h2hGames.filter(g => g.result === "D").length;
