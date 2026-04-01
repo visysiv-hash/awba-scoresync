@@ -125,7 +125,7 @@ export default function RoundStandingsChart({ playerName }) {
                   return (
                     <div key={i} className="bg-slate-50 rounded-lg p-3 flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground mb-1">Net {g.netId}</p>
+
                         <p className="text-sm font-medium leading-snug">
                           <span className="text-blue-600">{players.slice(0, 2).join(" & ")}</span>{" "}
                           <span className="text-red-500 font-bold">Vs</span>{" "}
