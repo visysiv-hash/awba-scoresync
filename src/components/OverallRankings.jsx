@@ -251,23 +251,14 @@ export default function OverallRankings({ groups }) {
               const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => winRate(b) - winRate(a));
               if (all.length === 0) return null;
               
-              // Get top 4, excluding players already used globally
-              const filtered = all.filter(r => !globalUsedPlayers.has(r.player));
-              const top4 = filtered.slice(0, 4);
+              // Get top 4 from this group
+              const top4 = all.slice(0, 4);
               
-              // Get bottom 4 from remaining players (exclude top 4 and globally used)
-              const usedInThisGroup = new Set(top4.map(p => p.player));
-              const filteredForBottom = filtered.filter(r => !usedInThisGroup.has(r.player));
-              const bottom4 = filteredForBottom.length > 0 ? filteredForBottom.slice(-4).reverse() : [];
+              // Get bottom 4 from remaining players (lowest performers)
+              const remaining = all.slice(4);
+              const bottom4 = remaining.length > 0 ? remaining.slice(-4).reverse() : [];
               
-              // Add these players to global used set
-              top4.forEach(p => globalUsedPlayers.add(p.player));
-              bottom4.forEach(p => globalUsedPlayers.add(p.player));
-              
-              const top4WithSwaps = top4;
-              const bottom4WithSwaps = bottom4;
-              
-              // Get all other players not in top/bottom 4 for this group
+              // Get other players (middle performers)
               const usedInDisplay = new Set([...top4, ...bottom4].map(p => p.player));
               const others = all.filter(r => !usedInDisplay.has(r.player));
               
