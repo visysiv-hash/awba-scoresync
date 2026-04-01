@@ -116,10 +116,18 @@ export default function Leaderboard() {
               </CardContent>
             </Card>
 
-            {/* 2. Games stats (form guide + games won/lost charts) */}
+            {/* Player name header */}
+            {selectedPlayer && playerData.length > 0 && (
+              <div className="text-center py-2">
+                <h2 className="text-2xl font-bold text-white">{selectedPlayer}</h2>
+                <p className="text-slate-300 text-sm">Player Stats</p>
+              </div>
+            )}
+
+            {/* 1. Games cards and stats */}
             {selectedPlayer && playerData.length > 0 && <PlayerStats playerName={selectedPlayer} />}
 
-            {/* 3. Weekly standings */}
+            {/* 2. Weekly standings */}
             {selectedPlayer && <RoundStandingsChart playerName={selectedPlayer} />}
 
             {/* 4. Group standings */}
