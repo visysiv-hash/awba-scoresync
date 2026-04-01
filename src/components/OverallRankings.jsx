@@ -93,6 +93,14 @@ export default function OverallRankings({ groups }) {
       .finally(() => setLoadingAdj(false));
   }, []);
 
+  // Build total GP per player across ALL groups
+  const totalGP = {};
+  Object.values(groups).forEach(rows =>
+    rows.forEach(r => {
+      totalGP[r.player] = (totalGP[r.player] || 0) + Number(r.gp);
+    })
+  );
+
   const GROUP_NAMES = [
     "Group 1 Leaderboard",
     "Group 2 Leaderboard",
@@ -111,7 +119,7 @@ export default function OverallRankings({ groups }) {
   const groupRanked = {};
   GROUP_NAMES.forEach(name => {
     groupRanked[name] = (groups[name] || [])
-      .filter(r => Number(r.gp) >= MIN_MATCHES)
+      .filter(r => (totalGP[r.player] || 0) >= MIN_MATCHES)
       .sort((a, b) => effectiveWR(b) - effectiveWR(a));
   });
 
@@ -213,7 +221,7 @@ export default function OverallRankings({ groups }) {
               {all.map((r, i) => {
                 const gp = Number(r.gp);
                 const wr = winRate(r);
-                const eligible = gp >= MIN_MATCHES;
+                const eligible = (totalGP[r.player] || 0) >= MIN_MATCHES;
                 return (
                   <div key={i} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2">
                     <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
