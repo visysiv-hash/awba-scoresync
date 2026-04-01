@@ -249,7 +249,15 @@ export default function OverallRankings({ groups }) {
             const globalUsedPlayers = new Set();
             
             return GROUP_NAMES.map(groupName => {
-              const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => winRate(b) - winRate(a));
+              const allRaw = (groups[groupName] || []).filter(r => Number(r.gp) > 0);
+              const seen = new Set();
+              const all = allRaw
+                .filter(r => {
+                  if (seen.has(r.player)) return false;
+                  seen.add(r.player);
+                  return true;
+                })
+                .sort((a, b) => winRate(b) - winRate(a));
               if (all.length === 0) return null;
               
               // For scheduling reference: filter out players already shown in better groups
