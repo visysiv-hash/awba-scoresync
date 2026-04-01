@@ -251,10 +251,14 @@ export default function OverallRankings({ groups }) {
               const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => winRate(b) - winRate(a));
               if (all.length === 0) return null;
               
-              // Get top 4 and bottom 4, excluding players already used globally
+              // Get top 4, excluding players already used globally
               const filtered = all.filter(r => !globalUsedPlayers.has(r.player));
               const top4 = filtered.slice(0, 4);
-              const bottom4 = filtered.length > 4 ? filtered.slice(-4).reverse() : [];
+              
+              // Get bottom 4 from remaining players (exclude top 4 and globally used)
+              const usedInThisGroup = new Set(top4.map(p => p.player));
+              const filteredForBottom = filtered.filter(r => !usedInThisGroup.has(r.player));
+              const bottom4 = filteredForBottom.length > 0 ? filteredForBottom.slice(-4).reverse() : [];
               
               // Add these players to global used set
               top4.forEach(p => globalUsedPlayers.add(p.player));
