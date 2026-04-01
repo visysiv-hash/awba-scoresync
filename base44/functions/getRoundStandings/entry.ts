@@ -4,10 +4,10 @@ Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
   const spreadsheetId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
-  const scoreSpreadsheetId = Deno.env.get("SPREADSHEET_ID");
+  const scoreSpreadsheetId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
 
   // Fetch round-date mapping from Raw Responses sheet (col A = date, col K = round)
-  const rawRange = encodeURIComponent("Raw Responses!A2:K2000");
+  const rawRange = encodeURIComponent("Raw_Responses!A2:K2000");
   const rawRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${scoreSpreadsheetId}/values/${rawRange}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   if (rawRes.ok) {
     const rawJson = await rawRes.json();
     for (const row of (rawJson.values || [])) {
-      const date = (row[0] || "").trim();
+      const date = (row[0] || "").trim().split(" ")[0]; // extract date only from timestamp
       const round = (row[10] || "").trim(); // column K = index 10
       if (round && date && !roundDateMap[round]) {
         roundDateMap[round] = date;
