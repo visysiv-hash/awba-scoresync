@@ -89,24 +89,26 @@ Deno.serve(async (req) => {
       addPartner(g.team2[1], g.team2[0]);
     }
 
-    // Count games won/lost per player
+    // Count games won/lost per player (each match = 2 games)
     const gamesWon = {}; // player -> { won, lost }
     for (const [name] of Object.entries(stats)) gamesWon[name] = { won: 0, lost: 0 };
 
     for (const g of games) {
-      const allPlayers = [...g.team1, ...g.team2];
-      const team1Result = g.team1Won ? 'W' : g.team2Won ? 'L' : 'D';
-      const team2Result = g.team2Won ? 'W' : g.team1Won ? 'L' : 'D';
-      for (const p of g.team1) {
-        if (gamesWon[p]) {
-          if (team1Result === 'W') gamesWon[p].won++;
-          else if (team1Result === 'L') gamesWon[p].lost++;
-        }
-      }
-      for (const p of g.team2) {
-        if (gamesWon[p]) {
-          if (team2Result === 'W') gamesWon[p].won++;
-          else if (team2Result === 'L') gamesWon[p].lost++;
+      if (g.team1Won) {
+        // Team 1 won 2 games, Team 2 lost 2 games
+        for (const p of g.team1) if (gamesWon[p]) gamesWon[p].won += 2;
+        for (const p of g.team2) if (gamesWon[p]) gamesWon[p].lost += 2;
+      } else if (g.team2Won) {
+        // Team 2 won 2 games, Team 1 lost 2 games
+        for (const p of g.team2) if (gamesWon[p]) gamesWon[p].won += 2;
+        for (const p of g.team1) if (gamesWon[p]) gamesWon[p].lost += 2;
+      } else {
+        // Draw: each player won 1, lost 1
+        for (const p of [...g.team1, ...g.team2]) {
+          if (gamesWon[p]) {
+            gamesWon[p].won++;
+            gamesWon[p].lost++;
+          }
         }
       }
     }
