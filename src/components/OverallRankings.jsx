@@ -34,9 +34,9 @@ function SwapExplainer({ pair, adjStats, sg }) {
           <div className="bg-white border rounded-lg p-2">
             <p className="font-semibold text-slate-900 mb-1">Why this swap?</p>
             <p className="text-muted-foreground leading-relaxed">
-              <span className="font-semibold text-red-600">{pair.moveDown.player}</span> has won {pair.moveDown.wins}W out of {pair.moveDown.gp} matches in {sg.harderGroup.replace(" Leaderboard", "")} ({pair.wrCandidate}% win rate).
-              <span className="font-semibold text-green-600 ml-1">{pair.moveUp.player}</span> has won {pair.moveUp.wins}W out of {pair.moveUp.gp} matches in {sg.easierGroup.replace(" Leaderboard", "")} ({pair.wrChallenger}% win rate).
-              Swapping them could help balance the groups — the lower performer moves to an easier group, the higher performer moves to a harder one.
+              <span className="font-semibold text-red-600">{pair.moveDown.player}</span> is struggling in {sg.harderGroup.replace(" Leaderboard", "")} with only {pair.moveDown.wins} win from {pair.moveDown.gp} matches ({pair.wrCandidate}% win rate). 
+              <span className="font-semibold text-green-600">{pair.moveUp.player}</span> is thriving in {sg.easierGroup.replace(" Leaderboard", "")} with {pair.moveUp.wins} win from {pair.moveUp.gp} matches ({pair.wrChallenger}% win rate). 
+              By swapping them, {pair.moveDown.player} gets a more suitable environment to compete fairly, while {pair.moveUp.player} joins a group that better matches their current skill level.
             </p>
           </div>
           <p className="text-muted-foreground text-center font-semibold">Adjusted WR = Raw WR − (Avg Partner WR − League Avg WR) × 0.5</p>
