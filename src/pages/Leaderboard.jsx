@@ -40,7 +40,7 @@ export default function Leaderboard() {
     rows.map(r => ({ ...r, group: grp }))
   );
   const playerData = selectedPlayer
-    ? allPlayers.filter(p => p.player.toLowerCase().includes(selectedPlayer.toLowerCase()))
+    ? allPlayers.filter(p => p.player.toLowerCase() === selectedPlayer.toLowerCase())
     : [];
 
   // Auto-select the group where player has most games played
@@ -51,7 +51,7 @@ export default function Leaderboard() {
   }, [selectedPlayer, JSON.stringify(playerData)]);
 
   const playerInChartGroup = selectedPlayer
-    ? (groups[chartGroup] || []).find(r => r.player.toLowerCase().includes(selectedPlayer.toLowerCase())) || null
+    ? (groups[chartGroup] || []).find(r => r.player.toLowerCase() === selectedPlayer.toLowerCase()) || null
     : null;
 
   const getStreak = (row) => {
