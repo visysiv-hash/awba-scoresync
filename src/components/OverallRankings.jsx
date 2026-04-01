@@ -124,6 +124,7 @@ export default function OverallRankings({ groups }) {
   });
 
   // Build swap suggestions between adjacent groups (multiple per pair)
+  const usedPlayers = new Set();
   const swapGroups = [];
   for (let i = 0; i < GROUP_NAMES.length - 1; i++) {
     const harderGroup = GROUP_NAMES[i];
@@ -142,9 +143,13 @@ export default function OverallRankings({ groups }) {
       const challenger = easierPlayers[j]; // best first
       // Only suggest swap if both played equal matches in their respective groups
       if (Number(candidate.gp) !== Number(challenger.gp)) continue;
+      // Skip if either player already used in another swap
+      if (usedPlayers.has(candidate.player) || usedPlayers.has(challenger.player)) continue;
       const wrCandidate = effectiveWR(candidate);
       const wrChallenger = effectiveWR(challenger);
       if (wrChallenger > wrCandidate) {
+        usedPlayers.add(candidate.player);
+        usedPlayers.add(challenger.player);
         pairs.push({ moveDown: candidate, moveUp: challenger, wrCandidate, wrChallenger });
       }
     }
