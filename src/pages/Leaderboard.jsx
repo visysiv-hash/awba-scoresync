@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import PlayerStats from "../components/PlayerStats";
 import RoundStandingsChart from "../components/RoundStandingsChart";
+import OverallRankings from "../components/OverallRankings";
 import LeaderboardSkeleton from "../components/LeaderboardSkeleton";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export default function Leaderboard() {
   const [selectedGroup, setSelectedGroup] = useState(GROUP_NAMES[0]);
   const [selectedPlayer, setSelectedPlayer] = useState("");
   const [chartGroup, setChartGroup] = useState(GROUP_NAMES[0]);
+  const [activeTab, setActiveTab] = useState("search");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,8 +95,27 @@ export default function Leaderboard() {
           <div className="w-20" />
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-2 mb-4">
+          {[{ id: "search", label: "Player Search" }, { id: "rankings", label: "🏆 Rankings" }].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                activeTab === tab.id
+                  ? "bg-white text-slate-900"
+                  : "bg-white/10 text-white hover:bg-white/20"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <LeaderboardSkeleton />
+        ) : activeTab === "rankings" ? (
+          <OverallRankings groups={groups} />
         ) : (
           <div className="space-y-6">
 
