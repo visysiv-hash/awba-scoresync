@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     const sheetId = Deno.env.get('SPREADSHEET_ID');
     
     const gamesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/raw_response!A:Z`;
-    const gamesRes = await fetch(`${gamesUrl}?key=${Deno.env.get('GOOGLE_API_KEY')}`, {
+    const gamesRes = await fetch(gamesUrl, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
     const gamesData = await gamesRes.json();
