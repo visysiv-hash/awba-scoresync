@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trophy } from "lucide-react";
+import { Loader2, Trophy, Equal } from "lucide-react";
 
 export default function RoundStandingsChart({ playerName }) {
   const [loading, setLoading] = useState(true);
@@ -120,24 +120,25 @@ export default function RoundStandingsChart({ playerName }) {
                   const players = g.gameChoice.split("&").map(p => p.trim());
                   const score1 = Number(g.team1Score);
                   const score2 = Number(g.team2Score);
-                  const won = score1 > score2;
-                  const lost = score1 < score2;
+                  const team1Won = score1 === 42;
+                  const team2Won = score2 === 42;
+                  const isDraw = !team1Won && !team2Won;
                   return (
                     <div key={i} className="bg-slate-50 rounded-lg p-3 flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
 
                         <p className="text-sm font-medium leading-snug">
-                          <span className="text-blue-600 inline-flex items-center gap-1">{players.slice(0, 2).join(" & ")}{won && <Trophy className="w-3 h-3 text-green-500" />}</span>{" "}
+                          <span className="text-blue-600 inline-flex items-center gap-1">{players.slice(0, 2).join(" & ")}{team1Won && <Trophy className="w-3 h-3 text-green-500" />}{isDraw && <Equal className="w-3 h-3 text-orange-400" />}</span>{" "}
                           <span className="text-red-500 font-bold">Vs</span>{" "}
-                          <span className="text-purple-600 inline-flex items-center gap-1">{players.slice(2).join(" & ")}{lost && <Trophy className="w-3 h-3 text-yellow-500" />}</span>
+                          <span className="text-purple-600 inline-flex items-center gap-1">{players.slice(2).join(" & ")}{team2Won && <Trophy className="w-3 h-3 text-green-500" />}{isDraw && <Equal className="w-3 h-3 text-orange-400" />}</span>
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-xl font-bold ${won ? "text-green-600" : lost ? "text-red-500" : "text-yellow-500"}`}>
+                        <span className={`text-xl font-bold ${team1Won ? "text-green-600" : team2Won ? "text-red-500" : "text-yellow-500"}`}>
                           {g.team1Score}
                         </span>
                         <span className="text-muted-foreground text-sm">–</span>
-                        <span className={`text-xl font-bold ${lost ? "text-green-600" : won ? "text-red-500" : "text-yellow-500"}`}>
+                        <span className={`text-xl font-bold ${team2Won ? "text-green-600" : team1Won ? "text-red-500" : "text-yellow-500"}`}>
                           {g.team2Score}
                         </span>
                       </div>
