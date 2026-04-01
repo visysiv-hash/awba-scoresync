@@ -5,37 +5,6 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const { player, group } = await req.json();
 
-    // Helper to get group number
-    const getGroupNum = (groupName) => {
-      const match = groupName?.match(/\d+/);
-      return match ? Number(match[0]) : null;
-    };
-
-    // Get player list from Group_Leaderboards sheet
-    const groupsRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Group_Leaderboards!A:Z`, {
-      headers: { 'Authorization': `Bearer ${(await base44.asServiceRole.connectors.getConnection('googlesheets')).accessToken}` }
-    });
-    const groupsData = await groupsRes.json();
-    const groupsRows = groupsData.values || [];
-
-    const currentGroupNum = getGroupNum(group);
-    const groupsToCheck = {};
-    const groupHeaders = groupsRows[0] || [];
-    
-    if (currentGroupNum) {
-      [currentGroupNum - 1, currentGroupNum, currentGroupNum + 1].forEach(num => {
-        if (num >= 1 && num <= 6) {
-          const colIndex = groupHeaders.findIndex(h => h && h.includes(`Group ${num}`));
-          if (colIndex >= 0) {
-            const players = groupsRows.slice(1)
-              .map(r => r[colIndex])
-              .filter(p => p && p.trim() && p.toLowerCase() !== 'player');
-            if (players.length > 0) groupsToCheck[num] = players;
-          }
-        }
-      });
-    }
-
     if (!player) {
       return Response.json({ error: 'Player name required' }, { status: 400 });
     }
@@ -86,31 +55,9 @@ Deno.serve(async (req) => {
       }
     });
 
-    // Find missing partners and opponents
-    const missingPartners = {};
-    const missingOpponents = {};
-    Object.entries(groupsToCheck).forEach(([groupNum, players]) => {
-      const missing = players.filter(p => {
-        const lowerP = p.toLowerCase();
-        const lowerPlayer = player.toLowerCase();
-        return lowerP !== lowerPlayer && !Object.keys(partnerCounts).some(k => k.toLowerCase() === lowerP);
-      });
-      if (missing.length > 0) missingPartners[groupNum] = missing;
-    });
-    Object.entries(groupsToCheck).forEach(([groupNum, players]) => {
-      const missing = players.filter(p => {
-        const lowerP = p.toLowerCase();
-        const lowerPlayer = player.toLowerCase();
-        return lowerP !== lowerPlayer && !Object.keys(opponentCounts).some(k => k.toLowerCase() === lowerP);
-      });
-      if (missing.length > 0) missingOpponents[groupNum] = missing;
-    });
-
     return Response.json({
       partners: Object.entries(partnerCounts).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)),
       opponents: Object.entries(opponentCounts).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)),
-      missingPartners,
-      missingOpponents,
       totalPartners: Object.keys(partnerCounts).length,
       totalOpponents: Object.keys(opponentCounts).length
     });
