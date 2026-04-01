@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
     const sheetId = Deno.env.get('SPREADSHEET_ID');
     
-    const gamesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Games!A:J`;
+    const gamesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/raw_response!A:Z`;
     const gamesRes = await fetch(`${gamesUrl}?key=${Deno.env.get('GOOGLE_API_KEY')}`, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
@@ -23,27 +23,25 @@ Deno.serve(async (req) => {
     const opponents = new Set();
 
     rows.slice(1).forEach(row => {
-      const [netId, matchId, round, team1Str, team2Str, , , , , ] = row;
+      const [, , , , team1Str, team2Str] = row;
       if (!team1Str || !team2Str) return;
 
-      const team1 = team1Str.split(' vs ')[0]?.split(' & ') || [];
-      const team2 = team2Str.split(' vs ')[0]?.split(' & ') || [];
+      const team1 = team1Str.split(' & ').map(p => p.trim()) || [];
+      const team2 = team2Str.split(' & ').map(p => p.trim()) || [];
 
-      const playerInTeam1 = team1.some(p => p.trim().toLowerCase() === player.toLowerCase());
-      const playerInTeam2 = team2.some(p => p.trim().toLowerCase() === player.toLowerCase());
+      const playerInTeam1 = team1.some(p => p.toLowerCase() === player.toLowerCase());
+      const playerInTeam2 = team2.some(p => p.toLowerCase() === player.toLowerCase());
 
       if (playerInTeam1) {
         team1.forEach(p => {
-          const name = p.trim();
-          if (name.toLowerCase() !== player.toLowerCase()) partners.add(name);
+          if (p.toLowerCase() !== player.toLowerCase()) partners.add(p);
         });
-        team2.forEach(p => opponents.add(p.trim()));
+        team2.forEach(p => opponents.add(p));
       } else if (playerInTeam2) {
         team2.forEach(p => {
-          const name = p.trim();
-          if (name.toLowerCase() !== player.toLowerCase()) partners.add(name);
+          if (p.toLowerCase() !== player.toLowerCase()) partners.add(p);
         });
-        team1.forEach(p => opponents.add(p.trim()));
+        team1.forEach(p => opponents.add(p));
       }
     });
 
