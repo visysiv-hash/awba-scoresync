@@ -11,17 +11,26 @@ Deno.serve(async (req) => {
       return match ? Number(match[0]) : null;
     };
 
-    // Get all players from standings to find group members
-    const standingsRes = await base44.asServiceRole.functions.invoke('getStandings', {});
-    const allGroups = standingsRes?.groups || {};
+    // Get player list from Group_Leaderboards sheet
+    const groupsRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Group_Leaderboards!A:Z`, {
+      headers: { 'Authorization': `Bearer ${(await base44.asServiceRole.connectors.getConnection('googlesheets')).accessToken}` }
+    });
+    const groupsData = await groupsRes.json();
+    const groupsRows = groupsData.values || [];
+
     const currentGroupNum = getGroupNum(group);
     const groupsToCheck = {};
+    const groupHeaders = groupsRows[0] || [];
+    
     if (currentGroupNum) {
       [currentGroupNum - 1, currentGroupNum, currentGroupNum + 1].forEach(num => {
         if (num >= 1 && num <= 6) {
-          const groupKey = Object.keys(allGroups).find(k => getGroupNum(k) === num);
-          if (groupKey) {
-            groupsToCheck[num] = allGroups[groupKey].map(r => r.player);
+          const colIndex = groupHeaders.findIndex(h => h && h.includes(`Group ${num}`));
+          if (colIndex >= 0) {
+            const players = groupsRows.slice(1)
+              .map(r => r[colIndex])
+              .filter(p => p && p.trim() && p.toLowerCase() !== 'player');
+            if (players.length > 0) groupsToCheck[num] = players;
           }
         }
       });
@@ -31,12 +40,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Player name required' }, { status: 400 });
     }
 
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
+    const conn = await base44.asServiceRole.connectors.getConnection('googlesheets');
     const sheetId = '1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U';
     
     const gamesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/games!A:Z`;
     const gamesRes = await fetch(gamesUrl, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
+      headers: { 'Authorization': `Bearer ${conn.accessToken}` }
     });
     const gamesData = await gamesRes.json();
     const rows = gamesData.values || [];
