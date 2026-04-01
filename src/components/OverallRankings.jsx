@@ -31,13 +31,19 @@ function SwapExplainer({ pair, adjStats, sg }) {
       </button>
       {open && (
         <div className="mt-2 bg-slate-50 rounded-lg p-3 text-xs space-y-3 border">
-          <div className="bg-white border rounded-lg p-2">
-            <p className="font-semibold text-slate-900 mb-1">Why this swap?</p>
-            <p className="text-muted-foreground leading-relaxed">
-              <span className="font-semibold text-red-600">{pair.moveDown.player}</span> is struggling in {sg.harderGroup.replace(" Leaderboard", "")} with only {pair.moveDown.wins} win from {pair.moveDown.gp} matches ({pair.wrCandidate}% win rate). 
-              <span className="font-semibold text-green-600">{pair.moveUp.player}</span> is thriving in {sg.easierGroup.replace(" Leaderboard", "")} with {pair.moveUp.wins} win from {pair.moveUp.gp} matches ({pair.wrChallenger}% win rate). 
-              By swapping them, {pair.moveDown.player} gets a more suitable environment to compete fairly, while {pair.moveUp.player} joins a group that better matches their current skill level.
-            </p>
+          <div className="bg-white border rounded-lg p-2 space-y-2">
+            <p className="font-semibold text-slate-900">Swap Analysis</p>
+            <div className="space-y-1.5 text-muted-foreground">
+              <div>
+                <p className="font-semibold text-red-600 mb-0.5">{pair.moveDown.player} (Moving from {sg.harderGroup.replace(" Leaderboard", "")})</p>
+                <p className="text-xs">Record: {pair.moveDown.wins}W–{pair.moveDown.losses}L | Matches: {pair.moveDown.gp} | Win Rate: {pair.wrCandidate}% | Point Diff: {Number(pair.moveDown.diff) >= 0 ? "+" : ""}{pair.moveDown.diff}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-green-600 mb-0.5">{pair.moveUp.player} (Moving from {sg.easierGroup.replace(" Leaderboard", "")})</p>
+                <p className="text-xs">Record: {pair.moveUp.wins}W–{pair.moveUp.losses}L | Matches: {pair.moveUp.gp} | Win Rate: {pair.wrChallenger}% | Point Diff: {Number(pair.moveUp.diff) >= 0 ? "+" : ""}{pair.moveUp.diff}</p>
+              </div>
+              <p className="text-xs pt-1 border-t">{pair.moveDown.player}'s performance decline in {sg.harderGroup.replace(" Leaderboard", "")} suggests a skill mismatch. Moving to {sg.easierGroup.replace(" Leaderboard", "")} allows for more competitive parity. Conversely, {pair.moveUp.player}'s consistent performance indicates readiness for higher competition.</p>
+            </div>
           </div>
           <p className="text-muted-foreground text-center font-semibold">Adjusted WR = Raw WR − (Avg Partner WR − League Avg WR) × 0.5</p>
           {[{ label: pair.moveDown.player, adj: downAdj, raw: winRate(pair.moveDown), color: "text-red-500" },
