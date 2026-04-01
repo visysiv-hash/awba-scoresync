@@ -11,15 +11,7 @@ import RoundScores from "./RoundScores";
 
 const emptyRounds = () => [{ score1: "", score2: "" }, { score1: "", score2: "" }];
 
-const isScoreEntryAllowed = () => {
-  const now = new Date();
-  // Convert to Australia/Sydney time
-  const sydney = new Date(now.toLocaleString("en-US", { timeZone: "Australia/Sydney" }));
-  const day = sydney.getDay(); // 2 = Tuesday
-  const hours = sydney.getHours();
-  const minutes = sydney.getMinutes();
-  return day === 2 && (hours > 19 || (hours === 19 && minutes >= 30));
-};
+
 
 export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   const [netNumber, setNetNumber] = useState("");
@@ -113,20 +105,6 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
     setRounds(emptyRounds());
     setSubmitted(false);
   };
-
-  if (!isScoreEntryAllowed()) {
-    return (
-      <Card className="shadow-2xl">
-        <CardContent className="pt-6">
-          <div className="text-center py-8 space-y-3">
-            <p className="text-4xl">🕖</p>
-            <p className="font-semibold text-lg">Score entry is not available yet</p>
-            <p className="text-sm text-muted-foreground">Scores can only be entered on <span className="font-semibold">Tuesdays after 7:30 PM</span> (Sydney time).</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="shadow-2xl">
