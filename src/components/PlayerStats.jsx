@@ -42,10 +42,20 @@ export default function PlayerStats({ playerName }) {
 
   // Points scored vs conceded per recent game (last 10)
   const chartData = games.slice(0, 10).reverse().map((g, i) => ({
-    name: `G${i + 1}`,
+    name: `M${i + 1}`,
     "Points For": g.myScore,
     "Points Against": g.oppScore,
   }));
+
+  // Games won per match: 42 = won both (2), opponent 42 = won 0, else each won 1
+  const gamesChartData = games.slice(0, 10).reverse().map((g, i) => {
+    const myGamesWon = g.myScore === 42 ? 2 : g.oppScore === 42 ? 0 : 1;
+    const oppGamesWon = 2 - myGamesWon;
+    return { name: `M${i + 1}`, "Games Won": myGamesWon, "Games Lost": oppGamesWon };
+  });
+
+  const totalGamesWon = games.reduce((sum, g) => sum + (g.myScore === 42 ? 2 : g.oppScore === 42 ? 0 : 1), 0);
+  const totalGamesLost = games.reduce((sum, g) => sum + (g.oppScore === 42 ? 2 : g.myScore === 42 ? 0 : 1), 0);
 
   return (
     <div className="space-y-4 mt-4 border-t pt-4">
@@ -64,10 +74,51 @@ export default function PlayerStats({ playerName }) {
         )}
       </div>
 
+      {/* Games Won vs Lost Summary */}
+      {games.length > 0 && (
+        <div className="bg-slate-50 rounded-lg p-4">
+          <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wide">Total Games Won vs Lost</p>
+          <div className="flex gap-4 justify-center">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{totalGamesWon}</p>
+              <p className="text-xs text-muted-foreground">Games Won</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-500">{totalGamesLost}</p>
+              <p className="text-xs text-muted-foreground">Games Lost</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-purple-600">
+                {totalGamesWon + totalGamesLost > 0 ? Math.round((totalGamesWon / (totalGamesWon + totalGamesLost)) * 100) : 0}%
+              </p>
+              <p className="text-xs text-muted-foreground">Game Win %</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Games Won per Match Chart */}
+      {gamesChartData.length > 0 && (
+        <div className="bg-slate-50 rounded-lg p-4">
+          <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wide">Games Won per Match (last {gamesChartData.length})</p>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={gamesChartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} domain={[0, 2]} ticks={[0, 1, 2]} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="Games Won" fill="#16a34a" />
+              <Bar dataKey="Games Lost" fill="#dc2626" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       {/* Points For vs Against Chart */}
       {chartData.length > 0 && (
         <div className="bg-slate-50 rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wide">Points Scored vs Conceded (last {chartData.length} games)</p>
+          <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wide">Points Scored vs Conceded (last {chartData.length} matches)</p>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
