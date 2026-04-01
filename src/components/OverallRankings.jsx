@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 
 const MIN_MATCHES = 6;
 
@@ -13,6 +13,50 @@ function getGroupNumber(groupName) {
 function winRate(row) {
   const gp = Number(row.gp);
   return gp > 0 ? Math.round((Number(row.wins) / gp) * 100) : 0;
+}
+
+function SwapExplainer({ pair, adjStats }) {
+  const [open, setOpen] = useState(false);
+  const downAdj = adjStats?.[pair.moveDown.player];
+  const upAdj = adjStats?.[pair.moveUp.player];
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1 text-xs text-blue-600 hover:underline mx-auto"
+      >
+        {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        {open ? "Hide" : "How is this calculated?"}
+      </button>
+      {open && (
+        <div className="mt-2 bg-slate-50 rounded-lg p-3 text-xs space-y-3 border">
+          <p className="text-muted-foreground text-center font-semibold">Adjusted WR = Raw WR − (Avg Partner WR − League Avg WR)</p>
+          {[{ label: pair.moveDown.player, adj: downAdj, raw: winRate(pair.moveDown), color: "text-red-500" },
+            { label: pair.moveUp.player, adj: upAdj, raw: winRate(pair.moveUp), color: "text-green-600" }]
+            .map(({ label, adj, raw, color }) => (
+              <div key={label} className="border rounded-lg p-2 bg-white">
+                <p className={`font-bold mb-1 ${color}`}>{label}</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-muted-foreground">
+                  <span>Raw WR:</span><span className="font-semibold text-slate-700">{raw}%</span>
+                  {adj && <>
+                    <span>Avg Partner WR:</span><span className="font-semibold text-slate-700">{adj.avgPartnerWR}%</span>
+                    <span>League Avg WR:</span><span className="font-semibold text-slate-700">{adj.leagueAvgWR}%</span>
+                    <span>Partner Bonus:</span>
+                    <span className={`font-semibold ${adj.partnerBonus < 0 ? "text-red-500" : "text-green-600"}`}>
+                      {adj.partnerBonus > 0 ? "+" : ""}{adj.partnerBonus}%
+                      {adj.partnerBonus < 0 ? " (penalised — strong partners)" : " (rewarded — weak partners)"}
+                    </span>
+                    <span className="font-semibold">Adjusted WR:</span>
+                    <span className="font-bold text-purple-700">{adj.adjustedWR}%</span>
+                  </>}
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function PlayerCard({ player, groupName, arrow, adjStats }) {
@@ -147,6 +191,7 @@ export default function OverallRankings({ groups }) {
                     <span className="text-red-500 font-semibold">{pair.moveDown.player}</span> ({pair.wrCandidate}% adj. WR) → {sg.easierGroup.replace(" Leaderboard", "")} ·{" "}
                     <span className="text-green-600 font-semibold">{pair.moveUp.player}</span> ({pair.wrChallenger}% adj. WR) → {sg.harderGroup.replace(" Leaderboard", "")}
                   </p>
+                  <SwapExplainer pair={pair} adjStats={adjStats} />
                 </div>
               ))}
             </CardContent>
