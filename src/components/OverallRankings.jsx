@@ -43,6 +43,7 @@ function SwapExplainer({ pair, adjStats, sg }) {
                 <p className="text-xs">Record: {pair.moveUp.wins}W–{pair.moveUp.losses}L | Matches: {pair.moveUp.gp} | Win Rate: {pair.wrChallenger}% | Point Diff: {Number(pair.moveUp.diff) >= 0 ? "+" : ""}{pair.moveUp.diff}</p>
               </div>
               <p className="text-xs pt-1 border-t">{pair.moveDown.player}'s performance decline in {sg.harderGroup.replace(" Leaderboard", "")} suggests a skill mismatch. Moving to {sg.easierGroup.replace(" Leaderboard", "")} allows for more competitive parity. Conversely, {pair.moveUp.player}'s consistent performance indicates readiness for higher competition.</p>
+              <p className="text-xs pt-2 border-t text-blue-600 font-semibold">Note: Group assignments are reviewed every 6 matches (~2 weeks). Players will be reassessed and rebalanced if needed, ensuring fair competition for everyone.</p>
             </div>
           </div>
           <p className="text-muted-foreground text-center font-semibold">Adjusted WR = Raw WR − (Avg Partner WR − League Avg WR) × 0.5</p>
