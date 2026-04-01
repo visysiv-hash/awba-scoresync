@@ -67,8 +67,48 @@ export default function PlayerPairingModal({ player, groupName, onClose }) {
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground mb-2">Haven't Partnered With</p>
+            <div className="space-y-2">
+              {Object.entries(data?.missingPartners || {}).length > 0 ? (
+                Object.entries(data.missingPartners).map(([groupNum, players]) => (
+                  <div key={groupNum}>
+                    <p className="text-xs text-muted-foreground font-semibold">Group {groupNum}</p>
+                    <div className="space-y-1 bg-red-50 rounded-lg p-2 max-h-24 overflow-y-auto">
+                      {players.map((p, i) => (
+                        <p key={i} className="text-xs text-slate-700">• {p}</p>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground">Partnered with everyone!</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground mb-2">Haven't Played Against</p>
+            <div className="space-y-2">
+              {Object.entries(data?.missingOpponents || {}).length > 0 ? (
+                Object.entries(data.missingOpponents).map(([groupNum, players]) => (
+                  <div key={groupNum}>
+                    <p className="text-xs text-muted-foreground font-semibold">Group {groupNum}</p>
+                    <div className="space-y-1 bg-blue-50 rounded-lg p-2 max-h-24 overflow-y-auto">
+                      {players.map((p, i) => (
+                        <p key={i} className="text-xs text-slate-700">• {p}</p>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground">Played against everyone!</p>
+              )}
+            </div>
+          </div>
+          </CardContent>
+          </Card>
+          </div>
+          );
+          }

@@ -5,6 +5,26 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const { player, group } = await req.json();
 
+    // Helper to get group number
+    const getGroupNum = (groupName) => {
+      const match = groupName?.match(/\d+/);
+      return match ? Number(match[0]) : null;
+    };
+
+    // Get all players from standings to find group members
+    const standingsRes = await base44.asServiceRole.functions.invoke('getStandings', {});
+    const allGroups = standingsRes?.groups || {};
+    const currentGroupNum = getGroupNum(group);
+    const groupsToCheck = {};
+    if (currentGroupNum) {
+      [currentGroupNum - 1, currentGroupNum, currentGroupNum + 1].forEach(num => {
+        if (num >= 1 && num <= 6) {
+          const groupKey = Object.keys(allGroups).find(k => getGroupNum(k) === num);
+          if (groupKey) groupsToCheck[num] = allGroups[groupKey].map(r => r.player);
+        }
+      });
+    }
+
     if (!player) {
       return Response.json({ error: 'Player name required' }, { status: 400 });
     }
@@ -55,9 +75,23 @@ Deno.serve(async (req) => {
       }
     });
 
+    // Find missing partners and opponents
+    const missingPartners = {};
+    const missingOpponents = {};
+    Object.entries(groupsToCheck).forEach(([groupNum, players]) => {
+      const missing = players.filter(p => p.toLowerCase() !== player.toLowerCase() && !partnerCounts[p]);
+      if (missing.length > 0) missingPartners[groupNum] = missing;
+    });
+    Object.entries(groupsToCheck).forEach(([groupNum, players]) => {
+      const missing = players.filter(p => p.toLowerCase() !== player.toLowerCase() && !opponentCounts[p]);
+      if (missing.length > 0) missingOpponents[groupNum] = missing;
+    });
+
     return Response.json({
       partners: Object.entries(partnerCounts).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)),
       opponents: Object.entries(opponentCounts).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)),
+      missingPartners,
+      missingOpponents,
       totalPartners: Object.keys(partnerCounts).length,
       totalOpponents: Object.keys(opponentCounts).length
     });
