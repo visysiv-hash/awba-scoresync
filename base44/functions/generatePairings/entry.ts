@@ -54,15 +54,11 @@ Deno.serve(async (req) => {
       else if (score2 === 42) h2h[matchup1].team2Wins++;
     }
 
-    // Generate pairings trying to balance partnerships and avoid recent matchups
+    // Generate pairings trying to balance partnerships
     const matches = [];
-    const used = new Set();
     const shuffled = [...availablePlayers].sort(() => Math.random() - 0.5);
 
-    for (let i = 0; i < shuffled.length - 3; i += 4) {
-      if (used.has(shuffled[i]) || used.has(shuffled[i + 1]) || 
-          used.has(shuffled[i + 2]) || used.has(shuffled[i + 3])) continue;
-
+    for (let i = 0; i + 3 < shuffled.length; i += 4) {
       const p1 = shuffled[i];
       const p2 = shuffled[i + 1];
       const p3 = shuffled[i + 2];
@@ -81,7 +77,7 @@ Deno.serve(async (req) => {
 
       for (const combo of combos) {
         const matchupKey = [combo.team1.join("|"), combo.team2.join("|")].sort().join("|||");
-        const matchCount = h2h[matchupKey]?.team1Wins || 0 + h2h[matchupKey]?.team2Wins || 0;
+        const matchCount = (h2h[matchupKey]?.team1Wins || 0) + (h2h[matchupKey]?.team2Wins || 0);
         if (matchCount < leastMatches) {
           leastMatches = matchCount;
           bestCombo = combo;
@@ -97,7 +93,7 @@ Deno.serve(async (req) => {
       } else if (leastMatches === 0) {
         reasoning = "First matchup between these teams";
       } else {
-        reasoning = `${leastMatches} previous matchups between these teams`;
+        reasoning = `${leastMatches} previous matchups`;
       }
 
       matches.push({
@@ -105,8 +101,6 @@ Deno.serve(async (req) => {
         team2: bestCombo.team2,
         reasoning,
       });
-
-      [p1, p2, p3, p4].forEach(p => used.add(p));
     }
 
     return Response.json({ matches });
