@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import PlayerPairingModal from "./PlayerPairingModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpDown, ArrowUp, ArrowDown, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -101,6 +102,8 @@ function PlayerCard({ player, groupName, arrow, adjStats }) {
 export default function OverallRankings({ groups }) {
   const [adjStats, setAdjStats] = useState(null);
   const [loadingAdj, setLoadingAdj] = useState(true);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
   useEffect(() => {
     base44.functions.invoke("getPartnerAdjustedStats", {})
@@ -175,6 +178,7 @@ export default function OverallRankings({ groups }) {
   }
 
   return (
+    <>
     <div className="space-y-4">
       <Card className="shadow-2xl">
         <CardHeader className="pb-2">
@@ -248,7 +252,7 @@ export default function OverallRankings({ groups }) {
                   <div key={i} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2">
                     <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{r.player}</p>
+                      <p className="text-sm font-semibold truncate cursor-pointer hover:text-blue-600 hover:underline" onClick={() => { setSelectedPlayer(r.player); setSelectedGroup(groupName); }}>{r.player}</p>
                       <p className="text-xs text-muted-foreground">{gp} MP · {r.wins}W · {r.losses}L · Diff: {Number(r.diff) >= 0 ? "+" : ""}{r.diff}</p>
                     </div>
                     <div className="text-right shrink-0">
@@ -263,5 +267,7 @@ export default function OverallRankings({ groups }) {
         );
       })}
     </div>
+    {selectedPlayer && <PlayerPairingModal player={selectedPlayer} groupName={selectedGroup} onClose={() => setSelectedPlayer(null)} />}
+    </>
   );
 }
