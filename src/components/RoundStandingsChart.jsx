@@ -53,7 +53,9 @@ export default function RoundStandingsChart({ playerName }) {
 
             {selectedRound && (
               <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{selectedRound} — Stats</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                  {selectedRound} — Stats{roundDateMap[selectedRound] ? ` · ${roundDateMap[selectedRound]}` : ""}
+                </p>
                 {player ? (
                   <div className="grid grid-cols-3 gap-2">
                     {[
