@@ -256,9 +256,8 @@ export default function OverallRankings({ groups }) {
               const filtered = all.filter(r => !globalUsedPlayers.has(r.player));
               const top4 = filtered.slice(0, 4);
               
-              // Get bottom 4 from remaining players (lowest performers in this filtered set)
-              const remaining = filtered.slice(4);
-              const bottom4 = remaining.length > 0 ? remaining.slice(-4).reverse() : [];
+              // Get bottom 4: the 4 absolute lowest performers in filtered set
+              const bottom4 = filtered.length > 4 ? filtered.slice(-4).reverse() : [];
               
               // Add to global used set for next groups
               top4.forEach(p => globalUsedPlayers.add(p.player));
