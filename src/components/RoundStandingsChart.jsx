@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trophy, Equal } from "lucide-react";
+import { Loader2, Equal } from "lucide-react";
 
 export default function RoundStandingsChart({ playerName }) {
   const [loading, setLoading] = useState(true);
@@ -123,14 +123,20 @@ export default function RoundStandingsChart({ playerName }) {
                   const team1Won = score1 === 42;
                   const team2Won = score2 === 42;
                   const isDraw = !team1Won && !team2Won;
+                  const renderTeam = (teamPlayers) => teamPlayers.map((p, idx) => (
+                    <span key={idx}>
+                      {idx > 0 && " & "}
+                      <span className={p.toLowerCase().includes(playerName.toLowerCase()) ? "underline font-bold" : ""}>{p}</span>
+                    </span>
+                  ));
                   return (
                     <div key={i} className="bg-slate-50 rounded-lg p-3 flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
 
                         <p className="text-sm font-medium leading-snug">
-                          <span className="text-blue-600 inline-flex items-center gap-1">{players.slice(0, 2).join(" & ")}{team1Won && <Trophy className="w-3 h-3 text-green-500" />}{isDraw && <Equal className="w-3 h-3 text-orange-400" />}</span>{" "}
+                          <span className="text-blue-600 inline-flex items-center gap-1 flex-wrap">{renderTeam(players.slice(0, 2))}{isDraw && <Equal className="w-3 h-3 text-orange-400" />}</span>{" "}
                           <span className="text-red-500 font-bold">Vs</span>{" "}
-                          <span className="text-purple-600 inline-flex items-center gap-1">{players.slice(2).join(" & ")}{team2Won && <Trophy className="w-3 h-3 text-green-500" />}{isDraw && <Equal className="w-3 h-3 text-orange-400" />}</span>
+                          <span className="text-purple-600 inline-flex items-center gap-1 flex-wrap">{renderTeam(players.slice(2))}{isDraw && <Equal className="w-3 h-3 text-orange-400" />}</span>
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
