@@ -46,7 +46,7 @@ export default function RoundStandingsChart({ playerName }) {
 
   const selectedRoundRows = data[selectedRound] || [];
   const player = selectedRound
-    ? selectedRoundRows.find(r => (r.player || r.name || Object.values(r)[0] || "").toLowerCase().includes(playerName.toLowerCase()))
+    ? selectedRoundRows.find(r => (r.player || r.name || Object.values(r)[0] || "").toLowerCase() === playerName.toLowerCase())
     : null;
 
   return (

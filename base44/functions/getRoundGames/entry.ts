@@ -26,7 +26,10 @@ Deno.serve(async (req) => {
       const rowRound = (row[10] || "").trim(); // col K
       const gameChoice = (row[1] || "").trim(); // col B e.g. "310 | Saideep & Ravi & Russell & Suryan"
       if (rowRound !== String(round)) continue;
-      if (!gameChoice.toLowerCase().includes(playerLower)) continue;
+      const parts0 = gameChoice.split("|");
+      const teamsStr0 = (parts0[1]?.trim() || gameChoice);
+      const gamePlayers = teamsStr0.split("&").map(p => p.trim().toLowerCase());
+      if (!gamePlayers.includes(playerLower)) continue;
 
       // Parse: "310 | Team1 & Player & ... vs Team2..." — col B format: "netId | all players listed"
       // Scores: col C = team1 score, col D = team2 score
