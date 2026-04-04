@@ -6,25 +6,25 @@ Deno.serve(async (req) => {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const standingsId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
 
-    // DEBUG: inspect a specific player
     const { debug } = await req.json().catch(() => ({}));
 
-    // Fetch Players sheet
+    // Fetch Players sheet just for active player list + fallback group
     // Headers: Player, Active?, Notes, Starting Group, Last Completed Group, Suggested Current Group
     const playersUrl = `https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Players!A:F`;
     const playersRes = await fetch(playersUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
     const playersJson = await playersRes.json();
     const playersRows = playersJson.values || [];
 
-    // Build player map: name -> suggestedGroup
-    const playerMap = {};
+    // Build active player set + fallback group (only used if player has 0 GP in all leaderboards)
+    const activePlayers = {};
     for (let i = 1; i < playersRows.length; i++) {
       const row = playersRows[i];
       const name = (row[0] || "").trim();
       const active = (row[1] || "").toLowerCase();
       if (!name || active === "no") continue;
-      const suggestedGroup = parseInt(row[5]) || parseInt(row[4]) || parseInt(row[3]) || 6;
-      playerMap[name] = suggestedGroup;
+      // fallback group: last completed (col4), else starting (col3), else 6
+      const fallbackGroup = parseInt(row[4]) || parseInt(row[3]) || 6;
+      activePlayers[name] = fallbackGroup;
     }
 
     // Fetch Group_Leaderboards sheet
@@ -57,17 +57,16 @@ Deno.serve(async (req) => {
     }
 
     if (debug) {
-      // Return raw per-group stats for a player
       const name = Object.keys(statsMap).find(k => k.toLowerCase().includes(debug.toLowerCase()));
       return Response.json({
-        playerMapEntry: name ? { name, suggestedGroup: playerMap[name] } : null,
+        playerMapEntry: name ? { name, fallbackGroup: activePlayers[name] } : null,
         allGroupStats: name ? statsMap[name] : null,
       });
     }
 
     // Build rated player list
     const players = [];
-    for (const [name, suggestedGroup] of Object.entries(playerMap)) {
+    for (const [name, fallbackGroup] of Object.entries(activePlayers)) {
       const groupStats = statsMap[name] || {};
 
       // Aggregate total GP and diff across ALL groups
@@ -78,19 +77,25 @@ Deno.serve(async (req) => {
         totalDiff += gs.diff;
       }
 
-      // Base rate = suggested current group
-      const baseRate = suggestedGroup;
-      let gp = totalGP;
-      let diff = totalDiff;
+      // Base group = lowest group number where GP > 0 (hardest group they've actually played in)
+      // Falls back to Players sheet "last completed group" if no leaderboard games found
+      let baseGroup = fallbackGroup;
+      const playedGroups = Object.entries(groupStats)
+        .filter(([, gs]) => gs.gp > 0)
+        .map(([g]) => parseInt(g));
+      if (playedGroups.length > 0) {
+        baseGroup = Math.min(...playedGroups);
+      }
+
       let hasStats = false;
-      let rating = parseFloat(baseRate.toFixed(2));
+      let rating = parseFloat(baseGroup.toFixed(2));
 
       if (totalGP >= 6) {
-        rating = parseFloat((baseRate - totalDiff / totalGP / 10).toFixed(2));
+        rating = parseFloat((baseGroup - totalDiff / totalGP / 10).toFixed(2));
         hasStats = true;
       }
 
-      players.push({ player: name, currentGroup: suggestedGroup, gp, diff, rating, hasStats });
+      players.push({ player: name, currentGroup: baseGroup, gp: totalGP, diff: totalDiff, rating, hasStats });
     }
 
     players.sort((a, b) => a.rating - b.rating);
