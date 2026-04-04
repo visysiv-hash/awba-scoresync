@@ -88,12 +88,12 @@ export default function OverallRankings({ groups }) {
         </Card>
       )}
 
-      {/* Struggling Players */}
+      {/* Demotion Watch */}
       {strugglingPlayers.length > 0 && (
-        <Card className="shadow-2xl border-red-200">
+        <Card className="shadow-2xl border-orange-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <ArrowDown className="w-4 h-4 text-red-500" /> Struggling Players
+              <ArrowDown className="w-4 h-4 text-orange-500" /> Demotion Watch
             </CardTitle>
             <p className="text-xs text-muted-foreground">
               Players whose rating has risen above their current group number — may be better suited to a lower group.
@@ -101,15 +101,15 @@ export default function OverallRankings({ groups }) {
           </CardHeader>
           <CardContent className="space-y-2">
             {strugglingPlayers.sort((a, b) => b.rating - a.rating).map((p, i) => (
-              <div key={i} className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                <ArrowDown className="w-4 h-4 text-red-400 shrink-0" />
+              <div key={i} className="flex items-center gap-3 bg-orange-50 border border-orange-100 rounded-lg px-3 py-2">
+                <ArrowDown className="w-4 h-4 text-orange-400 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold">{p.player}</p>
                   <p className="text-xs text-muted-foreground">Currently Group {p.currentGroup} · {p.gp} games · Diff {p.diff >= 0 ? "+" : ""}{p.diff}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-red-700">Rating {p.rating}</p>
-                  <p className="text-xs text-red-500 font-semibold">↓ Group {Math.floor(p.rating) + 1} territory</p>
+                  <p className="text-sm font-bold text-orange-700">Rating {p.rating}</p>
+                  <p className="text-xs text-orange-500 font-semibold">↓ Group {Math.floor(p.rating) + 1} territory</p>
                 </div>
               </div>
             ))}
