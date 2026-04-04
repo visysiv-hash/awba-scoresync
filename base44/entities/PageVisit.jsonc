@@ -1,0 +1,13 @@
+{
+  "name": "PageVisit",
+  "type": "object",
+  "properties": {
+    "page": {
+      "type": "string",
+      "title": "Page"
+    }
+  },
+  "required": [
+    "page"
+  ]
+}

@@ -25,6 +25,12 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState("");
   const [activeTab, setActiveTab] = useState("search");
+  const [visitCount, setVisitCount] = useState(null);
+
+  useEffect(() => {
+    base44.entities.PageVisit.create({ page: 'leaderboard' });
+    base44.entities.PageVisit.filter({ page: 'leaderboard' }).then(visits => setVisitCount(visits.length));
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,6 +84,9 @@ export default function Leaderboard() {
             <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
               <Trophy className="w-6 h-6 text-yellow-400" /> League Leaderboard
             </h1>
+            {visitCount !== null && (
+              <p className="text-xs text-slate-400 mt-1">{visitCount} visits</p>
+            )}
           </div>
           <div className="w-20" />
         </div>
