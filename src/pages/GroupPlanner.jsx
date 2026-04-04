@@ -17,9 +17,9 @@ function RatingBreakdown({ p }) {
   return (
     <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs space-y-1 text-slate-700">
       <p className="font-semibold text-blue-700 mb-1">Rating Calculation</p>
-      <p>Base Rate (Group {p.currentGroup}): <span className="font-bold">{p.currentGroup}.0</span></p>
-      <p>Total Point Diff: <span className="font-bold">{p.diff >= 0 ? "+" : ""}{p.diff}</span></p>
-      <p>Games Played: <span className="font-bold">{p.gp}</span></p>
+      <p>Base Rate (Suggested Group {p.currentGroup}): <span className="font-bold">{p.currentGroup}.0</span></p>
+      <p>Total Point Diff (all groups): <span className="font-bold">{p.diff >= 0 ? "+" : ""}{p.diff}</span></p>
+      <p>Total Games Played: <span className="font-bold">{p.gp}</span></p>
       <p>Diff per game: {p.diff} ÷ {p.gp} = <span className="font-bold">{diffPerGame}</span></p>
       <p>Adjustment: {diffPerGame} ÷ 10 = <span className="font-bold">{adjustment}</span></p>
       <p className="border-t pt-1 font-bold text-blue-800">

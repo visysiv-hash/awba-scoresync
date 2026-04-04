@@ -6,6 +6,9 @@ Deno.serve(async (req) => {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const standingsId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
 
+    // DEBUG: inspect a specific player
+    const { debug } = await req.json().catch(() => ({}));
+
     // Fetch Players sheet
     // Headers: Player, Active?, Notes, Starting Group, Last Completed Group, Suggested Current Group
     const playersUrl = `https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Players!A:F`;
@@ -20,7 +23,6 @@ Deno.serve(async (req) => {
       const name = (row[0] || "").trim();
       const active = (row[1] || "").toLowerCase();
       if (!name || active === "no") continue;
-      // Use Suggested Current Group (col 5), fallback to Last Completed (col 4), then Starting (col 3)
       const suggestedGroup = parseInt(row[5]) || parseInt(row[4]) || parseInt(row[3]) || 6;
       playerMap[name] = suggestedGroup;
     }
@@ -32,20 +34,17 @@ Deno.serve(async (req) => {
     const standingsJson = await standingsRes.json();
     const rows = standingsJson.values || [];
 
-    // Parse leaderboard rows — track current group number
-    // Structure: header row "Group X Leaderboard" appears, then col header row, then player rows
-    const statsMap = {}; // player -> { gp, diff, groupIndex }
+    // Parse leaderboard rows — collect stats per player per group
+    const statsMap = {}; // player -> { [groupIndex]: { gp, diff } }
     let currentGroupIndex = 0;
     let skipNextRow = false;
 
     for (const row of rows) {
       const firstCell = (row[0] || "").trim();
-
-      // Detect group header
       if (firstCell.includes("Leaderboard")) {
         const match = firstCell.match(/\d+/);
         if (match) currentGroupIndex = parseInt(match[0]);
-        skipNextRow = true; // skip the column header row that follows
+        skipNextRow = true;
         continue;
       }
       if (skipNextRow) { skipNextRow = false; continue; }
@@ -53,36 +52,48 @@ Deno.serve(async (req) => {
 
       const gp = Number(row[1] || 0);
       const diff = Number(row[8] || 0);
-
-      // Store stats for each player per group
       if (!statsMap[firstCell]) statsMap[firstCell] = {};
       statsMap[firstCell][currentGroupIndex] = { gp, diff };
+    }
+
+    if (debug) {
+      // Return raw per-group stats for a player
+      const name = Object.keys(statsMap).find(k => k.toLowerCase().includes(debug.toLowerCase()));
+      return Response.json({
+        playerMapEntry: name ? { name, suggestedGroup: playerMap[name] } : null,
+        allGroupStats: name ? statsMap[name] : null,
+      });
     }
 
     // Build rated player list
     const players = [];
     for (const [name, suggestedGroup] of Object.entries(playerMap)) {
       const groupStats = statsMap[name] || {};
-      // Use stats from their suggested group
-      const stats = groupStats[suggestedGroup] || null;
+
+      // Aggregate total GP and diff across ALL groups
+      let totalGP = 0;
+      let totalDiff = 0;
+      for (const gs of Object.values(groupStats)) {
+        totalGP += gs.gp;
+        totalDiff += gs.diff;
+      }
+
+      // Base rate = suggested current group
       const baseRate = suggestedGroup;
-      let gp = 0, diff = 0;
+      let gp = totalGP;
+      let diff = totalDiff;
       let hasStats = false;
       let rating = parseFloat(baseRate.toFixed(2));
 
-      if (stats && stats.gp >= 6) {
-        gp = stats.gp;
-        diff = stats.diff;
-        rating = parseFloat((baseRate - diff / gp / 10).toFixed(2));
+      if (totalGP >= 6) {
+        rating = parseFloat((baseRate - totalDiff / totalGP / 10).toFixed(2));
         hasStats = true;
       }
 
       players.push({ player: name, currentGroup: suggestedGroup, gp, diff, rating, hasStats });
     }
 
-    // Sort by rating ascending (lower = stronger)
     players.sort((a, b) => a.rating - b.rating);
-
     return Response.json({ players });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
