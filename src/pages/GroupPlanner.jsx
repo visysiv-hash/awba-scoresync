@@ -13,14 +13,14 @@ const GROUP_NAMES = [
   "Group 6 Leaderboard",
 ];
 
-// Veterans-style rating: Base Rate (group number) + point_diff_per_game / 10
-// Lower rating = stronger player
+// Veterans-style rating: Base Rate (group number) - point_diff_per_game / 10
+// Lower rating = stronger player (positive diff = more points won = lowers rating)
 function calcRating(row, groupIndex) {
   const gp = Number(row.gp);
   const diff = Number(row.diff);
   const baseRate = groupIndex + 1; // Group 1 = 1.0, Group 6 = 6.0
   if (gp === 0) return baseRate;
-  return parseFloat((baseRate + diff / gp / 10).toFixed(2));
+  return parseFloat((baseRate - diff / gp / 10).toFixed(2));
 }
 
 function RatingBreakdown({ p }) {
@@ -35,8 +35,9 @@ function RatingBreakdown({ p }) {
       <p>Diff per game: {p.diff} ÷ {p.gp} = <span className="font-bold">{diffPerGame}</span></p>
       <p>Rating adjustment: {diffPerGame} ÷ 10 = <span className="font-bold">{contribution}</span></p>
       <p className="border-t pt-1 font-bold text-blue-800">
-        Rating = {p.currentGroup}.0 + {contribution} = {p.rating}
+        Rating = {p.currentGroup}.0 − {contribution} = {p.rating}
       </p>
+      <p className="text-slate-500 italic">Suggested Group = round({p.rating}) = Group {Math.max(1, Math.min(6, Math.round(p.rating)))}</p>
     </div>
   );
 }
@@ -73,12 +74,11 @@ export default function GroupPlanner() {
       // Sort ascending (lower rating = stronger)
       allPlayers.sort((a, b) => a.rating - b.rating);
 
-      const total = allPlayers.length;
       const withSuggested = allPlayers.map((p, i) => ({
         ...p,
         rank: i + 1,
-        // Always divide into 6 groups evenly regardless of player count
-        suggestedGroup: Math.min(6, Math.floor(i * 6 / total) + 1),
+        // Suggested group is derived naturally from the rating itself
+        suggestedGroup: Math.max(1, Math.min(6, Math.round(p.rating))),
       }));
 
       setRanked(withSuggested);
@@ -106,7 +106,7 @@ export default function GroupPlanner() {
           </p>
           <div className="mt-2 bg-white/10 rounded-lg px-3 py-2 text-xs text-slate-300 flex items-start gap-2">
             <Info className="w-3 h-3 mt-0.5 shrink-0 text-yellow-400" />
-            <span>Rating = Group Base (1–6) + Avg Point Diff / 10. Lower = stronger. A Group 6 player stays near 6.0 even if dominant — no unfair leaps.</span>
+            <span>Rating = Group Base (1–6) − Avg Point Diff per game ÷ 10. Lower = stronger. Winning more points lowers your rating. Suggested group = rounded rating.</span>
           </div>
         </div>
 
