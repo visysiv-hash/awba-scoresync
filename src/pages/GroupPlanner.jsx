@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, ArrowRight, AlertTriangle } from "lucide-react";
+import { Loader2, Users, ArrowRight, AlertTriangle, Info } from "lucide-react";
 
 const MIN_MATCHES = 6;
 const GROUP_NAMES = [
@@ -13,9 +13,14 @@ const GROUP_NAMES = [
   "Group 6 Leaderboard",
 ];
 
-function rawWR(row) {
+// Veterans-style rating: Base Rate (group number) + point_diff_per_game / 10
+// Lower rating = stronger player
+function calcRating(row, groupIndex) {
   const gp = Number(row.gp);
-  return gp > 0 ? Math.round((Number(row.wins) / gp) * 100) : 0;
+  const diff = Number(row.diff);
+  const baseRate = groupIndex + 1; // Group 1 = 1.0, Group 6 = 6.0
+  if (gp === 0) return baseRate;
+  return parseFloat((baseRate + diff / gp / 10).toFixed(2));
 }
 
 export default function GroupPlanner() {
@@ -25,35 +30,30 @@ export default function GroupPlanner() {
   const [view, setView] = useState("master"); // "master" | "suggested"
 
   useEffect(() => {
-    Promise.all([
-      base44.functions.invoke("getStandings", {}),
-      base44.functions.invoke("getPartnerAdjustedStats", {}),
-    ]).then(([standingsRes, adjRes]) => {
+    base44.functions.invoke("getStandings", {}).then(standingsRes => {
       const groups = standingsRes.data?.groups || {};
-      const adjStats = adjRes.data?.adjusted || {};
 
-      // Collect all players with their current group
+      // Collect all players with veterans-style rating
       const allPlayers = [];
       GROUP_NAMES.forEach((groupName, idx) => {
         (groups[groupName] || []).forEach(row => {
           if (Number(row.gp) < MIN_MATCHES) return;
-          const adjWR = adjStats[row.player]?.adjustedWR ?? rawWR(row);
+          const rating = calcRating(row, idx);
           allPlayers.push({
             player: row.player,
             currentGroup: idx + 1,
             gp: Number(row.gp),
             wins: Number(row.wins),
             losses: Number(row.losses),
-            rawWR: rawWR(row),
-            adjWR,
+            diff: Number(row.diff),
+            rating,
           });
         });
       });
 
-      // Sort by adjWR descending (best = rank 1)
-      allPlayers.sort((a, b) => b.adjWR - a.adjWR);
+      // Sort ascending (lower rating = stronger)
+      allPlayers.sort((a, b) => a.rating - b.rating);
 
-      // Assign suggested group (bands of 8)
       const withSuggested = allPlayers.map((p, i) => ({
         ...p,
         rank: i + 1,
@@ -62,7 +62,6 @@ export default function GroupPlanner() {
 
       setRanked(withSuggested);
 
-      // Build suggested groups
       const sg = Array.from({ length: 6 }, (_, i) =>
         withSuggested.filter(p => p.suggestedGroup === i + 1)
       );
@@ -82,11 +81,24 @@ export default function GroupPlanner() {
             <Users className="w-6 h-6 text-yellow-400" /> Group Planner
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Suggested group assignments based on adjusted win rate ranking (≥{MIN_MATCHES} matches)
+            Veterans-style ratings: Base Rate (group #) ± point diff per game ÷ 10
           </p>
+          <div className="mt-2 bg-white/10 rounded-lg px-3 py-2 text-xs text-slate-300 flex items-start gap-2">
+            <Info className="w-3 h-3 mt-0.5 shrink-0 text-yellow-400" />
+            <span>Rating = Group Base (1–6) + Avg Point Diff / 10. Lower = stronger. A Group 6 player stays near 6.0 even if dominant — no unfair leaps.</span>
+          </div>
         </div>
 
         {/* Tabs */}
+        {/* Base rate reference */}
+        <div className="flex gap-1 mb-3 flex-wrap">
+          {[1,2,3,4,5,6].map(g => (
+            <span key={g} className="text-xs bg-white/10 text-slate-300 rounded px-2 py-1">
+              G{g} base: <span className="font-bold text-yellow-300">{g}.0</span>
+            </span>
+          ))}
+        </div>
+
         <div className="flex gap-2 mb-4">
           {[{ id: "master", label: "📋 Master Ranking" }, { id: "suggested", label: "🗂️ Suggested Groups" }, { id: "misplaced", label: `⚠️ Misplaced (${misplaced.length})` }].map(tab => (
             <button
@@ -129,10 +141,10 @@ export default function GroupPlanner() {
                           <span className="text-xs font-bold text-muted-foreground w-6">#{p.rank}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold truncate">{p.player}</p>
-                            <p className="text-xs text-muted-foreground">{p.gp} MP · {p.wins}W · {p.losses}L</p>
+                            <p className="text-xs text-muted-foreground">{p.gp} MP · {p.wins}W · {p.losses}L · Diff: {p.diff >= 0 ? "+" : ""}{p.diff}</p>
                           </div>
                           <div className="text-right shrink-0 space-y-0.5">
-                            <p className="text-sm font-bold text-purple-700">{p.adjWR}%</p>
+                            <p className="text-sm font-bold text-yellow-600">{p.rating}</p>
                             <div className="flex items-center gap-1 justify-end">
                               <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ${isMisplaced ? "bg-orange-200 text-orange-800" : "bg-slate-200 text-slate-700"}`}>
                                 G{p.currentGroup}
@@ -160,15 +172,15 @@ export default function GroupPlanner() {
               <div className="space-y-4">
                 {suggestedGroups.map((players, idx) => {
                   if (players.length === 0) return null;
-                  const wrs = players.map(p => p.adjWR);
-                  const min = Math.min(...wrs);
-                  const max = Math.max(...wrs);
+                  const ratings = players.map(p => p.rating);
+                  const min = Math.min(...ratings);
+                  const max = Math.max(...ratings);
                   return (
                     <Card key={idx} className="shadow-2xl">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center justify-between">
                           <span>Suggested Group {idx + 1}</span>
-                          <span className="text-xs text-muted-foreground font-normal">WR range: {min}% – {max}%</span>
+                          <span className="text-xs text-muted-foreground font-normal">Rating: {min} – {max}</span>
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-1 p-3">
@@ -182,7 +194,7 @@ export default function GroupPlanner() {
                                 <p className="text-xs text-muted-foreground">{p.gp} MP · rank #{p.rank} overall</p>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className="text-sm font-bold text-purple-700">{p.adjWR}%</p>
+                                <p className="text-sm font-bold text-yellow-600">{p.rating}</p>
                                 {isMisplaced ? (
                                   <div className="flex items-center gap-1 justify-end">
                                     <span className="text-xs px-1.5 py-0.5 rounded bg-orange-200 text-orange-800 font-semibold">Currently G{p.currentGroup}</span>
@@ -218,7 +230,7 @@ export default function GroupPlanner() {
                       <div key={p.player} className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold">{p.player}</p>
-                          <p className="text-xs text-muted-foreground">Rank #{p.rank} · {p.adjWR}% adj. WR · {p.gp} MP</p>
+                          <p className="text-xs text-muted-foreground">Rank #{p.rank} · Rating {p.rating} · {p.gp} MP · Diff {p.diff >= 0 ? "+" : ""}{p.diff}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-xs px-2 py-1 rounded bg-slate-200 text-slate-700 font-semibold">Group {p.currentGroup}</span>
