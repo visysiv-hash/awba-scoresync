@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import PlayerPairingModal from "./PlayerPairingModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpDown, ArrowUp, ArrowDown, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Loader2, ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 
 const GROUP_NAMES = [
   "Group 1 Leaderboard",
@@ -110,6 +110,12 @@ export default function OverallRankings({ groups }) {
     }
   }
 
+  // Rising players: rating has crossed below their current group number
+  // e.g. Group 3 player with rating < 3.0 → potentially ready for Group 2
+  const risingPlayers = ratings.filter(p =>
+    p.hasStats && p.currentGroup > 1 && p.rating < p.currentGroup
+  );
+
   return (
     <>
     <div className="space-y-4">
@@ -160,6 +166,35 @@ export default function OverallRankings({ groups }) {
             </CardContent>
           </Card>
         ))
+      )}
+
+      {/* Rising Players */}
+      {risingPlayers.length > 0 && (
+        <Card className="shadow-2xl border-yellow-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-yellow-500" /> Rising Players
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Players whose rating has crossed below their current group number — worth watching for promotion.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {risingPlayers.sort((a, b) => a.rating - b.rating).map((p, i) => (
+              <div key={i} className="flex items-center gap-3 bg-yellow-50 border border-yellow-100 rounded-lg px-3 py-2">
+                <TrendingUp className="w-4 h-4 text-yellow-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">{p.player}</p>
+                  <p className="text-xs text-muted-foreground">Currently Group {p.currentGroup} · {p.gp} games · Diff {p.diff >= 0 ? "+" : ""}{p.diff}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-bold text-yellow-700">Rating {p.rating}</p>
+                  <p className="text-xs text-green-600 font-semibold">↑ Group {Math.ceil(p.rating)} territory</p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       )}
 
       {/* Per-group standings for reference */}
