@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, ArrowRight, AlertTriangle, Info } from "lucide-react";
+import { Loader2, Users, ArrowRight, AlertTriangle, Info, ChevronDown, ChevronUp } from "lucide-react";
 
 const MIN_MATCHES = 6;
 const GROUP_NAMES = [
@@ -23,11 +23,30 @@ function calcRating(row, groupIndex) {
   return parseFloat((baseRate + diff / gp / 10).toFixed(2));
 }
 
+function RatingBreakdown({ p }) {
+  const diffPerGame = p.gp > 0 ? (p.diff / p.gp).toFixed(2) : 0;
+  const contribution = p.gp > 0 ? (p.diff / p.gp / 10).toFixed(2) : 0;
+  return (
+    <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs space-y-1 text-slate-700">
+      <p className="font-semibold text-blue-700 mb-1">Rating Calculation</p>
+      <p>Base Rate (Group {p.currentGroup}): <span className="font-bold">{p.currentGroup}.0</span></p>
+      <p>Total Point Diff: <span className="font-bold">{p.diff >= 0 ? "+" : ""}{p.diff}</span></p>
+      <p>Games Played: <span className="font-bold">{p.gp}</span></p>
+      <p>Diff per game: {p.diff} ÷ {p.gp} = <span className="font-bold">{diffPerGame}</span></p>
+      <p>Rating adjustment: {diffPerGame} ÷ 10 = <span className="font-bold">{contribution}</span></p>
+      <p className="border-t pt-1 font-bold text-blue-800">
+        Rating = {p.currentGroup}.0 + {contribution} = {p.rating}
+      </p>
+    </div>
+  );
+}
+
 export default function GroupPlanner() {
   const [loading, setLoading] = useState(true);
   const [ranked, setRanked] = useState([]);
   const [suggestedGroups, setSuggestedGroups] = useState([]);
-  const [view, setView] = useState("master"); // "master" | "suggested"
+  const [view, setView] = useState("master");
+  const [expandedPlayer, setExpandedPlayer] = useState(null);
 
   useEffect(() => {
     base44.functions.invoke("getStandings", {}).then(standingsRes => {
@@ -54,10 +73,12 @@ export default function GroupPlanner() {
       // Sort ascending (lower rating = stronger)
       allPlayers.sort((a, b) => a.rating - b.rating);
 
+      const total = allPlayers.length;
       const withSuggested = allPlayers.map((p, i) => ({
         ...p,
         rank: i + 1,
-        suggestedGroup: Math.min(6, Math.floor(i / 8) + 1),
+        // Always divide into 6 groups evenly regardless of player count
+        suggestedGroup: Math.min(6, Math.floor(i * 6 / total) + 1),
       }));
 
       setRanked(withSuggested);
@@ -128,40 +149,48 @@ export default function GroupPlanner() {
                 </CardHeader>
                 <CardContent className="space-y-1 p-3">
                   {ranked.map((p, i) => {
-                    const isMisplaced = p.currentGroup !== p.suggestedGroup;
-                    const isNewBand = i > 0 && Math.floor(i / 8) !== Math.floor((i - 1) / 8);
-                    return (
-                      <div key={p.player}>
-                        {isNewBand && (
-                          <div className="border-t border-dashed border-slate-200 my-2 pt-1">
-                            <p className="text-xs text-muted-foreground font-semibold">— Suggested Group {p.suggestedGroup} —</p>
-                          </div>
-                        )}
-                        <div className={`flex items-center gap-3 rounded-lg px-3 py-2 ${isMisplaced ? "bg-orange-50 border border-orange-200" : "bg-slate-50"}`}>
-                          <span className="text-xs font-bold text-muted-foreground w-6">#{p.rank}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold truncate">{p.player}</p>
-                            <p className="text-xs text-muted-foreground">{p.gp} MP · {p.wins}W · {p.losses}L · Diff: {p.diff >= 0 ? "+" : ""}{p.diff}</p>
-                          </div>
-                          <div className="text-right shrink-0 space-y-0.5">
-                            <p className="text-sm font-bold text-yellow-600">{p.rating}</p>
-                            <div className="flex items-center gap-1 justify-end">
-                              <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ${isMisplaced ? "bg-orange-200 text-orange-800" : "bg-slate-200 text-slate-700"}`}>
-                                G{p.currentGroup}
-                              </span>
-                              {isMisplaced && (
-                                <>
-                                  <ArrowRight className="w-3 h-3 text-orange-500" />
-                                  <span className="text-xs px-1.5 py-0.5 rounded font-semibold bg-green-200 text-green-800">
-                                    G{p.suggestedGroup}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
+                   const isMisplaced = p.currentGroup !== p.suggestedGroup;
+                   const isNewBand = i > 0 && ranked[i].suggestedGroup !== ranked[i-1].suggestedGroup;
+                   const isExpanded = expandedPlayer === p.player;
+                   return (
+                     <div key={p.player}>
+                       {isNewBand && (
+                         <div className="border-t border-dashed border-slate-200 my-2 pt-1">
+                           <p className="text-xs text-muted-foreground font-semibold">— Suggested Group {p.suggestedGroup} —</p>
+                         </div>
+                       )}
+                       <div
+                         className={`rounded-lg px-3 py-2 cursor-pointer ${isMisplaced ? "bg-orange-50 border border-orange-200" : "bg-slate-50"}`}
+                         onClick={() => setExpandedPlayer(isExpanded ? null : p.player)}
+                       >
+                         <div className="flex items-center gap-3">
+                           <span className="text-xs font-bold text-muted-foreground w-6">#{p.rank}</span>
+                           <div className="flex-1 min-w-0">
+                             <p className="text-sm font-semibold truncate">{p.player}</p>
+                             <p className="text-xs text-muted-foreground">{p.gp} MP · {p.wins}W · {p.losses}L · Diff: {p.diff >= 0 ? "+" : ""}{p.diff}</p>
+                           </div>
+                           <div className="text-right shrink-0 space-y-0.5">
+                             <p className="text-sm font-bold text-yellow-600">{p.rating}</p>
+                             <div className="flex items-center gap-1 justify-end">
+                               <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ${isMisplaced ? "bg-orange-200 text-orange-800" : "bg-slate-200 text-slate-700"}`}>
+                                 G{p.currentGroup}
+                               </span>
+                               {isMisplaced && (
+                                 <>
+                                   <ArrowRight className="w-3 h-3 text-orange-500" />
+                                   <span className="text-xs px-1.5 py-0.5 rounded font-semibold bg-green-200 text-green-800">
+                                     G{p.suggestedGroup}
+                                   </span>
+                                 </>
+                               )}
+                             </div>
+                           </div>
+                           {isExpanded ? <ChevronUp className="w-3 h-3 text-slate-400 shrink-0" /> : <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />}
+                         </div>
+                         {isExpanded && <RatingBreakdown p={p} />}
+                       </div>
+                     </div>
+                   );
                   })}
                 </CardContent>
               </Card>
@@ -185,26 +214,33 @@ export default function GroupPlanner() {
                       </CardHeader>
                       <CardContent className="space-y-1 p-3">
                         {players.map((p, i) => {
-                          const isMisplaced = p.currentGroup !== p.suggestedGroup;
-                          return (
-                            <div key={p.player} className={`flex items-center gap-3 rounded-lg px-3 py-2 ${isMisplaced ? "bg-orange-50 border border-orange-200" : "bg-slate-50"}`}>
-                              <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold truncate">{p.player}</p>
-                                <p className="text-xs text-muted-foreground">{p.gp} MP · rank #{p.rank} overall</p>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <p className="text-sm font-bold text-yellow-600">{p.rating}</p>
-                                {isMisplaced ? (
-                                  <div className="flex items-center gap-1 justify-end">
-                                    <span className="text-xs px-1.5 py-0.5 rounded bg-orange-200 text-orange-800 font-semibold">Currently G{p.currentGroup}</span>
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-green-600 font-semibold">✓ Correct</p>
-                                )}
-                              </div>
-                            </div>
-                          );
+                         const isMisplaced = p.currentGroup !== p.suggestedGroup;
+                         const isExpanded = expandedPlayer === p.player;
+                         return (
+                           <div
+                             key={p.player}
+                             className={`rounded-lg px-3 py-2 cursor-pointer ${isMisplaced ? "bg-orange-50 border border-orange-200" : "bg-slate-50"}`}
+                             onClick={() => setExpandedPlayer(isExpanded ? null : p.player)}
+                           >
+                             <div className="flex items-center gap-3">
+                               <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
+                               <div className="flex-1 min-w-0">
+                                 <p className="text-sm font-semibold truncate">{p.player}</p>
+                                 <p className="text-xs text-muted-foreground">{p.gp} MP · rank #{p.rank} overall</p>
+                               </div>
+                               <div className="text-right shrink-0">
+                                 <p className="text-sm font-bold text-yellow-600">{p.rating}</p>
+                                 {isMisplaced ? (
+                                   <span className="text-xs px-1.5 py-0.5 rounded bg-orange-200 text-orange-800 font-semibold">Currently G{p.currentGroup}</span>
+                                 ) : (
+                                   <p className="text-xs text-green-600 font-semibold">✓ Correct</p>
+                                 )}
+                               </div>
+                               {isExpanded ? <ChevronUp className="w-3 h-3 text-slate-400 shrink-0" /> : <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />}
+                             </div>
+                             {isExpanded && <RatingBreakdown p={p} />}
+                           </div>
+                         );
                         })}
                       </CardContent>
                     </Card>
