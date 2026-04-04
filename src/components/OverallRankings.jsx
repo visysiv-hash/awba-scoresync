@@ -4,23 +4,22 @@ import PlayerPairingModal from "./PlayerPairingModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpDown, ArrowUp, ArrowDown, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 
-const MIN_MATCHES = 6;
-
-function getGroupNumber(groupName) {
-  const match = groupName.match(/\d+/);
-  return match ? Number(match[0]) : 99;
-}
+const GROUP_NAMES = [
+  "Group 1 Leaderboard",
+  "Group 2 Leaderboard",
+  "Group 3 Leaderboard",
+  "Group 4 Leaderboard",
+  "Group 5 Leaderboard",
+  "Group 6 Leaderboard",
+];
 
 function winRate(row) {
   const gp = Number(row.gp);
   return gp > 0 ? Math.round((Number(row.wins) / gp) * 100) : 0;
 }
 
-function SwapExplainer({ pair, adjStats, sg }) {
+function SwapExplainer({ pair }) {
   const [open, setOpen] = useState(false);
-  const downAdj = adjStats?.[pair.moveDown.player];
-  const upAdj = adjStats?.[pair.moveUp.player];
-
   return (
     <div className="mt-2">
       <button
@@ -31,54 +30,33 @@ function SwapExplainer({ pair, adjStats, sg }) {
         {open ? "Hide" : "How is this calculated?"}
       </button>
       {open && (
-        <div className="mt-2 bg-slate-50 rounded-lg p-3 text-xs space-y-3 border">
-          <div className="bg-white border rounded-lg p-2 space-y-2">
-            <p className="font-semibold text-slate-900">Swap Analysis</p>
-            <div className="space-y-1.5 text-muted-foreground">
-              <div>
-                <p className="font-semibold text-red-600 mb-0.5">{pair.moveDown.player} (Moving from {sg.harderGroup.replace(" Leaderboard", "")})</p>
-                <p className="text-xs">Matches: {pair.moveDown.gp} ({pair.moveDown.wins}W–{pair.moveDown.losses}L) | Point Diff: {Number(pair.moveDown.diff) >= 0 ? "+" : ""}{pair.moveDown.diff}</p>
-              </div>
-              <div>
-                <p className="font-semibold text-green-600 mb-0.5">{pair.moveUp.player} (Moving from {sg.easierGroup.replace(" Leaderboard", "")})</p>
-                <p className="text-xs">Matches: {pair.moveUp.gp} ({pair.moveUp.wins}W–{pair.moveUp.losses}L) | Point Diff: {Number(pair.moveUp.diff) >= 0 ? "+" : ""}{pair.moveUp.diff}</p>
-              </div>
-              <p className="text-xs pt-1 border-t">{pair.moveDown.player}'s performance decline in {sg.harderGroup.replace(" Leaderboard", "")} suggests a skill mismatch. Moving to {sg.easierGroup.replace(" Leaderboard", "")} allows for more competitive parity. Conversely, {pair.moveUp.player}'s consistent performance indicates readiness for higher competition.</p>
-              <p className="text-xs pt-2 border-t text-blue-600 font-semibold">Note: Group assignments are reviewed every 6 matches (~2 weeks). Players will be reassessed and rebalanced if needed, ensuring fair competition for everyone.</p>
+        <div className="mt-2 bg-slate-50 rounded-lg p-3 text-xs space-y-2 border">
+          <p className="font-semibold text-slate-700">Rating-Based Swap Analysis</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-2">
+              <p className="font-bold text-red-600 mb-1">{pair.moveDown.player}</p>
+              <p className="text-muted-foreground">Current Group: {pair.moveDown.currentGroup}</p>
+              <p className="text-muted-foreground">Rating: <span className="font-bold text-slate-700">{pair.moveDown.rating}</span></p>
+              <p className="text-muted-foreground">{pair.moveDown.gp} games · Diff {pair.moveDown.diff >= 0 ? "+" : ""}{pair.moveDown.diff}</p>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-2">
+              <p className="font-bold text-green-600 mb-1">{pair.moveUp.player}</p>
+              <p className="text-muted-foreground">Current Group: {pair.moveUp.currentGroup}</p>
+              <p className="text-muted-foreground">Rating: <span className="font-bold text-slate-700">{pair.moveUp.rating}</span></p>
+              <p className="text-muted-foreground">{pair.moveUp.gp} games · Diff {pair.moveUp.diff >= 0 ? "+" : ""}{pair.moveUp.diff}</p>
             </div>
           </div>
-          <p className="text-muted-foreground text-center font-semibold">Adjusted WR = Raw WR − (Avg Partner WR − League Avg WR) × 0.5</p>
-          {[{ label: pair.moveDown.player, adj: downAdj, raw: winRate(pair.moveDown), color: "text-red-500" },
-            { label: pair.moveUp.player, adj: upAdj, raw: winRate(pair.moveUp), color: "text-green-600" }]
-            .map(({ label, adj, raw, color }) => (
-              <div key={label} className="border rounded-lg p-2 bg-white">
-                <p className={`font-bold mb-1 ${color}`}>{label}</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-muted-foreground">
-                  <span>Raw WR:</span><span className="font-semibold text-slate-700">{raw}%</span>
-                  {adj && <>
-                    <span>Avg Partner WR:</span><span className="font-semibold text-slate-700">{adj.avgPartnerWR}%</span>
-                    <span>League Avg WR:</span><span className="font-semibold text-slate-700">{adj.leagueAvgWR}%</span>
-                    <span>Partner Bonus:</span>
-                    <span className={`font-semibold ${adj.partnerBonus < 0 ? "text-red-500" : "text-green-600"}`}>
-                      {adj.partnerBonus > 0 ? "+" : ""}{adj.partnerBonus}%
-                      {adj.partnerBonus < 0 ? " (penalised — strong partners)" : " (rewarded — weak partners)"}
-                    </span>
-                    <span className="font-semibold">Adjusted WR:</span>
-                    <span className="font-bold text-purple-700">{adj.adjustedWR}%</span>
-                  </>}
-                </div>
-              </div>
-            ))}
+          <p className="text-slate-500">
+            {pair.moveUp.player} (rating {pair.moveUp.rating}) is rated stronger than {pair.moveDown.player} (rating {pair.moveDown.rating}) despite being in a lower group.
+          </p>
+          <p className="text-xs text-blue-600 font-semibold border-t pt-1">Rating = Base Group − (Avg Point Diff per game ÷ 10). Lower = stronger.</p>
         </div>
       )}
     </div>
   );
 }
 
-function PlayerCard({ player, groupName, arrow, adjStats }) {
-  const gp = Number(player.gp);
-  const wr = winRate(player);
-  const adj = adjStats?.[player.player];
+function PlayerCard({ player, groupName, arrow }) {
   return (
     <div className={`flex-1 rounded-lg p-3 border ${arrow === "up" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
       <div className="flex items-center gap-1 mb-1">
@@ -88,92 +66,47 @@ function PlayerCard({ player, groupName, arrow, adjStats }) {
         <span className="text-xs text-muted-foreground">{groupName.replace(" Leaderboard", "")}</span>
       </div>
       <p className="font-bold text-sm">{player.player}</p>
-      <p className="text-xs text-muted-foreground">{gp} MP · {player.wins}W · {wr}% WR</p>
-      {adj && (
-        <div className="mt-1 text-xs">
-          <span className="font-semibold text-purple-700">{adj.adjustedWR}% adj. WR</span>
-          <span className="text-muted-foreground ml-1">(partner avg: {adj.avgPartnerWR}%)</span>
-        </div>
-      )}
+      <p className="text-xs text-muted-foreground">{player.gp} games · Diff {player.diff >= 0 ? "+" : ""}{player.diff}</p>
+      <p className="text-xs font-semibold text-yellow-700 mt-0.5">Rating: {player.rating}</p>
     </div>
   );
 }
 
 export default function OverallRankings({ groups }) {
-  const [adjStats, setAdjStats] = useState(null);
-  const [loadingAdj, setLoadingAdj] = useState(true);
+  const [ratings, setRatings] = useState([]);
+  const [loadingRatings, setLoadingRatings] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
 
   useEffect(() => {
-    base44.functions.invoke("getPartnerAdjustedStats", {})
-      .then(res => setAdjStats(res.data?.adjusted || {}))
-      .finally(() => setLoadingAdj(false));
+    base44.functions.invoke("getPlayerRatings", {})
+      .then(res => setRatings(res.data?.players || []))
+      .finally(() => setLoadingRatings(false));
   }, []);
 
-  // Build total GP per player across ALL groups
-  const totalGP = {};
-  Object.values(groups).forEach(rows =>
-    rows.forEach(r => {
-      totalGP[r.player] = (totalGP[r.player] || 0) + Number(r.gp);
-    })
-  );
-
-  const GROUP_NAMES = [
-    "Group 1 Leaderboard",
-    "Group 2 Leaderboard",
-    "Group 3 Leaderboard",
-    "Group 4 Leaderboard",
-    "Group 5 Leaderboard",
-    "Group 6 Leaderboard",
-  ];
-
-  // Helper: get adjusted WR if available, else raw win rate
-  const effectiveWR = (row) => {
-    if (adjStats && adjStats[row.player] !== undefined) return adjStats[row.player].adjustedWR;
-    return winRate(row);
-  };
-
-  const groupRanked = {};
-  GROUP_NAMES.forEach(name => {
-    groupRanked[name] = (groups[name] || [])
-      .filter(r => Number(r.gp) >= MIN_MATCHES)
-      .sort((a, b) => effectiveWR(b) - effectiveWR(a));
+  // Group players by their actual currentGroup (from leaderboard data)
+  const ratingsByGroup = {};
+  ratings.forEach(p => {
+    if (!p.hasStats) return; // need >= 6 games
+    if (!ratingsByGroup[p.currentGroup]) ratingsByGroup[p.currentGroup] = [];
+    ratingsByGroup[p.currentGroup].push(p);
   });
+  Object.values(ratingsByGroup).forEach(arr => arr.sort((a, b) => a.rating - b.rating));
 
-  // Build swap suggestions between adjacent groups (multiple per pair)
-  const usedPlayers = new Set();
+  // Build swap suggestions: if best in Group N+1 has lower rating than worst in Group N → swap
   const swapGroups = [];
-  for (let i = 0; i < GROUP_NAMES.length - 1; i++) {
-    const harderGroup = GROUP_NAMES[i];
-    const easierGroup = GROUP_NAMES[i + 1];
-
-    const harderPlayers = groupRanked[harderGroup];
-    const easierPlayers = groupRanked[easierGroup];
-
-    if (harderPlayers.length === 0 || easierPlayers.length === 0) continue;
-
-    const pairs = [];
-    // Compare from the bottom of harder group vs top of easier group
-    const maxPairs = Math.min(harderPlayers.length, easierPlayers.length);
-    for (let j = 0; j < maxPairs; j++) {
-      const candidate = harderPlayers[harderPlayers.length - 1 - j]; // worst first
-      const challenger = easierPlayers[j]; // best first
-      // Only suggest swap if both played equal matches in their respective groups
-      if (Number(candidate.gp) !== Number(challenger.gp)) continue;
-      // Skip if either player already used in another swap
-      if (usedPlayers.has(candidate.player) || usedPlayers.has(challenger.player)) continue;
-      const wrCandidate = effectiveWR(candidate);
-      const wrChallenger = effectiveWR(challenger);
-      if (wrChallenger > wrCandidate) {
-        usedPlayers.add(candidate.player);
-        usedPlayers.add(challenger.player);
-        pairs.push({ moveDown: candidate, moveUp: challenger, wrCandidate, wrChallenger });
-      }
-    }
-
-    if (pairs.length > 0) {
-      swapGroups.push({ harderGroup, easierGroup, pairs });
+  for (let i = 1; i <= 5; i++) {
+    const harderPlayers = ratingsByGroup[i] || [];
+    const easierPlayers = ratingsByGroup[i + 1] || [];
+    if (!harderPlayers.length || !easierPlayers.length) continue;
+    const worstInHarder = harderPlayers[harderPlayers.length - 1];
+    const bestInEasier = easierPlayers[0];
+    if (bestInEasier.rating < worstInHarder.rating) {
+      swapGroups.push({
+        harderGroup: `Group ${i} Leaderboard`,
+        easierGroup: `Group ${i + 1} Leaderboard`,
+        pairs: [{ moveDown: worstInHarder, moveUp: bestInEasier }]
+      });
     }
   }
 
@@ -186,17 +119,16 @@ export default function OverallRankings({ groups }) {
             <ArrowUpDown className="w-4 h-4" /> Suggested Group Swaps
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Rankings are partner-adjusted: win rate is corrected based on whether partners were stronger or weaker than the league average.
-            Players eligible if they've played ≥{MIN_MATCHES} matches.
+            Based on player ratings (group base − avg point diff ÷ 10). Players eligible if they've played ≥6 matches.
           </p>
-          {loadingAdj && <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1"><Loader2 className="w-3 h-3 animate-spin" /> Loading partner stats...</div>}
+          {loadingRatings && <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1"><Loader2 className="w-3 h-3 animate-spin" /> Loading ratings...</div>}
         </CardHeader>
       </Card>
 
       {swapGroups.length === 0 ? (
         <Card className="shadow-2xl">
           <CardContent className="py-8 text-center text-muted-foreground text-sm">
-            No swap suggestions yet — not enough eligible players (need ≥{MIN_MATCHES} matches).
+            No swap suggestions yet — not enough eligible players (need ≥6 matches).
           </CardContent>
         </Card>
       ) : (
@@ -210,22 +142,19 @@ export default function OverallRankings({ groups }) {
             <CardContent className="space-y-3">
               {sg.pairs.map((pair, j) => (
                 <div key={j}>
-                  {sg.pairs.length > 1 && (
-                    <p className="text-xs text-muted-foreground font-semibold mb-1">Swap {j + 1}</p>
-                  )}
                   <div className="flex gap-3 items-center">
-                    <PlayerCard player={pair.moveDown} groupName={sg.harderGroup} arrow="down" adjStats={adjStats} />
+                    <PlayerCard player={pair.moveDown} groupName={sg.harderGroup} arrow="down" />
                     <div className="text-center shrink-0">
                       <ArrowUpDown className="w-5 h-5 text-slate-400 mx-auto" />
                       <p className="text-xs text-muted-foreground mt-1">Swap</p>
                     </div>
-                    <PlayerCard player={pair.moveUp} groupName={sg.easierGroup} arrow="up" adjStats={adjStats} />
+                    <PlayerCard player={pair.moveUp} groupName={sg.easierGroup} arrow="up" />
                   </div>
                   <p className="text-xs text-center text-muted-foreground mt-2">
-                    <span className="text-red-500 font-semibold">{pair.moveDown.player}</span> ({pair.wrCandidate}% adj. WR) → {sg.easierGroup.replace(" Leaderboard", "")} ·{" "}
-                    <span className="text-green-600 font-semibold">{pair.moveUp.player}</span> ({pair.wrChallenger}% adj. WR) → {sg.harderGroup.replace(" Leaderboard", "")}
+                    <span className="text-red-500 font-semibold">{pair.moveDown.player}</span> (rating {pair.moveDown.rating}) → {sg.easierGroup.replace(" Leaderboard", "")} ·{" "}
+                    <span className="text-green-600 font-semibold">{pair.moveUp.player}</span> (rating {pair.moveUp.rating}) → {sg.harderGroup.replace(" Leaderboard", "")}
                   </p>
-                  <SwapExplainer pair={pair} adjStats={adjStats} sg={sg} />
+                  <SwapExplainer pair={pair} />
                 </div>
               ))}
             </CardContent>
@@ -235,7 +164,6 @@ export default function OverallRankings({ groups }) {
 
       {/* Per-group standings for reference */}
       {GROUP_NAMES.map(groupName => {
-        const ranked = groupRanked[groupName];
         const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => winRate(b) - winRate(a));
         if (all.length === 0) return null;
         return (
@@ -247,7 +175,7 @@ export default function OverallRankings({ groups }) {
               {all.map((r, i) => {
                 const gp = Number(r.gp);
                 const wr = winRate(r);
-                const eligible = (totalGP[r.player] || 0) >= MIN_MATCHES;
+                const ratingEntry = ratings.find(p => p.player === r.player);
                 return (
                   <div key={i} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2">
                     <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
@@ -257,7 +185,7 @@ export default function OverallRankings({ groups }) {
                     </div>
                     <div className="text-right shrink-0">
                       <p className={`text-sm font-bold ${wr >= 70 ? "text-green-600" : wr <= 30 ? "text-red-500" : "text-slate-700"}`}>{wr}%</p>
-                      <p className="text-xs text-muted-foreground">{eligible ? "WR" : "< 6 MP"}</p>
+                      {ratingEntry && <p className="text-xs text-yellow-600 font-semibold">R: {ratingEntry.rating}</p>}
                     </div>
                   </div>
                 );
