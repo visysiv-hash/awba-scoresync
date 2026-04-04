@@ -35,6 +35,7 @@ export default function OverallRankings({ groups }) {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
+  const [showExplainer, setShowExplainer] = useState(false);
 
   useEffect(() => {
     base44.functions.invoke("getPlayerRatings", {})
@@ -53,6 +54,39 @@ export default function OverallRankings({ groups }) {
   return (
     <>
     <div className="space-y-4">
+      {/* Explainer */}
+      <div className="bg-white border border-slate-200 rounded-xl shadow">
+        <button
+          onClick={() => setShowExplainer(!showExplainer)}
+          className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+        >
+          <span>📊 How are ratings calculated?</span>
+          {showExplainer ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+        {showExplainer && (
+          <div className="px-4 pb-4 text-xs text-slate-600 space-y-3 border-t pt-3">
+            <p><span className="font-bold">Formula:</span> Rating = Group Base − (Total Point Diff ÷ Games Played ÷ 10)</p>
+            <p>A <span className="font-semibold">lower rating</span> means a stronger player. The base starts at your current group number (e.g. Group 3 = 3.0). Your average point differential per game shifts it up or down.</p>
+            <div className="bg-slate-50 rounded-lg p-3 space-y-1">
+              <p className="font-semibold text-slate-700">Example — Alex in Group 3:</p>
+              <p>• Base rate: <strong>3.0</strong></p>
+              <p>• 20 games played, total point diff: <strong>+40</strong></p>
+              <p>• Avg diff per game: 40 ÷ 20 = <strong>2.0</strong></p>
+              <p>• Adjustment: 2.0 ÷ 10 = <strong>0.20</strong></p>
+              <p>• Rating: 3.0 − 0.20 = <strong>2.80</strong> → performing at Group 2 level 🔥</p>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-3 space-y-1">
+              <p className="font-semibold text-slate-700">Example — Jordan in Group 2:</p>
+              <p>• Base rate: <strong>2.0</strong></p>
+              <p>• 15 games played, total point diff: <strong>−30</strong></p>
+              <p>• Avg diff per game: −30 ÷ 15 = <strong>−2.0</strong></p>
+              <p>• Adjustment: −2.0 ÷ 10 = <strong>−0.20</strong></p>
+              <p>• Rating: 2.0 − (−0.20) = <strong>2.20</strong> → drifting into Group 3 territory</p>
+            </div>
+            <p className="text-slate-400 italic">Players need at least 6 games before a rating adjustment is applied.</p>
+          </div>
+        )}
+      </div>
       {loadingRatings && (
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Loader2 className="w-3 h-3 animate-spin" /> Loading ratings...
