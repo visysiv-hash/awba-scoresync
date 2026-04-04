@@ -164,7 +164,14 @@ export default function OverallRankings({ groups }) {
 
       {/* Per-group standings for reference */}
       {GROUP_NAMES.map(groupName => {
-        const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => winRate(b) - winRate(a));
+        const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => {
+            const ra = ratings.find(p => p.player === a.player);
+            const rb = ratings.find(p => p.player === b.player);
+            if (ra && rb) return ra.rating - rb.rating;
+            if (ra) return -1;
+            if (rb) return 1;
+            return winRate(b) - winRate(a);
+          });
         if (all.length === 0) return null;
         return (
           <Card key={groupName} className="shadow-2xl">
