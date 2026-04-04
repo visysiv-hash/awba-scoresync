@@ -6,7 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
-import GroupPlanner from './pages/GroupPlanner';
+
 import ExplainerDownload from './pages/ExplainerDownload';
 import UserManual from './pages/UserManual';
 import AdminScoreEdit from './pages/AdminScoreEdit';
@@ -51,7 +51,7 @@ const AuthenticatedApp = () => {
           <Route path="/manual" element={<UserManual />} />
           <Route path="/explainer" element={<ExplainerDownload />} />
           <Route path="/admin/scores" element={<AdminScoreEdit />} />
-          <Route path="/group-planner" element={<GroupPlanner />} />
+
           <Route path="*" element={<PageNotFound />} />
         </Routes>
       </div>

@@ -2,20 +2,31 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import PlayerPairingModal from "./PlayerPairingModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDown, Loader2, TrendingUp } from "lucide-react";
+import { ArrowDown, Loader2, TrendingUp, ChevronDown, ChevronUp, Info } from "lucide-react";
 
-const GROUP_NAMES = [
-  "Group 1 Leaderboard",
-  "Group 2 Leaderboard",
-  "Group 3 Leaderboard",
-  "Group 4 Leaderboard",
-  "Group 5 Leaderboard",
-  "Group 6 Leaderboard",
-];
-
-function winRate(row) {
-  const gp = Number(row.gp);
-  return gp > 0 ? Math.round((Number(row.wins) / gp) * 100) : 0;
+function RatingBreakdown({ p }) {
+  if (!p.hasStats) {
+    return (
+      <div className="mt-2 bg-slate-100 rounded-lg p-3 text-xs text-slate-500">
+        Not enough games played (&lt;6 matches) — using base rate only.
+        <br />Rating = Group {p.currentGroup} base rate = <strong>{p.currentGroup}.0</strong>
+      </div>
+    );
+  }
+  const diffPerGame = (p.diff / p.gp).toFixed(2);
+  const adjustment = (p.diff / p.gp / 10).toFixed(2);
+  return (
+    <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs space-y-1 text-slate-700">
+      <p className="font-semibold text-blue-700 mb-1">Rating Calculation</p>
+      <p>Base Rate (Group {p.currentGroup}): <span className="font-bold">{p.currentGroup}.0</span></p>
+      <p>Total Point Diff: <span className="font-bold">{p.diff >= 0 ? "+" : ""}{p.diff}</span></p>
+      <p>Total Games: <span className="font-bold">{p.gp}</span></p>
+      <p>Diff per game: <span className="font-bold">{diffPerGame}</span></p>
+      <p>Adjustment: <span className="font-bold">{adjustment}</span></p>
+      <p className="border-t pt-1 font-bold text-blue-800">Rating = {p.currentGroup}.0 − {adjustment} = {p.rating}</p>
+      <p className="text-slate-500 italic">Lower rating = stronger player</p>
+    </div>
+  );
 }
 
 export default function OverallRankings({ groups }) {
@@ -23,6 +34,7 @@ export default function OverallRankings({ groups }) {
   const [loadingRatings, setLoadingRatings] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [expandedPlayer, setExpandedPlayer] = useState(null);
 
   useEffect(() => {
     base44.functions.invoke("getPlayerRatings", {})
@@ -105,45 +117,43 @@ export default function OverallRankings({ groups }) {
         </Card>
       )}
 
-      {/* Per-group standings for reference */}
-      {GROUP_NAMES.map(groupName => {
-        const all = (groups[groupName] || []).filter(r => Number(r.gp) > 0).sort((a, b) => {
-          const ra = ratings.find(p => p.player === a.player);
-          const rb = ratings.find(p => p.player === b.player);
-          if (ra && rb) return ra.rating - rb.rating;
-          if (ra) return -1;
-          if (rb) return 1;
-          return winRate(b) - winRate(a);
-        });
-        if (all.length === 0) return null;
-        return (
-          <Card key={groupName} className="shadow-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">{groupName}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {all.map((r, i) => {
-                const gp = Number(r.gp);
-                const wr = winRate(r);
-                const ratingEntry = ratings.find(p => p.player === r.player);
-                return (
-                  <div key={i} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2">
-                    <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate cursor-pointer hover:text-blue-600 hover:underline" onClick={() => { setSelectedPlayer(r.player); setSelectedGroup(groupName); }}>{r.player}</p>
-                      <p className="text-xs text-muted-foreground">{gp} MP · {r.wins}W · {r.losses}L · Diff: {Number(r.diff) >= 0 ? "+" : ""}{r.diff}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className={`text-sm font-bold ${wr >= 70 ? "text-green-600" : wr <= 30 ? "text-red-500" : "text-slate-700"}`}>{wr}%</p>
-                      {ratingEntry && <p className="text-xs text-yellow-600 font-semibold">R: {ratingEntry.rating}</p>}
-                    </div>
+      {/* All Player Rankings */}
+      <Card className="shadow-2xl">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">All Player Rankings</CardTitle>
+          <div className="flex items-start gap-2 text-xs text-slate-400 mt-1">
+            <Info className="w-3 h-3 mt-0.5 shrink-0 text-yellow-400" />
+            <span>Rating = Group Base − Avg Point Diff per game ÷ 10. Tap a player to see breakdown.</span>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-1 p-3">
+          {ratings.map((p, i) => {
+            const isExpanded = expandedPlayer === p.player;
+            return (
+              <div
+                key={p.player}
+                className="rounded-lg px-3 py-2 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
+                onClick={() => setExpandedPlayer(isExpanded ? null : p.player)}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-muted-foreground w-6">#{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{p.player}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Group {p.currentGroup || "?"} · {p.hasStats ? `${p.gp} MP · Diff ${p.diff >= 0 ? "+" : ""}${p.diff}` : "< 6 games"}
+                    </p>
                   </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        );
-      })}
+                  <div className="text-right shrink-0 flex items-center gap-2">
+                    <span className={`text-sm font-bold ${p.hasStats ? "text-yellow-600" : "text-slate-400"}`}>{p.rating}</span>
+                    {isExpanded ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
+                  </div>
+                </div>
+                {isExpanded && <RatingBreakdown p={p} />}
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
     </div>
     {selectedPlayer && <PlayerPairingModal player={selectedPlayer} groupName={selectedGroup} onClose={() => setSelectedPlayer(null)} />}
     </>
