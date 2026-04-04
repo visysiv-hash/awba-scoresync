@@ -93,7 +93,7 @@ export default function OverallRankings({ groups }) {
         <Card className="shadow-2xl border-orange-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <ArrowDown className="w-4 h-4 text-orange-500" /> Demotion Watch
+              <ArrowDown className="w-4 h-4 text-orange-500" /> Room for Improvement
             </CardTitle>
             <p className="text-xs text-muted-foreground">
               Players whose rating has risen above their current group number — may be better suited to a lower group.
