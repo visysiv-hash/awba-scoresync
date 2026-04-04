@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { base44 } from "@/api/base44Client";
 
 import ScoreEntry from "../components/ScoreEntry";
 import GameSearch from "../components/GameSearch";
@@ -7,6 +8,12 @@ import GameSearch from "../components/GameSearch";
 export default function Home() {
   const [activeTab, setActiveTab] = useState("search");
   const [prefilledGame, setPrefilledGame] = useState(null);
+  const [totalVisits, setTotalVisits] = useState(null);
+
+  useEffect(() => {
+    base44.entities.PageVisit.create({ page: 'home' });
+    base44.entities.PageVisit.list().then(visits => setTotalVisits(visits.length));
+  }, []);
 
   const handleSelectGame = (game) => {
     setPrefilledGame(game);
@@ -19,6 +26,9 @@ export default function Home() {
         <div className="text-center mb-6">
           <img src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png" alt="Albury Wodonga Badminton" className="mx-auto mb-2 h-16 object-contain" />
           <h1 className="text-3xl font-bold text-white">Score Entry</h1>
+          {totalVisits !== null && (
+            <p className="text-xs text-slate-400 mt-1">{totalVisits} total app visits</p>
+          )}
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 space-y-1 mb-4">
