@@ -18,6 +18,13 @@ Deno.serve(async (req) => {
 
   await base44.asServiceRole.entities.Booking.update(bookingId, { status: 'cancelled' });
 
+  // Email the person who cancelled
+  await base44.asServiceRole.integrations.Core.SendEmail({
+    to: booking.user_email,
+    subject: `❌ Booking Cancelled — ${booking.session_title}`,
+    body: `Hi ${booking.user_name},\n\nYour booking for the following session has been cancelled:\n\nSession: ${booking.session_title}\nDate: ${booking.session_date}\n\nIf this was a mistake, you can rebook via the app (subject to availability).`,
+  });
+
   // If it was a confirmed booking, promote first waitlisted person
   if (booking.status === 'confirmed') {
     const allBookings = await base44.asServiceRole.entities.Booking.filter({ session_id: booking.session_id });
