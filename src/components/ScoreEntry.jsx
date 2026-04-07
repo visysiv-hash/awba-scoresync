@@ -12,13 +12,16 @@ import RoundScores from "./RoundScores";
 const emptyRounds = () => [{ score1: "", score2: "", }, { score1: "", score2: "" }];
 
 function isScoreEntryAllowed() {
-  // Australia/Sydney time
   const now = new Date();
   const sydney = new Date(now.toLocaleString("en-AU", { timeZone: "Australia/Sydney" }));
-  const day = sydney.getDay(); // 2 = Tuesday
+  const day = sydney.getDay();
   const hour = sydney.getHours();
   const minute = sydney.getMinutes();
-  return day === 2 && (hour > 19 || (hour === 19 && minute >= 30));
+  // Tuesday after 7:30 PM
+  const isTuesdayEvening = day === 2 && (hour > 19 || (hour === 19 && minute >= 30));
+  // Wednesday before 5 AM
+  const isWednesdayEarlyMorning = day === 3 && hour < 5;
+  return isTuesdayEvening || isWednesdayEarlyMorning;
 }
 
 export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
@@ -29,19 +32,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [restrictionEnabled, setRestrictionEnabled] = useState(() => {
-    return localStorage.getItem("scoreEntryRestriction") !== "false";
-  });
-
-  useEffect(() => {
-    const handler = () => {
-      setRestrictionEnabled(localStorage.getItem("scoreEntryRestriction") !== "false");
-    };
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
-  }, []);
-
-  const allowed = !restrictionEnabled || isScoreEntryAllowed();
+  const allowed = isScoreEntryAllowed();
 
   // Load prefilled game from search
   useEffect(() => {
