@@ -17,7 +17,7 @@ export default function BottomNav() {
     { path: "/leaderboard", label: "Leaderboard", icon: Trophy },
     { path: "/bookings", label: "Book", icon: CalendarCheck },
     { path: "/manual", label: "Manual", icon: BookOpen },
-    ...(isAdmin ? [{ path: "/admin/scores", label: "Admin", icon: ShieldCheck }] : []),
+    ...(isAdmin ? [{ path: "/admin/scores", label: "Scores", icon: ShieldCheck }, { path: "/admin/sessions", label: "Sessions", icon: CalendarCheck }] : []),
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-700 flex">
