@@ -17,8 +17,9 @@ export default function BottomNav() {
     { path: "/leaderboard", label: "Leaderboard", icon: Trophy },
     // { path: "/bookings", label: "Book", icon: CalendarCheck },
     { path: "/manual", label: "Manual", icon: BookOpen },
-    { path: "/register", label: "Register", icon: CalendarCheck },
-    ...(isAdmin ? [{ path: "/admin/scores", label: "Scores", icon: ShieldCheck }, { path: "/admin/registrations", label: "Regs", icon: ShieldCheck }] : []),
+    // { path: "/register", label: "Register", icon: CalendarCheck },
+    ...(isAdmin ? [{ path: "/admin/scores", label: "Scores", icon: ShieldCheck }] : []),
+    // admin registrations tab hidden: { path: "/admin/registrations", label: "Regs", icon: ShieldCheck }
     // admin sessions tab hidden: { path: "/admin/sessions", label: "Sessions", icon: CalendarCheck }
   ];
   return (
