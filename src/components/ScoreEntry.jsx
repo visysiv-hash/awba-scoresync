@@ -11,18 +11,6 @@ import RoundScores from "./RoundScores";
 
 const emptyRounds = () => [{ score1: "", score2: "", }, { score1: "", score2: "" }];
 
-function isScoreEntryAllowed() {
-  const now = new Date();
-  const sydney = new Date(now.toLocaleString("en-AU", { timeZone: "Australia/Sydney" }));
-  const day = sydney.getDay();
-  const hour = sydney.getHours();
-  const minute = sydney.getMinutes();
-  // Tuesday after 7:30 PM
-  const isTuesdayEvening = day === 2 && (hour > 19 || (hour === 19 && minute >= 30));
-  // Wednesday before 5 AM
-  const isWednesdayEarlyMorning = day === 3 && hour < 5;
-  return isTuesdayEvening || isWednesdayEarlyMorning;
-}
 
 export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   const [netNumber, setNetNumber] = useState("");
@@ -32,7 +20,6 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const allowed = isScoreEntryAllowed();
 
   // Load prefilled game from search
   useEffect(() => {
@@ -122,15 +109,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
     <Card className="shadow-2xl">
       <CardContent className="pt-6 space-y-5">
 
-        {!allowed && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center space-y-1">
-            <p className="text-amber-700 font-semibold text-sm">⏰ Score entry opens Tuesday at 7:30 PM</p>
-            <p className="text-amber-600 text-xs">Please return after league play has started.</p>
-          </div>
-        )}
-
-        {allowed && (
-          <div className="space-y-5">
+        <div className="space-y-5">
 
           <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
@@ -203,7 +182,6 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
           </div>
         )}
         </div>
-        )}
       </CardContent>
     </Card>
   );
