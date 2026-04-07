@@ -1,0 +1,41 @@
+{
+  "name": "Booking",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "title": "Session ID"
+    },
+    "session_title": {
+      "type": "string",
+      "title": "Session Title"
+    },
+    "session_date": {
+      "type": "string",
+      "title": "Session Date"
+    },
+    "user_email": {
+      "type": "string",
+      "title": "User Email"
+    },
+    "user_name": {
+      "type": "string",
+      "title": "User Name"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "confirmed",
+        "waitlisted",
+        "cancelled"
+      ]
+    }
+  },
+  "required": [
+    "session_id",
+    "user_email",
+    "user_name",
+    "status"
+  ]
+}

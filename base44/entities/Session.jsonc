@@ -1,0 +1,48 @@
+{
+  "name": "Session",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "date": {
+      "type": "string",
+      "title": "Date"
+    },
+    "start_time": {
+      "type": "string",
+      "title": "Start Time"
+    },
+    "end_time": {
+      "type": "string",
+      "title": "End Time"
+    },
+    "location": {
+      "type": "string",
+      "title": "Location"
+    },
+    "max_spots": {
+      "type": "number",
+      "title": "Max Spots"
+    },
+    "payment_required": {
+      "type": "boolean",
+      "title": "Payment Required"
+    },
+    "price": {
+      "type": "number",
+      "title": "Price (AUD)"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "title",
+    "date",
+    "start_time",
+    "max_spots"
+  ]
+}
