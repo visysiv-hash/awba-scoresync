@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -30,26 +30,16 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [restrictionEnabled, setRestrictionEnabled] = useState(() => {
-    const stored = localStorage.getItem("scoreEntryRestriction");
-    return stored === null ? true : stored === "true";
+    return localStorage.getItem("scoreEntryRestriction") !== "false";
   });
-  const tapCount = useRef(0);
-  const tapTimer = useRef(null);
 
-  const handleHiddenTap = () => {
-    tapCount.current += 1;
-    clearTimeout(tapTimer.current);
-    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
-    if (tapCount.current >= 5) {
-      tapCount.current = 0;
-      setRestrictionEnabled(prev => {
-        const next = !prev;
-        localStorage.setItem("scoreEntryRestriction", String(next));
-        toast.info(next ? "⏰ Time restriction ON" : "🔓 Time restriction OFF");
-        return next;
-      });
-    }
-  };
+  useEffect(() => {
+    const handler = () => {
+      setRestrictionEnabled(localStorage.getItem("scoreEntryRestriction") !== "false");
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
 
   const allowed = !restrictionEnabled || isScoreEntryAllowed();
 
@@ -140,8 +130,6 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   return (
     <Card className="shadow-2xl">
       <CardContent className="pt-6 space-y-5">
-        {/* Hidden tap target on the card top edge */}
-        <div className="absolute top-0 left-0 w-full h-1 cursor-default" onClick={handleHiddenTap} />
 
         {!allowed && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center space-y-1">
