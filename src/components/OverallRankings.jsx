@@ -8,8 +8,8 @@ function RatingBreakdown({ p }) {
   if (!p.hasStats) {
     return (
       <div className="mt-2 bg-slate-100 rounded-lg p-3 text-xs text-slate-500">
-        Not enough games played (&lt;6 matches) — using base rate only.
-        <br />Rating = Group {p.currentGroup} base rate = <strong>{p.currentGroup}.0</strong>
+        Not enough games played (&lt;6 matches) — using weighted base rate only.
+        <br />Weighted Base Rate = <strong>{p.currentGroup}</strong>
       </div>
     );
   }
@@ -18,12 +18,12 @@ function RatingBreakdown({ p }) {
   return (
     <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs space-y-1 text-slate-700">
       <p className="font-semibold text-blue-700 mb-1">Rating Calculation</p>
-      <p>Base Rate (Group {p.currentGroup}): <span className="font-bold">{p.currentGroup}.0</span></p>
+      <p>Weighted Base Rate: <span className="font-bold">{p.currentGroup}</span> <span className="text-slate-400">(avg group weighted by games played)</span></p>
       <p>Total Point Diff: <span className="font-bold">{p.diff >= 0 ? "+" : ""}{p.diff}</span></p>
       <p>Total Games: <span className="font-bold">{p.gp}</span></p>
       <p>Diff per game: <span className="font-bold">{diffPerGame}</span></p>
       <p>Adjustment: <span className="font-bold">{adjustment}</span></p>
-      <p className="border-t pt-1 font-bold text-blue-800">Rating = {p.currentGroup}.0 − {adjustment} = {p.rating}</p>
+      <p className="border-t pt-1 font-bold text-blue-800">Rating = {p.currentGroup} − {adjustment} = {p.rating}</p>
       <p className="text-slate-500 italic">Lower rating = stronger player</p>
     </div>
   );

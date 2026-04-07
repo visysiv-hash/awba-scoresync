@@ -77,18 +77,19 @@ Deno.serve(async (req) => {
         totalDiff += gs.diff;
       }
 
-      // Base group = lowest group number where GP > 0 (hardest group they've actually played in)
+      // Base group = weighted average of all groups played, weighted by GP
+      // E.g. 10 games in Group 3 + 2 games in Group 2 → base = (3×10 + 2×2) / 12 = 2.83
       // Falls back to Players sheet "last completed group" if no leaderboard games found
       let baseGroup = fallbackGroup;
-      const playedGroups = Object.entries(groupStats)
-        .filter(([, gs]) => gs.gp > 0)
-        .map(([g]) => parseInt(g));
-      if (playedGroups.length > 0) {
-        baseGroup = Math.min(...playedGroups);
+      const playedGroupEntries = Object.entries(groupStats).filter(([, gs]) => gs.gp > 0);
+      if (playedGroupEntries.length > 0) {
+        const weightedSum = playedGroupEntries.reduce((sum, [g, gs]) => sum + parseInt(g) * gs.gp, 0);
+        const totalPlayedGP = playedGroupEntries.reduce((sum, [, gs]) => sum + gs.gp, 0);
+        baseGroup = parseFloat((weightedSum / totalPlayedGP).toFixed(2));
       }
 
       let hasStats = false;
-      let rating = parseFloat(baseGroup.toFixed(2));
+      let rating = parseFloat(parseFloat(baseGroup).toFixed(2));
 
       if (totalGP >= 6) {
         rating = parseFloat((baseGroup - totalDiff / totalGP / 10).toFixed(2));
