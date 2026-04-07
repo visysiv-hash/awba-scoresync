@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,17 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import RoundScores from "./RoundScores";
 
-const emptyRounds = () => [{ score1: "", score2: "" }, { score1: "", score2: "" }];
+const emptyRounds = () => [{ score1: "", score2: "", }, { score1: "", score2: "" }];
 
-
+function isScoreEntryAllowed() {
+  // Australia/Sydney time
+  const now = new Date();
+  const sydney = new Date(now.toLocaleString("en-AU", { timeZone: "Australia/Sydney" }));
+  const day = sydney.getDay(); // 2 = Tuesday
+  const hour = sydney.getHours();
+  const minute = sydney.getMinutes();
+  return day === 2 && (hour > 19 || (hour === 19 && minute >= 30));
+}
 
 export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   const [netNumber, setNetNumber] = useState("");
@@ -21,6 +29,29 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [restrictionEnabled, setRestrictionEnabled] = useState(() => {
+    const stored = localStorage.getItem("scoreEntryRestriction");
+    return stored === null ? true : stored === "true";
+  });
+  const tapCount = useRef(0);
+  const tapTimer = useRef(null);
+
+  const handleHiddenTap = () => {
+    tapCount.current += 1;
+    clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
+    if (tapCount.current >= 5) {
+      tapCount.current = 0;
+      setRestrictionEnabled(prev => {
+        const next = !prev;
+        localStorage.setItem("scoreEntryRestriction", String(next));
+        toast.info(next ? "⏰ Time restriction ON" : "🔓 Time restriction OFF");
+        return next;
+      });
+    }
+  };
+
+  const allowed = !restrictionEnabled || isScoreEntryAllowed();
 
   // Load prefilled game from search
   useEffect(() => {
@@ -109,8 +140,20 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
   return (
     <Card className="shadow-2xl">
       <CardContent className="pt-6 space-y-5">
+        {/* Hidden tap target on the card top edge */}
+        <div className="absolute top-0 left-0 w-full h-1 cursor-default" onClick={handleHiddenTap} />
 
-        <div className="grid grid-cols-2 gap-4">
+        {!allowed && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center space-y-1">
+            <p className="text-amber-700 font-semibold text-sm">⏰ Score entry opens Tuesday at 7:30 PM</p>
+            <p className="text-amber-600 text-xs">Please return after league play has started.</p>
+          </div>
+        )}
+
+        {allowed && (
+          <div className="space-y-5">
+
+          <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label>Net Number</Label>
             <Select value={netNumber} onValueChange={setNetNumber}>
@@ -179,6 +222,8 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
             </div>
             <Button variant="outline" className="w-full" onClick={handleReset}>Enter Another Score</Button>
           </div>
+        )}
+        </div>
         )}
       </CardContent>
     </Card>
