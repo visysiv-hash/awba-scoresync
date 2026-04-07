@@ -1,0 +1,71 @@
+{
+  "name": "Registration",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "title": "Full Name"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "email": {
+      "type": "string",
+      "title": "Email"
+    },
+    "player_type": {
+      "type": "string",
+      "title": "New or Returning",
+      "enum": [
+        "new",
+        "returning"
+      ]
+    },
+    "skill_group": {
+      "type": "string",
+      "title": "Skill Group Preference",
+      "enum": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "unsure"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ]
+    },
+    "payment_status": {
+      "type": "string",
+      "title": "Payment Status",
+      "enum": [
+        "unpaid",
+        "paid"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "title": "Admin Notes"
+    },
+    "season_id": {
+      "type": "string",
+      "title": "Season ID"
+    }
+  },
+  "required": [
+    "full_name",
+    "phone",
+    "email",
+    "player_type",
+    "skill_group"
+  ]
+}

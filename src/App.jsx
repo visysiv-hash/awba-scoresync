@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
 import BookingSessions from './pages/BookingSessions';
+import Register from './pages/Register';
+import AdminRegistrations from './pages/AdminRegistrations';
 import AdminSessions from './pages/AdminSessions';
 
 import ExplainerDownload from './pages/ExplainerDownload';
@@ -55,6 +57,8 @@ const AuthenticatedApp = () => {
           <Route path="/admin/scores" element={<AdminScoreEdit />} />
           <Route path="/bookings" element={<BookingSessions />} />
           <Route path="/admin/sessions" element={<AdminSessions />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/admin/registrations" element={<AdminRegistrations />} />
 
           <Route path="*" element={<PageNotFound />} />
         </Routes>

@@ -1,0 +1,54 @@
+{
+  "name": "Season",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Season Name"
+    },
+    "start_date": {
+      "type": "string",
+      "title": "Start Date"
+    },
+    "end_date": {
+      "type": "string",
+      "title": "End Date"
+    },
+    "fee": {
+      "type": "number",
+      "title": "Registration Fee (AUD)"
+    },
+    "bank_name": {
+      "type": "string",
+      "title": "Bank Name"
+    },
+    "bsb": {
+      "type": "string",
+      "title": "BSB"
+    },
+    "account_number": {
+      "type": "string",
+      "title": "Account Number"
+    },
+    "account_name": {
+      "type": "string",
+      "title": "Account Name"
+    },
+    "payment_reference_instructions": {
+      "type": "string",
+      "title": "Payment Reference Instructions"
+    },
+    "registration_open": {
+      "type": "boolean",
+      "title": "Registration Open"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Additional Notes"
+    }
+  },
+  "required": [
+    "name",
+    "registration_open"
+  ]
+}
