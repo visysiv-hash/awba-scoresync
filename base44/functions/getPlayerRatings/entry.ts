@@ -22,8 +22,8 @@ Deno.serve(async (req) => {
       const name = (row[0] || "").trim();
       const active = (row[1] || "").toLowerCase();
       if (!name || active === "no") continue;
-      // fallback group: last completed (col4), else starting (col3), else 6
-      const fallbackGroup = parseInt(row[4]) || parseInt(row[3]) || 6;
+      // fallback group priority: Suggested Current (col5) > Last Completed (col4) > Starting (col3) > 6
+      const fallbackGroup = parseInt(row[5]) || parseInt(row[4]) || parseInt(row[3]) || 6;
       activePlayers[name] = fallbackGroup;
     }
 

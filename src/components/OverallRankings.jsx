@@ -116,7 +116,7 @@ export default function OverallRankings({ groups }) {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{p.player}</p>
                     <p className="text-xs text-muted-foreground">
-                      Group {p.currentGroup || "?"} · {p.hasStats ? `${p.gp} MP · Diff ${p.diff >= 0 ? "+" : ""}${p.diff}` : "< 6 games"}
+                      {p.gp > 0 ? `${p.gp} MP · Diff ${p.diff >= 0 ? "+" : ""}${p.diff}` : "No games recorded"}
                     </p>
                   </div>
                   <div className="text-right shrink-0 flex items-center gap-2">
@@ -148,9 +148,9 @@ export default function OverallRankings({ groups }) {
                 <TrendingUp className="w-4 h-4 text-yellow-500 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold">{p.player}</p>
-                  <p className="text-xs text-muted-foreground">Currently Group {p.currentGroup} · {p.gp} games · Diff {p.diff >= 0 ? "+" : ""}{p.diff}</p>
-                </div>
-                <div className="text-right shrink-0">
+                  <p className="text-xs text-muted-foreground">{p.gp} MP · Diff {p.diff >= 0 ? "+" : ""}{p.diff}</p>
+                  </div>
+                  <div className="text-right shrink-0">
                   <p className="text-sm font-bold text-yellow-700">Rating {p.rating}</p>
                   <p className="text-xs text-green-600 font-semibold">↑ Group {Math.ceil(p.rating)} territory</p>
                 </div>
@@ -177,7 +177,7 @@ export default function OverallRankings({ groups }) {
                 <ArrowDown className="w-4 h-4 text-orange-400 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold">{p.player}</p>
-                  <p className="text-xs text-muted-foreground">Currently Group {p.currentGroup} · {p.gp} games · Diff {p.diff >= 0 ? "+" : ""}{p.diff}</p>
+                  <p className="text-xs text-muted-foreground">{p.gp} MP · Diff {p.diff >= 0 ? "+" : ""}{p.diff}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-bold text-orange-700">Rating {p.rating}</p>
