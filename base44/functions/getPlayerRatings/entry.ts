@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch Group_Leaderboards sheet
-    const range = encodeURIComponent("Group_Leaderboards!A1:K500");
+    const range = encodeURIComponent("Group_Leaderboards!A1:K2000");
     const standingsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/${range}`;
     const standingsRes = await fetch(standingsUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
     const standingsJson = await standingsRes.json();
