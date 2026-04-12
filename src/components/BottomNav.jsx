@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { CalendarCheck } from "lucide-react";
-import { Home, BarChart2, Trophy, BookOpen, ShieldCheck } from "lucide-react";
+import { Home, BarChart2, Trophy, BookOpen, ShieldCheck, CalendarCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 
@@ -17,6 +16,7 @@ export default function BottomNav() {
     { path: "/leaderboard", label: "Leaderboard", icon: Trophy },
     // { path: "/bookings", label: "Book", icon: CalendarCheck },
     { path: "/manual", label: "Manual", icon: BookOpen },
+    { path: "/availability", label: "Available", icon: CalendarCheck },
     // { path: "/register", label: "Register", icon: CalendarCheck },
     ...(isAdmin ? [{ path: "/admin/scores", label: "Scores", icon: ShieldCheck }] : []),
     // admin registrations tab hidden: { path: "/admin/registrations", label: "Regs", icon: ShieldCheck }
