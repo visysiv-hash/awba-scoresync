@@ -44,6 +44,8 @@ export default function RoundStandingsChart({ playerName }) {
       .finally(() => setGamesLoading(false));
   }, [selectedRound, playerName]);
 
+  const clean = (val) => (typeof val === "string" && val.startsWith("#")) ? "—" : val;
+
   const selectedRoundRows = data[selectedRound] || [];
   const player = selectedRound
     ? selectedRoundRows.find(r => (r.player || r.name || Object.values(r)[0] || "").toLowerCase() === playerName.toLowerCase())
@@ -80,12 +82,12 @@ export default function RoundStandingsChart({ playerName }) {
                   {player ? (
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { label: "Wins", value: player.wins ?? "—", color: "text-green-600" },
-                        { label: "Losses", value: player.losses ?? "—", color: "text-red-500" },
-                        { label: "Draws", value: player.draws ?? "—", color: "text-yellow-500" },
-                        { label: "Pts For", value: player["points for"] ?? player.pointsFor ?? "—", color: "text-blue-600" },
-                        { label: "Pts Against", value: player["points against"] ?? player.pointsAgainst ?? "—", color: "text-slate-500" },
-                        { label: "Diff", value: player.diff ?? "—", color: Number(player.diff) >= 0 ? "text-green-600" : "text-red-500" },
+                        { label: "Wins", value: clean(player.wins ?? "—"), color: "text-green-600" },
+                        { label: "Losses", value: clean(player.losses ?? "—"), color: "text-red-500" },
+                        { label: "Draws", value: clean(player.draws ?? "—"), color: "text-yellow-500" },
+                        { label: "Pts For", value: clean(player["points for"] ?? player.pointsFor ?? "—"), color: "text-blue-600" },
+                        { label: "Pts Against", value: clean(player["points against"] ?? player.pointsAgainst ?? "—"), color: "text-slate-500" },
+                        { label: "Diff", value: clean(player.diff ?? "—"), color: Number(player.diff) >= 0 ? "text-green-600" : "text-red-500" },
                       ].map(stat => (
                         <div key={stat.label} className="text-center">
                           <p className="text-xs text-muted-foreground">{stat.label}</p>
