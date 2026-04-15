@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,9 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Search, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
-export default function GameSearch({ onSelectGame, submittedScores = {} }) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState(null);
+export default function GameSearch({ onSelectGame, submittedScores = {}, query, onQueryChange, results, onResultsChange }) {
   const [loading, setLoading] = useState(false);
 
   const handleSearch = async () => {
@@ -22,7 +20,7 @@ export default function GameSearch({ onSelectGame, submittedScores = {} }) {
     if (res.data?.error) {
       toast.error(res.data.error);
     } else {
-      setResults(res.data?.results || []);
+      onResultsChange(res.data?.results || []);
     }
   };
 
@@ -34,7 +32,7 @@ export default function GameSearch({ onSelectGame, submittedScores = {} }) {
             className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
             placeholder="Search by player name..."
             value={query}
-            onChange={e => { setQuery(e.target.value); setResults(null); }}
+            onChange={e => { onQueryChange(e.target.value); onResultsChange(null); }}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
           />
           <Button onClick={handleSearch} disabled={loading || !query}>

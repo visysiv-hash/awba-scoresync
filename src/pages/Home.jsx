@@ -11,6 +11,9 @@ export default function Home() {
   const [totalVisits, setTotalVisits] = useState(null);
   // Track locally submitted scores so GameSearch can show ✓ Scored instantly
   const [submittedScores, setSubmittedScores] = useState({});
+  // Persist search state across tab switches
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
 
   useEffect(() => {
     base44.entities.PageVisit.create({ page: 'home' });
@@ -55,7 +58,14 @@ export default function Home() {
             <TabsTrigger value="search" className="flex-1">Search Match</TabsTrigger>
           </TabsList>
           <TabsContent value="search">
-            <GameSearch onSelectGame={handleSelectGame} submittedScores={submittedScores} />
+            <GameSearch
+              onSelectGame={handleSelectGame}
+              submittedScores={submittedScores}
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              results={searchResults}
+              onResultsChange={setSearchResults}
+            />
           </TabsContent>
           <TabsContent value="entry">
             <ScoreEntry
