@@ -9,6 +9,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("search");
   const [prefilledGame, setPrefilledGame] = useState(null);
   const [totalVisits, setTotalVisits] = useState(null);
+  // Track locally submitted scores so GameSearch can show ✓ Scored instantly
+  const [submittedScores, setSubmittedScores] = useState({});
 
   useEffect(() => {
     base44.entities.PageVisit.create({ page: 'home' });
@@ -18,6 +20,18 @@ export default function Home() {
   const handleSelectGame = (game) => {
     setPrefilledGame(game);
     setActiveTab("entry");
+  };
+
+  const handleScoreSubmitted = ({ net, game, rounds, total1, total2, goBack }) => {
+    if (net && game) {
+      const key = `${net}-${game}`;
+      setSubmittedScores(prev => ({
+        ...prev,
+        [key]: { submitted: true, rounds, total1, total2 }
+      }));
+    }
+    // Always go back to search after submission
+    setActiveTab("search");
   };
 
   return (
@@ -41,10 +55,14 @@ export default function Home() {
             <TabsTrigger value="search" className="flex-1">Search Match</TabsTrigger>
           </TabsList>
           <TabsContent value="search">
-            <GameSearch onSelectGame={handleSelectGame} />
+            <GameSearch onSelectGame={handleSelectGame} submittedScores={submittedScores} />
           </TabsContent>
           <TabsContent value="entry">
-            <ScoreEntry prefilledGame={prefilledGame} onPrefilledUsed={() => setPrefilledGame(null)} />
+            <ScoreEntry
+              prefilledGame={prefilledGame}
+              onPrefilledUsed={() => setPrefilledGame(null)}
+              onScoreSubmitted={handleScoreSubmitted}
+            />
           </TabsContent>
         </Tabs>
 

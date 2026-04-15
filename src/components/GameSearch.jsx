@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Search, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
-export default function GameSearch({ onSelectGame }) {
+export default function GameSearch({ onSelectGame, submittedScores = {} }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -47,39 +47,46 @@ export default function GameSearch({ onSelectGame }) {
             {results.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">No matches found.</p>
             ) : (
-              results.map((g, i) => (
-                <div
-                  key={i}
-                  className="border rounded-lg p-3 text-sm space-y-1 cursor-pointer hover:bg-accent transition-colors"
-                  onClick={() => onSelectGame(g)}
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                        <span>Net {g.net} · Match {g.game}</span>
-                        {g.submitted && <span className="text-green-600 font-medium">✓ Scored</span>}
-                      </div>
-                      <div className="flex items-center gap-2 font-semibold">
-                        <span className="text-blue-600">{g.team1}</span>
-                        <span className="text-muted-foreground text-xs">VS</span>
-                        <span className="text-red-600">{g.team2}</span>
-                      </div>
-                      {g.submitted && (
-                        <div className="text-xs text-muted-foreground space-y-0.5 pt-1 border-t mt-1">
-                          {g.rounds?.map((r, ri) => (
-                            <p key={ri}>Game {ri + 1}: <b>{r.score1}</b> – <b>{r.score2}</b></p>
-                          ))}
-                          <p className="font-semibold">Total: <b>{g.total1}</b> – <b>{g.total2}</b></p>
+              results.map((g, i) => {
+                const localSubmit = submittedScores[`${g.net}-${g.game}`];
+                const isScored = g.submitted || !!localSubmit;
+                const displayRounds = localSubmit?.rounds || g.rounds;
+                const displayTotal1 = localSubmit?.total1 ?? g.total1;
+                const displayTotal2 = localSubmit?.total2 ?? g.total2;
+                return (
+                  <div
+                    key={i}
+                    className="border rounded-lg p-3 text-sm space-y-1 cursor-pointer hover:bg-accent transition-colors"
+                    onClick={() => onSelectGame(g)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                          <span>Net {g.net} · Match {g.game}</span>
+                          {isScored && <span className="text-green-600 font-medium">✓ Scored</span>}
                         </div>
-                      )}
+                        <div className="flex items-center gap-2 font-semibold">
+                          <span className="text-blue-600">{g.team1}</span>
+                          <span className="text-muted-foreground text-xs">VS</span>
+                          <span className="text-red-600">{g.team2}</span>
+                        </div>
+                        {isScored && displayRounds && (
+                          <div className="text-xs text-muted-foreground space-y-0.5 pt-1 border-t mt-1">
+                            {displayRounds.map((r, ri) => (
+                              <p key={ri}>Game {ri + 1}: <b>{r.score1}</b> – <b>{r.score2}</b></p>
+                            ))}
+                            <p className="font-semibold">Total: <b>{displayTotal1}</b> – <b>{displayTotal2}</b></p>
+                          </div>
+                        )}
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground ml-2 shrink-0" />
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground ml-2 shrink-0" />
+                    {!isScored && (
+                      <p className="text-xs text-blue-600 font-medium">Click to enter scores →</p>
+                    )}
                   </div>
-                  {!g.submitted && (
-                    <p className="text-xs text-blue-600 font-medium">Click to enter scores →</p>
-                  )}
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}

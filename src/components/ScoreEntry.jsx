@@ -12,7 +12,7 @@ import RoundScores from "./RoundScores";
 const emptyRounds = () => [{ score1: "", score2: "", }, { score1: "", score2: "" }];
 
 
-export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
+export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubmitted }) {
   const [netNumber, setNetNumber] = useState("");
   const [gameNumber, setGameNumber] = useState("");
   const [gameDetails, setGameDetails] = useState(null);
@@ -90,8 +90,9 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
     if (res.data?.success) {
       const t1 = rounds.reduce((s, r) => s + Number(r.score1), 0);
       const t2 = rounds.reduce((s, r) => s + Number(r.score2), 0);
-      toast.success(`✅ ${gameDetails.team1} ${t1} – ${t2} ${gameDetails.team2}`, { description: "Scores saved successfully!" });
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ["#16a34a", "#2563eb", "#f59e0b", "#dc2626"] });
+      setSubmitted(true);
+      onScoreSubmitted?.({ net: gameDetails.net, game: gameDetails.game, rounds, total1: t1, total2: t2 });
     } else {
       toast.error(res.data?.error || "Failed to submit scores. Please try again.");
     }
@@ -178,6 +179,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed }) {
                 <span className="font-bold">{rounds.reduce((s, r) => s + Number(r.score2), 0)}</span> {gameDetails.team2}
               </p>
             </div>
+            <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => onScoreSubmitted?.({ goBack: true })}>← Back to Game List</Button>
             <Button variant="outline" className="w-full" onClick={handleReset}>Enter Another Score</Button>
           </div>
         )}
