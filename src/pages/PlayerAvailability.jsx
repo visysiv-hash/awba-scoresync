@@ -13,15 +13,6 @@ export default function PlayerAvailability() {
   const [sortDir, setSortDir] = useState("asc");
   const [showSchedule, setShowSchedule] = useState(false);
 
-  const schedulePlayers = useMemo(() => {
-    return [...merged].sort((a, b) => {
-      if (a.rating === null && b.rating === null) return 0;
-      if (a.rating === null) return 1;
-      if (b.rating === null) return -1;
-      return a.rating - b.rating;
-    });
-  }, [merged]);
-
   useEffect(() => {
     Promise.all([
       base44.functions.invoke("getPlayerAvailability", {}),
@@ -71,6 +62,15 @@ export default function PlayerAvailability() {
     });
   }, [merged, sortField, sortDir]);
 
+  const schedulePlayers = useMemo(() => {
+    return [...merged].sort((a, b) => {
+      if (a.rating === null && b.rating === null) return 0;
+      if (a.rating === null) return 1;
+      if (b.rating === null) return -1;
+      return a.rating - b.rating;
+    });
+  }, [merged]);
+
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -102,6 +102,7 @@ export default function PlayerAvailability() {
             <Loader2 className="w-6 h-6 animate-spin text-yellow-400" />
           </div>
         ) : (
+          <>
           <Button
             onClick={() => setShowSchedule(s => !s)}
             className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold"
@@ -178,6 +179,7 @@ export default function PlayerAvailability() {
               </div>
             </CardContent>
           </Card>
+          </>
         )}
 
         <p className="text-xs text-slate-500 text-center pb-2">
