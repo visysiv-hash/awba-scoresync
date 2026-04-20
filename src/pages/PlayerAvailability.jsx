@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users, CalendarDays } from "lucide-react";
+import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import SuggestedSchedule from "../components/SuggestedSchedule";
 import SuggestedGroups from "../components/SuggestedGroups";
 
 export default function PlayerAvailability() {
@@ -12,7 +11,6 @@ export default function PlayerAvailability() {
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState("rating");
   const [sortDir, setSortDir] = useState("asc");
-  const [showSchedule, setShowSchedule] = useState(false);
   const [showGroups, setShowGroups] = useState(false);
 
   useEffect(() => {
@@ -105,25 +103,15 @@ export default function PlayerAvailability() {
           </div>
         ) : (
           <>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setShowGroups(s => !s)}
-              className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              {showGroups ? "Hide Groups" : "Show Groups"}
-            </Button>
-            <Button
-              onClick={() => setShowSchedule(s => !s)}
-              className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold"
-            >
-              <CalendarDays className="w-4 h-4 mr-2" />
-              {showSchedule ? "Hide Pairings" : "Game Pairings"}
-            </Button>
-          </div>
+          <Button
+            onClick={() => setShowGroups(s => !s)}
+            className="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold"
+          >
+            <Users className="w-4 h-4 mr-2" />
+            {showGroups ? "Hide Groups" : "Show Groups"}
+          </Button>
 
           {showGroups && <SuggestedGroups players={schedulePlayers} />}
-          {showSchedule && <SuggestedSchedule players={schedulePlayers} />}
 
           <Card className="bg-slate-800 border-slate-700 text-white shadow-xl">
             <CardHeader className="pb-2">
