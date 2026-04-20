@@ -13,6 +13,15 @@ export default function PlayerAvailability() {
   const [sortDir, setSortDir] = useState("asc");
   const [showSchedule, setShowSchedule] = useState(false);
 
+  const schedulePlayers = useMemo(() => {
+    return [...merged].sort((a, b) => {
+      if (a.rating === null && b.rating === null) return 0;
+      if (a.rating === null) return 1;
+      if (b.rating === null) return -1;
+      return a.rating - b.rating;
+    });
+  }, [merged]);
+
   useEffect(() => {
     Promise.all([
       base44.functions.invoke("getPlayerAvailability", {}),
@@ -101,12 +110,7 @@ export default function PlayerAvailability() {
             {showSchedule ? "Hide Suggested Schedule" : "Suggest Schedule"}
           </Button>
 
-          {showSchedule && <SuggestedSchedule players={merged.sort((a, b) => {
-            if (a.rating === null && b.rating === null) return 0;
-            if (a.rating === null) return 1;
-            if (b.rating === null) return -1;
-            return a.rating - b.rating;
-          })} />}
+          {showSchedule && <SuggestedSchedule players={schedulePlayers} />}
 
           <Card className="bg-slate-800 border-slate-700 text-white shadow-xl">
             <CardHeader className="pb-2">
