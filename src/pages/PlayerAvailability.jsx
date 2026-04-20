@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SuggestedSchedule from "../components/SuggestedSchedule";
+import SuggestedGroups from "../components/SuggestedGroups";
 
 export default function PlayerAvailability() {
   const [availablePlayers, setAvailablePlayers] = useState([]);
@@ -12,6 +13,7 @@ export default function PlayerAvailability() {
   const [sortField, setSortField] = useState("rating");
   const [sortDir, setSortDir] = useState("asc");
   const [showSchedule, setShowSchedule] = useState(false);
+  const [showGroups, setShowGroups] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -103,14 +105,24 @@ export default function PlayerAvailability() {
           </div>
         ) : (
           <>
-          <Button
-            onClick={() => setShowSchedule(s => !s)}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold"
-          >
-            <CalendarDays className="w-4 h-4 mr-2" />
-            {showSchedule ? "Hide Suggested Schedule" : "Suggest Schedule"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowGroups(s => !s)}
+              className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              {showGroups ? "Hide Groups" : "Show Groups"}
+            </Button>
+            <Button
+              onClick={() => setShowSchedule(s => !s)}
+              className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold"
+            >
+              <CalendarDays className="w-4 h-4 mr-2" />
+              {showSchedule ? "Hide Pairings" : "Game Pairings"}
+            </Button>
+          </div>
 
+          {showGroups && <SuggestedGroups players={schedulePlayers} />}
           {showSchedule && <SuggestedSchedule players={schedulePlayers} />}
 
           <Card className="bg-slate-800 border-slate-700 text-white shadow-xl">
