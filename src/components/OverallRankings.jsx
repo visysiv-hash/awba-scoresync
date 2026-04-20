@@ -8,18 +8,53 @@ function RatingBreakdown({ p }) {
   if (!p.hasStats) {
     return (
       <div className="mt-2 bg-slate-100 rounded-lg p-3 text-xs text-slate-500">
-        Not enough games played (&lt;6 matches) — using weighted base rate only.
-        <br />Weighted Base Rate = <strong>{p.currentGroup}</strong>
+        Not enough games played (&lt;6 total games) — using base group only.
+        <br />Base Group = <strong>{p.currentGroup}</strong>
       </div>
     );
   }
+
+  // Group rounds by year (round numbers don't have years, so group under "2026")
+  // Rounds are just round numbers; label the season as current year
+  const season = "2026";
+  const rounds = p.rounds || [];
+
   return (
-    <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs space-y-1 text-slate-700">
-      <p className="font-semibold text-blue-700 mb-1">Rating Calculation (Veterans Method)</p>
-      <p>Weighted Base Group: <span className="font-bold">{p.currentGroup}</span> <span className="text-slate-400">(avg group weighted by games played)</span></p>
-      <p>Total Games: <span className="font-bold">{p.gp}</span> · Total Point Diff: <span className="font-bold">{p.diff >= 0 ? "+" : ""}{p.diff}</span></p>
-      <p className="border-t pt-1 font-bold text-blue-800">Final Rating = <span className="text-yellow-600">{p.rating}</span></p>
-      <p className="text-slate-500 italic">Each weekly session rated independently (Group − diff/gp/10), then weighted-averaged. Lower = stronger.</p>
+    <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg overflow-hidden text-xs text-slate-700">
+      {/* Season header */}
+      <div className="bg-blue-200 px-3 py-1.5 font-bold text-blue-900 text-xs">{season} SEASON</div>
+
+      {/* Table */}
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="bg-blue-100 text-slate-600">
+            <th className="text-left px-2 py-1">Round</th>
+            <th className="text-center px-2 py-1">Group</th>
+            <th className="text-center px-2 py-1">GP</th>
+            <th className="text-center px-2 py-1">Diff</th>
+            <th className="text-center px-2 py-1">Rating</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rounds.map((r, i) => (
+            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
+              <td className="px-2 py-1">Round {r.round}</td>
+              <td className="text-center px-2 py-1">{r.group}</td>
+              <td className="text-center px-2 py-1">{r.gp}</td>
+              <td className="text-center px-2 py-1">{r.diff >= 0 ? "+" : ""}{r.diff}</td>
+              <td className="text-center px-2 py-1 font-semibold">{r.sessionRating}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="bg-blue-200 font-bold text-blue-900">
+            <td className="px-2 py-1" colSpan={2}>Total Games Played: {p.gp}</td>
+            <td className="text-center px-2 py-1">{p.gp}</td>
+            <td className="text-center px-2 py-1">{p.diff >= 0 ? "+" : ""}{p.diff}</td>
+            <td className="text-center px-2 py-1 text-yellow-700">avg: {p.rating}</td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   );
 }

@@ -114,7 +114,16 @@ Deno.serve(async (req) => {
         hasStats = true;
       }
 
-      players.push({ player: name, currentGroup: baseGroup, gp: totalGP, diff: totalDiff, rating, hasStats });
+      // Build per-round detail for the breakdown table
+      const roundDetail = rounds.map(r => ({
+        round: r.round,
+        group: r.group,
+        gp: r.gp,
+        diff: r.diff,
+        sessionRating: parseFloat((r.group - (r.diff / r.gp / 10)).toFixed(2)),
+      }));
+
+      players.push({ player: name, currentGroup: baseGroup, gp: totalGP, diff: totalDiff, rating, hasStats, rounds: roundDetail });
     }
 
     players.sort((a, b) => a.rating - b.rating);
