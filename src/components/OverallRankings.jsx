@@ -13,18 +13,13 @@ function RatingBreakdown({ p }) {
       </div>
     );
   }
-  const diffPerGame = (p.diff / p.gp).toFixed(2);
-  const adjustment = (p.diff / p.gp / 10).toFixed(2);
   return (
     <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs space-y-1 text-slate-700">
-      <p className="font-semibold text-blue-700 mb-1">Rating Calculation</p>
-      <p>Weighted Base Rate: <span className="font-bold">{p.currentGroup}</span> <span className="text-slate-400">(avg group weighted by games played)</span></p>
-      <p>Total Point Diff: <span className="font-bold">{p.diff >= 0 ? "+" : ""}{p.diff}</span></p>
-      <p>Total Games: <span className="font-bold">{p.gp}</span></p>
-      <p>Diff per game: <span className="font-bold">{diffPerGame}</span></p>
-      <p>Adjustment: <span className="font-bold">{adjustment}</span></p>
-      <p className="border-t pt-1 font-bold text-blue-800">Rating = {p.currentGroup} − {adjustment} = {p.rating}</p>
-      <p className="text-slate-500 italic">Lower rating = stronger player</p>
+      <p className="font-semibold text-blue-700 mb-1">Rating Calculation (Veterans Method)</p>
+      <p>Weighted Base Group: <span className="font-bold">{p.currentGroup}</span> <span className="text-slate-400">(avg group weighted by games played)</span></p>
+      <p>Total Games: <span className="font-bold">{p.gp}</span> · Total Point Diff: <span className="font-bold">{p.diff >= 0 ? "+" : ""}{p.diff}</span></p>
+      <p className="border-t pt-1 font-bold text-blue-800">Final Rating = <span className="text-yellow-600">{p.rating}</span></p>
+      <p className="text-slate-500 italic">Each weekly session rated independently (Group − diff/gp/10), then weighted-averaged. Lower = stronger.</p>
     </div>
   );
 }
@@ -65,25 +60,15 @@ export default function OverallRankings({ groups }) {
         </button>
         {showExplainer && (
           <div className="px-4 pb-4 text-xs text-slate-600 space-y-3 border-t pt-3">
-            <p><span className="font-bold">Formula:</span> Rating = Group Base − (Total Point Diff ÷ Games Played ÷ 10)</p>
-            <p>A <span className="font-semibold">lower rating</span> means a stronger player. The base starts at your current group number (e.g. Group 3 = 3.0). Your average point differential per game shifts it up or down.</p>
+            <p><span className="font-bold">Formula (Veterans Method):</span> Each weekly session is treated as a separate tournament. Per session: <em>Session Rating = Group − (Diff ÷ GP ÷ 10)</em>. Final rating = weighted average of all session ratings, weighted by games played.</p>
+            <p>A <span className="font-semibold">lower rating</span> means a stronger player. Base starts at your group number (e.g. Group 3 = 3.0).</p>
             <div className="bg-slate-50 rounded-lg p-3 space-y-1">
               <p className="font-semibold text-slate-700">Example — Alex in Group 3:</p>
-              <p>• Base rate: <strong>3.0</strong></p>
-              <p>• 20 games played, total point diff: <strong>+40</strong></p>
-              <p>• Avg diff per game: 40 ÷ 20 = <strong>2.0</strong></p>
-              <p>• Adjustment: 2.0 ÷ 10 = <strong>0.20</strong></p>
-              <p>• Rating: 3.0 − 0.20 = <strong>2.80</strong> → performing at Group 2 level 🔥</p>
+              <p>• Week 1: 3 games, diff <strong>+6</strong> → 3 − (6÷3÷10) = <strong>2.80</strong></p>
+              <p>• Week 2: 3 games, diff <strong>−3</strong> → 3 − (−3÷3÷10) = <strong>3.10</strong></p>
+              <p>• Final: (2.80×3 + 3.10×3) ÷ 6 = <strong>2.95</strong></p>
             </div>
-            <div className="bg-slate-50 rounded-lg p-3 space-y-1">
-              <p className="font-semibold text-slate-700">Example — Jordan in Group 2:</p>
-              <p>• Base rate: <strong>2.0</strong></p>
-              <p>• 15 games played, total point diff: <strong>−30</strong></p>
-              <p>• Avg diff per game: −30 ÷ 15 = <strong>−2.0</strong></p>
-              <p>• Adjustment: −2.0 ÷ 10 = <strong>−0.20</strong></p>
-              <p>• Rating: 2.0 − (−0.20) = <strong>2.20</strong> → drifting into Group 3 territory</p>
-            </div>
-            <p className="text-slate-400 italic">Players need at least 6 games before a rating adjustment is applied.</p>
+            <p className="text-slate-400 italic">Players need at least 6 total games before a rating adjustment is applied.</p>
           </div>
         )}
       </div>
