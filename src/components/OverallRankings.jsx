@@ -19,11 +19,15 @@ function RatingBreakdown({ p }) {
   // Rounds are just round numbers; label the season as current year
   const season = "2026";
   const rounds = p.rounds || [];
+  const hasOverride = p.ratingBaseGroup != null;
 
   return (
     <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg overflow-hidden text-xs text-slate-700">
       {/* Season header */}
-      <div className="bg-blue-200 px-3 py-1.5 font-bold text-blue-900 text-xs">{season} SEASON</div>
+      <div className="bg-blue-200 px-3 py-1.5 font-bold text-blue-900 text-xs flex items-center justify-between">
+        <span>{season} SEASON</span>
+        {hasOverride && <span className="text-orange-600 font-semibold">* Base overridden → Group {p.ratingBaseGroup}</span>}
+      </div>
 
       {/* Table */}
       <table className="w-full text-xs">
@@ -39,12 +43,17 @@ function RatingBreakdown({ p }) {
         </thead>
         <tbody>
           {rounds.map((r, i) => {
+            const base = r.base || r.group;
             const adj = parseFloat((r.diff / r.gp / 10).toFixed(3));
-            const calc = `${r.group} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp} ÷ 10) = ${r.group} − ${adj}`;
+            const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp} ÷ 10) = ${base} − ${adj}`;
+            const overrideUsed = r.base && r.base !== r.group;
             return (
             <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
               <td className="px-2 py-1">Round {r.round}</td>
-              <td className="text-center px-2 py-1">{r.group}</td>
+              <td className="text-center px-2 py-1">
+                {r.group}
+                {overrideUsed && <span className="ml-1 text-orange-500" title={`Base overridden to ${r.base}`}>*</span>}
+              </td>
               <td className="text-center px-2 py-1">{r.gp}</td>
               <td className="text-center px-2 py-1">{r.diff >= 0 ? "+" : ""}{r.diff}</td>
               <td className="px-2 py-1 text-slate-400 font-mono">{calc}</td>
