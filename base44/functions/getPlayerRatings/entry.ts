@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         for (const r of rounds) {
           // Use override base if set, otherwise use the group played that round
           const base = ratingBaseGroup || r.group;
-          const roundRating = base - (r.diff / r.gp / 10);
+          const roundRating = base - (r.diff / r.gp / 20);
           weightedRatingSum += roundRating * r.gp;
           totalWeight += r.gp;
         }
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
           base,                   // base used for calculation (may differ if override set)
           gp: r.gp,
           diff: r.diff,
-          sessionRating: parseFloat((base - (r.diff / r.gp / 10)).toFixed(2)),
+          sessionRating: parseFloat((base - (r.diff / r.gp / 20)).toFixed(2)),
         };
       });
 
