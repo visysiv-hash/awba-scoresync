@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users } from "lucide-react";
+import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SuggestedSchedule from "../components/SuggestedSchedule";
 
 export default function PlayerAvailability() {
   const [availablePlayers, setAvailablePlayers] = useState([]);
@@ -10,6 +11,7 @@ export default function PlayerAvailability() {
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState("rating");
   const [sortDir, setSortDir] = useState("asc");
+  const [showSchedule, setShowSchedule] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -91,6 +93,21 @@ export default function PlayerAvailability() {
             <Loader2 className="w-6 h-6 animate-spin text-yellow-400" />
           </div>
         ) : (
+          <Button
+            onClick={() => setShowSchedule(s => !s)}
+            className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold"
+          >
+            <CalendarDays className="w-4 h-4 mr-2" />
+            {showSchedule ? "Hide Suggested Schedule" : "Suggest Schedule"}
+          </Button>
+
+          {showSchedule && <SuggestedSchedule players={merged.sort((a, b) => {
+            if (a.rating === null && b.rating === null) return 0;
+            if (a.rating === null) return 1;
+            if (b.rating === null) return -1;
+            return a.rating - b.rating;
+          })} />}
+
           <Card className="bg-slate-800 border-slate-700 text-white shadow-xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center justify-between">
