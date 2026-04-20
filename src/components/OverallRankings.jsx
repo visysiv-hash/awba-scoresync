@@ -33,19 +33,25 @@ function RatingBreakdown({ p }) {
             <th className="text-center px-2 py-1">Group</th>
             <th className="text-center px-2 py-1">GP</th>
             <th className="text-center px-2 py-1">Diff</th>
+            <th className="text-left px-2 py-1">Calculation</th>
             <th className="text-center px-2 py-1">Rating</th>
           </tr>
         </thead>
         <tbody>
-          {rounds.map((r, i) => (
+          {rounds.map((r, i) => {
+            const adj = parseFloat((r.diff / r.gp / 10).toFixed(3));
+            const calc = `${r.group} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp} ÷ 10) = ${r.group} − ${adj}`;
+            return (
             <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
               <td className="px-2 py-1">Round {r.round}</td>
               <td className="text-center px-2 py-1">{r.group}</td>
               <td className="text-center px-2 py-1">{r.gp}</td>
               <td className="text-center px-2 py-1">{r.diff >= 0 ? "+" : ""}{r.diff}</td>
+              <td className="px-2 py-1 text-slate-400 font-mono">{calc}</td>
               <td className="text-center px-2 py-1 font-semibold">{r.sessionRating}</td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
         <tfoot>
           <tr className="bg-blue-200 font-bold text-blue-900">
