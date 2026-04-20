@@ -44,8 +44,8 @@ function RatingBreakdown({ p }) {
         <tbody>
           {rounds.map((r, i) => {
             const base = r.base || r.group;
-            const adj = parseFloat((r.diff / r.gp / 20).toFixed(3));
-            const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp} ÷ 20) = ${base} − ${adj}`;
+            const adj = parseFloat((r.diff / (r.gp * 2) / 10).toFixed(3));
+            const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp * 2} ÷ 10) = ${base} − ${adj}`;
             const overrideUsed = r.base && r.base !== r.group;
             return (
             <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
@@ -112,12 +112,12 @@ export default function OverallRankings({ groups }) {
         </button>
         {showExplainer && (
           <div className="px-4 pb-4 text-xs text-slate-600 space-y-3 border-t pt-3">
-            <p><span className="font-bold">Formula (Veterans Method):</span> Each weekly session is treated as a separate tournament. Per session: <em>Session Rating = Group − (Diff ÷ GP ÷ 20)</em>. Final rating = weighted average of all session ratings, weighted by games played. (÷20 accounts for GP being recorded as matches while points span 2 games per match.)</p>
+            <p><span className="font-bold">Formula (Veterans Method):</span> Each weekly session is treated as a separate tournament. Per session: <em>Session Rating = Group − (Diff ÷ (MP×2) ÷ 10)</em>. Final rating = weighted average of all session ratings, weighted by matches played. (MP is matches played; ×2 converts to games since each match = 2 games.)</p>
             <p>A <span className="font-semibold">lower rating</span> means a stronger player. Base starts at your group number (e.g. Group 3 = 3.0).</p>
             <div className="bg-slate-50 rounded-lg p-3 space-y-1">
               <p className="font-semibold text-slate-700">Example — Alex in Group 3:</p>
-              <p>• Week 1: 3 MP, diff <strong>+6</strong> → 3 − (6÷3÷20) = <strong>2.90</strong></p>
-              <p>• Week 2: 3 MP, diff <strong>−3</strong> → 3 − (−3÷3÷20) = <strong>3.05</strong></p>
+              <p>• Week 1: 3 MP (6 games), diff <strong>+6</strong> → 3 − (6÷6÷10) = <strong>2.90</strong></p>
+              <p>• Week 2: 3 MP (6 games), diff <strong>−3</strong> → 3 − (−3÷6÷10) = <strong>3.05</strong></p>
               <p>• Final: (2.90×3 + 3.05×3) ÷ 6 = <strong>2.975</strong></p>
             </div>
             <p className="text-slate-400 italic">Any player with at least one round of data receives a calculated rating.</p>
