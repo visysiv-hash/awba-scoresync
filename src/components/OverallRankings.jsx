@@ -35,7 +35,7 @@ function RatingBreakdown({ p }) {
           <tr className="bg-blue-100 text-slate-600">
             <th className="text-left px-2 py-1">Round</th>
             <th className="text-center px-2 py-1">Group</th>
-            <th className="text-center px-2 py-1">GP</th>
+            <th className="text-center px-2 py-1">MP</th>
             <th className="text-center px-2 py-1">Diff</th>
             <th className="text-left px-2 py-1">Calculation</th>
             <th className="text-center px-2 py-1">Rating</th>
@@ -64,7 +64,7 @@ function RatingBreakdown({ p }) {
         </tbody>
         <tfoot>
           <tr className="bg-blue-200 font-bold text-blue-900">
-            <td className="px-2 py-1" colSpan={2}>Total Games Played: {p.gp}</td>
+            <td className="px-2 py-1" colSpan={2}>Total MP: {p.gp}</td>
             <td className="text-center px-2 py-1">{p.gp}</td>
             <td className="text-center px-2 py-1">{p.diff >= 0 ? "+" : ""}{p.diff}</td>
             <td className="px-2 py-1"></td>
