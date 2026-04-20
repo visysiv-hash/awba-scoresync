@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
       let rating   = parseFloat(baseGroup.toFixed(2));
       let hasStats = false;
 
-      if (totalGP >= 6) {
+      if (rounds.length > 0) {
         // Veterans method: per-round rating, then weighted average
         let weightedRatingSum = 0;
         let totalWeight = 0;

@@ -8,7 +8,7 @@ function RatingBreakdown({ p }) {
   if (!p.hasStats) {
     return (
       <div className="mt-2 bg-slate-100 rounded-lg p-3 text-xs text-slate-500">
-        Not enough games played (&lt;6 total games) — using base group only.
+        No round data recorded yet — using base group only.
         <br />Base Group = <strong>{p.currentGroup}</strong>
       </div>
     );
@@ -103,7 +103,7 @@ export default function OverallRankings({ groups }) {
               <p>• Week 2: 3 games, diff <strong>−3</strong> → 3 − (−3÷3÷10) = <strong>3.10</strong></p>
               <p>• Final: (2.80×3 + 3.10×3) ÷ 6 = <strong>2.95</strong></p>
             </div>
-            <p className="text-slate-400 italic">Players need at least 6 total games before a rating adjustment is applied.</p>
+            <p className="text-slate-400 italic">Any player with at least one round of data receives a calculated rating.</p>
           </div>
         )}
       </div>
