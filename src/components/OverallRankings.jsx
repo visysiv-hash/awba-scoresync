@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import PlayerPairingModal from "./PlayerPairingModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowDown, Loader2, TrendingUp, ChevronDown, ChevronUp, Info } from "lucide-react";
+import RatingTrendChart from "./RatingTrendChart";
 
 function RatingBreakdown({ p }) {
   if (!p.hasStats) {
@@ -116,7 +117,7 @@ export default function OverallRankings({ groups }) {
       {/* All Player Rankings */}
       <Card className="shadow-2xl">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">All Player Rankings</CardTitle>
+          <CardTitle className="text-sm flex items-center gap-2">All Player Ratings</CardTitle>
           <div className="flex items-start gap-2 text-xs text-slate-400 mt-1">
             <Info className="w-3 h-3 mt-0.5 shrink-0 text-yellow-400" />
             <span>Rating = Group Base − Avg Point Diff per game ÷ 10. Tap a player to see breakdown.</span>
@@ -144,7 +145,12 @@ export default function OverallRankings({ groups }) {
                     {isExpanded ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
                   </div>
                 </div>
-                {isExpanded && <RatingBreakdown p={p} />}
+                {isExpanded && (
+          <>
+            <RatingBreakdown p={p} />
+            <RatingTrendChart rounds={p.rounds} overallRating={p.rating} groupBase={p.currentGroup} />
+          </>
+        )}
               </div>
             );
           })}

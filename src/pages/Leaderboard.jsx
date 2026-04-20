@@ -93,7 +93,7 @@ export default function Leaderboard() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-4">
-          {[{ id: "search", label: "Player Search" }, { id: "rankings", label: "🏆 Rankings" }].map(tab => (
+          {[{ id: "search", label: "Player Search" }, { id: "rankings", label: "🏆 Ratings" }].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
