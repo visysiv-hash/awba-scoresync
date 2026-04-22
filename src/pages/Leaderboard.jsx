@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import PlayerStats from "../components/PlayerStats";
+import PlayerRatingCard from "../components/PlayerRatingCard";
 import RoundStandingsChart from "../components/RoundStandingsChart";
 import OverallRankings from "../components/OverallRankings";
 import LeaderboardSkeleton from "../components/LeaderboardSkeleton";
@@ -140,6 +141,9 @@ export default function Leaderboard() {
                 <p className="text-slate-300 text-sm">Click name to see full profile</p>
               </div>
             )}
+
+            {/* Rating card - first */}
+            {selectedPlayer && playerData.length > 0 && <PlayerRatingCard playerName={selectedPlayer} />}
 
             {/* 1. Games cards and stats */}
             {selectedPlayer && playerData.length > 0 && <PlayerStats playerName={selectedPlayer} />}
