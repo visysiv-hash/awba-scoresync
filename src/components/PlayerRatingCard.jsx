@@ -73,7 +73,7 @@ function RatingBreakdown({ p }) {
 export default function PlayerRatingCard({ playerName }) {
   const [playerData, setPlayerData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
     setLoading(true);
