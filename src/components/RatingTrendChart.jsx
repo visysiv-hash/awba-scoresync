@@ -27,7 +27,7 @@ export default function RatingTrendChart({ rounds, overallRating, groupBase }) {
 
   return (
     <div className="mt-3 bg-white border border-blue-100 rounded-lg p-3">
-      <p className="text-xs font-semibold text-slate-500 mb-2">Rating Trend <span className="text-slate-400 font-normal">(lower = stronger)</span></p>
+      <p className="text-xs font-semibold text-slate-500 mb-2">Rating Trend <span className="text-slate-400 font-normal">(up = improving)</span></p>
       <ResponsiveContainer width="100%" height={120}>
         <LineChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -35,7 +35,7 @@ export default function RatingTrendChart({ rounds, overallRating, groupBase }) {
           <YAxis
             tick={{ fontSize: 10, fill: "#94a3b8" }}
             domain={["auto", "auto"]}
-            reversed={false}
+            reversed={true}
           />
           <Tooltip content={<CustomTooltip />} />
           <ReferenceLine
