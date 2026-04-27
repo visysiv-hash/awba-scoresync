@@ -10,7 +10,8 @@ Deno.serve(async (req) => {
     ? rawId.split("/spreadsheets/d/")[1].split("/")[0].split("?")[0]
     : rawId.split("/")[0].split("?")[0];
 
-  const timestamp = new Date().toISOString();
+  const now = new Date();
+  const timestamp = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
 
   // Build row: Net, Game, Team1, Team2, R1_T1, R1_T2, R2_T1, R2_T2, Total1, Total2, Timestamp
   const r1 = rounds[0] || { score1: 0, score2: 0 };
