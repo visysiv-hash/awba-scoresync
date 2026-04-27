@@ -24,10 +24,19 @@ Deno.serve(async (req) => {
     timestamp
   ]];
 
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!A1:K1:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`;
+  // Find the first empty row by reading column A only
+  const colARes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!A:A`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  const colAData = await colARes.json();
+  const colAValues = colAData.values || [];
+  const nextRow = colAValues.length + 1; // 1-indexed, next empty row
 
-  const response = await fetch(url, {
-    method: "POST",
+  // Write directly to that row in columns A:K
+  const writeUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!A${nextRow}:K${nextRow}?valueInputOption=USER_ENTERED`;
+  const response = await fetch(writeUrl, {
+    method: "PUT",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
