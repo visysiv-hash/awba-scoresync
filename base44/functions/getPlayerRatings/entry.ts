@@ -252,11 +252,11 @@ Deno.serve(async (req) => {
       let rollingRating = startingGroup;
       const roundDetail = [];
 
-      // Divisor based on group floor of rolling base rating (discrete, cleaner)
+      // Divisor based on nearest group of rolling base rating
       const ratingDivisor = (base) => {
-        const groupFloor = Math.floor(base) || 1;
+        const groupNearest = Math.round(base) || 1;
         const map = { 1: 40, 2: 35, 3: 30, 4: 25, 5: 20 };
-        return map[groupFloor] ?? 15; // 6+ → 15
+        return map[groupNearest] ?? 15; // 6+ → 15
       };
 
       for (const r of roundsSorted) {
