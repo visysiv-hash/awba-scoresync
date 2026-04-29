@@ -135,14 +135,24 @@ export default function OverallRankings({ groups }) {
               <p className="font-bold text-slate-800">📐 How is each round calculated?</p>
               <p>After each round, your rating updates using this formula:</p>
               <div className="bg-slate-100 rounded-lg px-3 py-2 font-mono text-xs text-slate-700">
-                New Rating = Previous Rating − (Total Point Diff ÷ Games Played ÷ 30)
+                New Rating = Previous Rating − (Total Adjusted Diff ÷ Games Played ÷ Divisor)
               </div>
               <ul className="list-disc ml-4 space-y-1 text-xs mt-2">
-                <li><strong>Point Diff</strong> = for each match, your team's score minus opponent's score — adjusted individually if teams were from different groups (see below), then summed across the round</li>
-                <li><strong>Games Played</strong> = total individual games in that round (3 matches × 2 games = 6)</li>
-                <li><strong>÷ divisor</strong> = dampening factor based on your <em>current rolling rating</em> (not just assigned group) — rating ~1.x→÷~38, ~2.x→÷~33, ~3.x→÷~28, ~4.x→÷~23, ~5.x→÷~18, ~6→÷15. Players performing better move faster</li>
-                <li>Ratings <strong>compound</strong> — your rating from last round becomes the base for the next</li>
-                <li>Each match's strength adjustment is applied <strong>individually</strong> — so only the specific match with a cross-group pairing gets adjusted, not the whole round</li>
+                <li><strong>Previous Rating</strong> = your rating from the last round (or starting group for round 1, or override group if set)</li>
+                <li><strong>Total Adjusted Diff</strong> = sum of all match diffs in the round, adjusted for cross-group strength (see below)</li>
+                <li><strong>Games Played</strong> = total individual games in that round (e.g., 3 matches = 6 games)</li>
+                <li><strong>Divisor</strong> = based on your <em>current rolling rating</em> (rounded to nearest group):
+                  <div className="bg-slate-50 rounded px-2 py-1 mt-1 font-mono text-xs text-slate-600 space-y-0.5">
+                    <div>Rating 1.0–1.5 → <strong>÷40</strong></div>
+                    <div>Rating 1.5–2.5 → <strong>÷35</strong></div>
+                    <div>Rating 2.5–3.5 → <strong>÷30</strong></div>
+                    <div>Rating 3.5–4.5 → <strong>÷25</strong></div>
+                    <div>Rating 4.5–5.5 → <strong>÷20</strong></div>
+                    <div>Rating 5.5+ → <strong>÷15</strong></div>
+                  </div>
+                </li>
+                <li>Ratings <strong>compound</strong> — each round's new rating becomes the base for the next</li>
+                <li>Each match's strength adjustment is applied <strong>individually</strong> — only matches with cross-group pairings get adjusted</li>
               </ul>
             </div>
 
