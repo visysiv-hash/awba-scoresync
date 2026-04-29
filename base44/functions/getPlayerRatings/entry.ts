@@ -126,8 +126,9 @@ Deno.serve(async (req) => {
         hasStats = true;
       }
 
-      // --- Diff bonus: -0.5 per +100 total diff (only if diff is positive) ---
-      const diffBonus = totalDiff > 0 ? parseFloat((Math.floor(totalDiff / 100) * 0.5).toFixed(2)) : 0;
+      // --- Diff bonus: -0.5 per +100 total diff (only for group 2+ players, only if diff is positive) ---
+      const effectiveGroup = ratingBaseGroup || Math.round(baseGroup);
+      const diffBonus = (totalDiff > 0 && effectiveGroup >= 2) ? parseFloat((Math.floor(totalDiff / 100) * 0.5).toFixed(2)) : 0;
       const adjustedRating = hasStats ? Math.max(0, parseFloat((rating - diffBonus).toFixed(2))) : rating;
 
       // Build per-round detail for the breakdown table
