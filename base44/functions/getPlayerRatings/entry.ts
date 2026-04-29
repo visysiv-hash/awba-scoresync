@@ -8,147 +8,226 @@ Deno.serve(async (req) => {
 
     const { debug } = await req.json().catch(() => ({}));
 
-    // --- 1. Fetch active players + fallback group from Players sheet ---
-    // Column G (index 6) = "Rating Base Group" override. If set, use it as the fixed base for ALL rounds.
-    // If empty, fall back to weighted average of groups played (original behaviour).
-    const playersUrl = `https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Players!A:G`;
-    const playersRes = await fetch(playersUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
-    const playersJson = await playersRes.json();
-    const playersRows = playersJson.values || [];
+    // Fetch all 3 sheets in parallel
+    const [playersRes, gamesRes, rawRes, standingsRes] = await Promise.all([
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Players!A:G`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }),
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Games!A:R`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }),
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Raw_Responses!A:K`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }),
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/${encodeURIComponent("Group_Round_Standings!A1:Z2000")}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }),
+    ]);
 
-    const activePlayers = {}; // name -> { fallbackGroup, ratingBaseGroup }
+    const playersJson = await playersRes.json();
+    const gamesJson = await gamesRes.json();
+    const rawJson = await rawRes.json();
+    const standingsJson = await standingsRes.json();
+
+    // --- 1. Active players list (for filtering who to show) ---
+    const playersRows = playersJson.values || [];
+    const activePlayers = new Set();
     for (let i = 1; i < playersRows.length; i++) {
       const row = playersRows[i];
       const name = (row[0] || "").trim();
       const active = (row[1] || "").toLowerCase();
       if (!name || active === "no") continue;
-      const fallbackGroup = parseInt(row[5]) || parseInt(row[4]) || parseInt(row[3]) || 6;
-      const ratingBaseGroup = parseInt(row[6]) || null; // column G override
-      activePlayers[name] = { fallbackGroup, ratingBaseGroup };
+      activePlayers.add(name);
     }
 
-    // --- 2. Fetch Group_Round_Standings — one row per player per round ---
-    // Columns: player, round, group, gp, wins, losses, draws, ladder pts, points for, points against, diff, ...
-    const roundRange = encodeURIComponent("Group_Round_Standings!A1:Z2000");
-    const roundRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/${roundRange}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const roundJson = await roundRes.json();
-    const allRows = roundJson.values || [];
-
-    if (allRows.length < 2) {
-      return Response.json({ players: [] });
+    // --- 2. Build player+round → group lookup from Group_Round_Standings ---
+    // Key: "PlayerName|Round" → group number
+    const playerRoundGroup = {}; // "Name|Round" -> group
+    const standingsRows = standingsJson.values || [];
+    if (standingsRows.length > 1) {
+      const sHeaders = standingsRows[0].map(h => (h || "").trim().toLowerCase());
+      const iSPlayer = sHeaders.indexOf("player");
+      const iSRound  = sHeaders.indexOf("round");
+      const iSGroup  = sHeaders.indexOf("group");
+      for (let i = 1; i < standingsRows.length; i++) {
+        const row = standingsRows[i];
+        const name  = (row[iSPlayer] || "").trim();
+        const round = (row[iSRound]  || "").trim();
+        const group = parseInt(row[iSGroup]) || 0;
+        if (name && round && group) {
+          playerRoundGroup[`${name}|${round}`] = group;
+        }
+      }
     }
 
-    const headers = allRows[0].map(h => (h || "").trim().toLowerCase());
-    const iPlayer = headers.indexOf("player");
-    const iRound  = headers.indexOf("round");
-    const iGroup  = headers.indexOf("group");
-    const iGP     = headers.indexOf("gp");
-    const iDiff   = headers.indexOf("diff");
-
-    // Build per-player list of round entries: [{ round, group, gp, diff }]
-    // Veterans method: each round = one "tournament"
-    const playerRounds = {}; // name -> [{ round, group, gp, diff }]
-
-    for (let i = 1; i < allRows.length; i++) {
-      const row = allRows[i];
-      const name = (row[iPlayer] || "").trim();
-      if (!name) continue;
-
-      const round = (row[iRound] || "").trim();
-      const group = parseInt(row[iGroup]) || 0;
-      const gp    = parseInt(row[iGP])    || 0;
-      const diff  = parseFloat(row[iDiff]) || 0;
-
-      if (!round || !group || gp === 0) continue;
-
-      if (!playerRounds[name]) playerRounds[name] = [];
-      playerRounds[name].push({ round, group, gp, diff });
+    // --- 3. Build Game ID → { player1, player2, player3, player4 } from Games sheet ---
+    const gamesRows = gamesJson.values || [];
+    const gamePlayerMap = {}; // gameId -> { round, p1, p2, p3, p4 }
+    if (gamesRows.length > 1) {
+      const gHeaders = gamesRows[0].map(h => (h || "").trim().toLowerCase());
+      const iRound = gHeaders.indexOf("round");
+      const iGameId = gHeaders.indexOf("game id");
+      const iP1 = gHeaders.indexOf("player 1");
+      const iP2 = gHeaders.indexOf("player 2");
+      const iP3 = gHeaders.indexOf("player 3");
+      const iP4 = gHeaders.indexOf("player 4");
+      for (let i = 1; i < gamesRows.length; i++) {
+        const row = gamesRows[i];
+        const gameId = (row[iGameId] || "").trim();
+        if (!gameId) continue;
+        gamePlayerMap[gameId] = {
+          round: (row[iRound] || "").trim(),
+          p1: (row[iP1] || "").trim(),
+          p2: (row[iP2] || "").trim(),
+          p3: (row[iP3] || "").trim(),
+          p4: (row[iP4] || "").trim(),
+        };
+      }
     }
 
-    if (debug) {
-      const name = Object.keys(playerRounds).find(k => k.toLowerCase().includes(debug.toLowerCase()));
-      return Response.json({
-        playerFound: name || null,
-        rounds: name ? playerRounds[name] : null,
-        playerData: name ? activePlayers[name] : null,
-      });
+    // --- 4. Process Raw_Responses: one row per scored game ---
+    // For each game: look up players, look up their group for that round, calc per-player match rating
+    const rawRows = rawJson.values || [];
+
+    // playerMatches: name -> [{ round, gameId, group, diff, matchRating }]
+    const playerMatches = {};
+
+    for (let i = 1; i < rawRows.length; i++) {
+      const row = rawRows[i];
+      const gameId  = (row[9]  || "").trim(); // Game ID Clean (col J, index 9)
+      const round   = (row[10] || "").trim(); // Round (col K, index 10)
+      const score1  = parseFloat(row[2]) || 0; // Team 1 Score
+      const score2  = parseFloat(row[3]) || 0; // Team 2 Score
+
+      if (!gameId || !round) continue;
+
+      // Skip non-verified or amended entries — use "Original" only, or verified
+      const entryType = (row[7] || "").trim(); // Entry Type
+      const verified  = (row[6] || "").trim().toLowerCase(); // Verified
+      // If there's an "Amended" entry, it will have a different row — we want the latest valid score
+      // Simple approach: just use all verified rows; if same gameId appears twice, last one wins
+      if (verified !== "yes") continue;
+
+      const game = gamePlayerMap[gameId];
+      if (!game) continue;
+
+      // Team 1 = p1 & p2, Team 2 = p3 & p4
+      const team1Players = [game.p1, game.p2].filter(Boolean);
+      const team2Players = [game.p3, game.p4].filter(Boolean);
+      const diff1 = score1 - score2; // diff for team 1 players
+      const diff2 = score2 - score1; // diff for team 2 players
+
+      // For each player, find their group for this round and compute match rating
+      // matchRating = group − (diff / 2 / 10)  [÷2 because 1 match = 2 games of points]
+      for (const [players, diff] of [[team1Players, diff1], [team2Players, diff2]]) {
+        for (const playerName of players) {
+          if (!playerName) continue;
+          const group = playerRoundGroup[`${playerName}|${round}`];
+          if (!group) continue; // player not in standings for this round, skip
+
+          const matchRating = group - (diff / 2 / 10);
+
+          if (!playerMatches[playerName]) playerMatches[playerName] = [];
+          playerMatches[playerName].push({
+            round,
+            gameId,
+            group,
+            diff,
+            matchRating: parseFloat(matchRating.toFixed(3)),
+          });
+        }
+      }
     }
 
-    // --- 3. Calculate Veterans-style rating per player ---
-    // For each round (tournament):
-    //   roundRating = base − (diff / gp / 10)
-    //
-    // base per round:
-    //   - If column G (ratingBaseGroup) is set → use that fixed value for ALL rounds (override mode)
-    //   - Otherwise → use the actual group played that round (original behaviour)
-    //
-    // Final rating = weighted average of all roundRatings, weighted by gp
-
+    // --- 5. Aggregate per player ---
     const players = [];
 
-    for (const [name, { fallbackGroup, ratingBaseGroup }] of Object.entries(activePlayers)) {
-      const rounds = playerRounds[name] || [];
+    for (const name of activePlayers) {
+      const matches = playerMatches[name] || [];
 
-      const totalGP   = rounds.reduce((s, r) => s + r.gp, 0);
-      const totalDiff = rounds.reduce((s, r) => s + r.diff, 0);
+      if (matches.length === 0) {
+        // No data — find fallback group from Group_Round_Standings (most recent round)
+        const groupEntries = Object.entries(playerRoundGroup)
+          .filter(([key]) => key.startsWith(`${name}|`))
+          .map(([, g]) => g);
+        const fallbackGroup = groupEntries.length > 0
+          ? groupEntries[groupEntries.length - 1]
+          : 6;
 
-      // currentGroup shown in UI:
-      // If override set → use it. Otherwise weighted avg of groups played (or fallback).
-      let baseGroup;
-      if (ratingBaseGroup) {
-        baseGroup = ratingBaseGroup;
-      } else if (rounds.length > 0) {
-        const weightedSum = rounds.reduce((s, r) => s + r.group * r.gp, 0);
-        baseGroup = parseFloat((weightedSum / totalGP).toFixed(2));
-      } else {
-        baseGroup = fallbackGroup;
+        players.push({
+          player: name,
+          currentGroup: fallbackGroup,
+          gp: 0,
+          diff: 0,
+          rating: parseFloat(fallbackGroup.toFixed ? fallbackGroup.toFixed(2) : String(fallbackGroup)),
+          baseRating: parseFloat(fallbackGroup.toFixed ? fallbackGroup.toFixed(2) : String(fallbackGroup)),
+          diffBonus: 0,
+          hasStats: false,
+          rounds: [],
+        });
+        continue;
       }
 
-      let rating   = parseFloat(baseGroup.toFixed ? baseGroup.toFixed(2) : String(baseGroup));
-      let hasStats = false;
+      const totalMatches = matches.length;
+      const totalDiff = matches.reduce((s, m) => s + m.diff, 0);
 
-      if (rounds.length > 0) {
-        let weightedRatingSum = 0;
-        let totalWeight = 0;
+      // Weighted average of match ratings (each match = weight 1)
+      const avgRating = matches.reduce((s, m) => s + m.matchRating, 0) / totalMatches;
 
-        for (const r of rounds) {
-          // Use override base if set, otherwise use the group played that round
-          const base = ratingBaseGroup || r.group;
-          const roundRating = base - (r.diff / (r.gp * 2) / 10);
-          weightedRatingSum += roundRating * r.gp;
-          totalWeight += r.gp;
+      // Current group = most recent round's group
+      const sortedMatches = [...matches].sort((a, b) => parseInt(a.round) - parseInt(b.round));
+      const currentGroup = sortedMatches[sortedMatches.length - 1].group;
+
+      // Diff bonus: -0.5 per +100 total diff, only for group 2+
+      const effectiveGroup = currentGroup;
+      const diffBonus = (totalDiff > 0 && effectiveGroup >= 2)
+        ? parseFloat((Math.floor(totalDiff / 100) * 0.5).toFixed(2))
+        : 0;
+
+      const baseRating = parseFloat(avgRating.toFixed(2));
+      const adjustedRating = Math.max(0, parseFloat((baseRating - diffBonus).toFixed(2)));
+
+      // Group matches by round for the breakdown UI
+      const roundMap = {};
+      for (const m of sortedMatches) {
+        if (!roundMap[m.round]) {
+          roundMap[m.round] = { round: m.round, group: m.group, matchCount: 0, totalDiff: 0, ratingSum: 0 };
         }
-
-        rating   = parseFloat((weightedRatingSum / totalWeight).toFixed(2));
-        hasStats = true;
+        roundMap[m.round].matchCount++;
+        roundMap[m.round].totalDiff += m.diff;
+        roundMap[m.round].ratingSum += m.matchRating;
       }
 
-      // --- Diff bonus: -0.5 per +100 total diff (only for group 2+ players, only if diff is positive) ---
-      const effectiveGroup = ratingBaseGroup || Math.round(baseGroup);
-      const diffBonus = (totalDiff > 0 && effectiveGroup >= 2) ? parseFloat((Math.floor(totalDiff / 100) * 0.5).toFixed(2)) : 0;
-      const adjustedRating = hasStats ? Math.max(0, parseFloat((rating - diffBonus).toFixed(2))) : rating;
+      const roundDetail = Object.values(roundMap).map(r => ({
+        round: r.round,
+        group: r.group,
+        gp: r.matchCount,
+        diff: r.totalDiff,
+        sessionRating: parseFloat((r.ratingSum / r.matchCount).toFixed(2)),
+        base: r.group,
+      }));
 
-      // Build per-round detail for the breakdown table
-      const roundDetail = rounds.map(r => {
-        const base = ratingBaseGroup || r.group;
-        return {
-          round: r.round,
-          group: r.group,         // actual group played (shown in table)
-          base,                   // base used for calculation (may differ if override set)
-          gp: r.gp,
-          diff: r.diff,
-          sessionRating: parseFloat((base - (r.diff / (r.gp * 2) / 10)).toFixed(2)),
-        };
+      if (debug && name.toLowerCase().includes(debug.toLowerCase())) {
+        return Response.json({ playerFound: name, matches, roundDetail, baseRating, diffBonus, adjustedRating });
+      }
+
+      players.push({
+        player: name,
+        currentGroup,
+        ratingBaseGroup: null,
+        gp: totalMatches,
+        diff: totalDiff,
+        rating: adjustedRating,
+        baseRating,
+        diffBonus,
+        hasStats: true,
+        rounds: roundDetail,
       });
-
-      players.push({ player: name, currentGroup: baseGroup, ratingBaseGroup: ratingBaseGroup || null, gp: totalGP, diff: totalDiff, rating: adjustedRating, baseRating: rating, diffBonus, hasStats, rounds: roundDetail });
     }
 
     players.sort((a, b) => a.rating - b.rating);
     return Response.json({ players });
+
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
   }
