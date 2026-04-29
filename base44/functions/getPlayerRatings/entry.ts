@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
 
     const { debug, debugRound, scanThreshold } = await req.json().catch(() => ({}));
 
-    // Fetch all 3 sheets in parallel
+    // Fetch all sheets in parallel
     const [playersRes, gamesRes, rawRes, standingsRes] = await Promise.all([
       fetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Players!A:G`, {
         headers: { Authorization: `Bearer ${accessToken}` }
@@ -29,15 +29,18 @@ Deno.serve(async (req) => {
     const rawJson = await rawRes.json();
     const standingsJson = await standingsRes.json();
 
-    // --- 1. Active players list (for filtering who to show) ---
+    // --- 1. Active players list + override group lookup ---
     const playersRows = playersJson.values || [];
     const activePlayers = new Set();
+    const playerStartingGroup = {}; // name -> override starting group (col G = index 6)
     for (let i = 1; i < playersRows.length; i++) {
       const row = playersRows[i];
       const name = (row[0] || "").trim();
       const active = (row[1] || "").toLowerCase();
+      const overrideGroup = parseInt(row[6]) || null; // col G, index 6
       if (!name || active === "no") continue;
       activePlayers.add(name);
+      if (overrideGroup) playerStartingGroup[name.toLowerCase()] = overrideGroup;
     }
 
     // --- 2. Build player+round → group lookup from Group_Round_Standings ---
@@ -191,14 +194,17 @@ Deno.serve(async (req) => {
       const matches = playerMatches[name.toLowerCase()] || [];
 
       if (matches.length === 0) {
-        // No data — find fallback group from Group_Round_Standings (most recent round)
+        // No data — use override group if set, else find fallback from Group_Round_Standings
         const nameLower = name.toLowerCase();
-        const groupEntries = Object.entries(playerRoundGroup)
-          .filter(([key]) => key.startsWith(`${nameLower}|`))
-          .map(([, g]) => g);
-        const fallbackGroup = groupEntries.length > 0
-          ? groupEntries[groupEntries.length - 1]
-          : 6;
+        let fallbackGroup = playerStartingGroup[nameLower];
+        if (!fallbackGroup) {
+          const groupEntries = Object.entries(playerRoundGroup)
+            .filter(([key]) => key.startsWith(`${nameLower}|`))
+            .map(([, g]) => g);
+          fallbackGroup = groupEntries.length > 0
+            ? groupEntries[groupEntries.length - 1]
+            : 6;
+        }
 
         players.push({
           player: name,
@@ -241,7 +247,9 @@ Deno.serve(async (req) => {
 
       const roundsSorted = Object.values(roundMap).sort((a, b) => parseInt(a.round) - parseInt(b.round));
 
-      let rollingRating = roundsSorted[0].group;
+      // Use override starting group if set, otherwise use first round's registered group
+      const startingGroup = playerStartingGroup[name.toLowerCase()] || roundsSorted[0].group;
+      let rollingRating = startingGroup;
       const roundDetail = [];
 
       // Divisor based on group floor of rolling base rating (discrete, cleaner)
