@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
         const isMixed = avgBase !== r.group;
         // Use adjustedDiff (strength-factor applied) for rating calculation
         const avgAdjustedDiffPerGame = r.totalAdjustedDiff / (r.matchCount * 2);
-        const roundRating = parseFloat((rollingRating - avgAdjustedDiffPerGame / 40).toFixed(3));
+        const roundRating = parseFloat((rollingRating - avgAdjustedDiffPerGame / 30).toFixed(3));
         roundDetail.push({
           round: r.round,
           group: r.group,
