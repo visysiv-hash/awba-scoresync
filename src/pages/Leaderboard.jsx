@@ -29,15 +29,20 @@ export default function Leaderboard() {
   const [visitCount, setVisitCount] = useState(null);
 
   useEffect(() => {
-    base44.entities.PageVisit.create({ page: 'leaderboard' });
-    base44.entities.PageVisit.filter({ page: 'leaderboard' }).then(visits => setVisitCount(visits.length));
+    base44.entities.PageVisit.create({ page: 'leaderboard' }).catch(() => {});
+    base44.entities.PageVisit.filter({ page: 'leaderboard' }).then(visits => setVisitCount(visits.length)).catch(() => {});
   }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const standingsRes = await base44.functions.invoke("getStandings", {});
-    setGroups(standingsRes.data?.groups || {});
-    setLoading(false);
+    try {
+      const standingsRes = await base44.functions.invoke("getStandings", {});
+      setGroups(standingsRes.data?.groups || {});
+    } catch (e) {
+      console.error("Failed to load standings:", e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
