@@ -34,7 +34,8 @@ function RatingBreakdown({ p }) {
         <thead>
           <tr className="bg-blue-100 text-slate-600">
             <th className="text-left px-2 py-1">Round</th>
-            <th className="text-center px-2 py-1">Group</th>
+            <th className="text-center px-2 py-1">Own Grp</th>
+            <th className="text-center px-2 py-1">Base Used</th>
             <th className="text-center px-2 py-1">MP</th>
             <th className="text-center px-2 py-1">Diff</th>
             <th className="text-left px-2 py-1">Calculation</th>
@@ -43,16 +44,18 @@ function RatingBreakdown({ p }) {
         </thead>
         <tbody>
           {rounds.map((r, i) => {
-            const base = r.base || r.group;
+            const base = r.base;
             const adj = parseFloat((r.diff / (r.gp * 2) / 10).toFixed(3));
             const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp * 2} ÷ 10) = ${base} − ${adj}`;
-            const overrideUsed = r.base && r.base !== r.group;
             return (
             <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
               <td className="px-2 py-1">Round {r.round}</td>
+              <td className="text-center px-2 py-1">{r.group}</td>
               <td className="text-center px-2 py-1">
-                {r.group}
-                {overrideUsed && <span className="ml-1 text-orange-500" title={`Base overridden to ${r.base}`}>*</span>}
+                <span className={r.isMixed ? "text-purple-600 font-semibold" : ""}>
+                  {base}
+                </span>
+                {r.isMixed && <span className="ml-1 text-purple-400" title="Mixed group pairing — team avg used">⚡</span>}
               </td>
               <td className="text-center px-2 py-1">{r.gp}</td>
               <td className="text-center px-2 py-1">{r.diff >= 0 ? "+" : ""}{r.diff}</td>

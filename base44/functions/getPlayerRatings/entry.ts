@@ -114,24 +114,39 @@ Deno.serve(async (req) => {
       // Team 1 = p1 & p2, Team 2 = p3 & p4
       const team1Players = [game.p1, game.p2].filter(Boolean);
       const team2Players = [game.p3, game.p4].filter(Boolean);
-      const diff1 = score1 - score2; // diff for team 1 players
-      const diff2 = score2 - score1; // diff for team 2 players
+      const diff1 = score1 - score2;
+      const diff2 = score2 - score1;
 
-      // For each player, find their group for this round and compute match rating
-      // matchRating = group − (diff / 2 / 10)  [÷2 because 1 match = 2 games of points]
-      for (const [players, diff] of [[team1Players, diff1], [team2Players, diff2]]) {
+      // Compute team average group (for fair mixed-pairing handling)
+      // Each player uses the TEAM's average group as their base, not just their own
+      const getTeamAvgGroup = (players) => {
+        const groups = players.map(n => playerRoundGroup[`${n}|${round}`]).filter(Boolean);
+        if (groups.length === 0) return null;
+        return groups.reduce((s, g) => s + g, 0) / groups.length;
+      };
+
+      const team1AvgGroup = getTeamAvgGroup(team1Players);
+      const team2AvgGroup = getTeamAvgGroup(team2Players);
+
+      for (const [players, diff, teamAvgBase] of [
+        [team1Players, diff1, team1AvgGroup],
+        [team2Players, diff2, team2AvgGroup],
+      ]) {
+        if (!teamAvgBase) continue;
         for (const playerName of players) {
           if (!playerName) continue;
-          const group = playerRoundGroup[`${playerName}|${round}`];
-          if (!group) continue; // player not in standings for this round, skip
+          const ownGroup = playerRoundGroup[`${playerName}|${round}`];
+          if (!ownGroup) continue; // player not in standings for this round, skip
 
-          const matchRating = group - (diff / 2 / 10);
+          // Use team average as base — fairer for mixed-group pairings
+          const matchRating = teamAvgBase - (diff / 2 / 10);
 
           if (!playerMatches[playerName]) playerMatches[playerName] = [];
           playerMatches[playerName].push({
             round,
             gameId,
-            group,
+            group: ownGroup,          // player's own group (for display)
+            teamAvgBase,              // team avg used as calculation base
             diff,
             matchRating: parseFloat(matchRating.toFixed(3)),
           });
@@ -191,21 +206,27 @@ Deno.serve(async (req) => {
       const roundMap = {};
       for (const m of sortedMatches) {
         if (!roundMap[m.round]) {
-          roundMap[m.round] = { round: m.round, group: m.group, matchCount: 0, totalDiff: 0, ratingSum: 0 };
+          roundMap[m.round] = { round: m.round, group: m.group, matchCount: 0, totalDiff: 0, ratingSum: 0, teamAvgBaseSum: 0 };
         }
         roundMap[m.round].matchCount++;
         roundMap[m.round].totalDiff += m.diff;
         roundMap[m.round].ratingSum += m.matchRating;
+        roundMap[m.round].teamAvgBaseSum += m.teamAvgBase;
       }
 
-      const roundDetail = Object.values(roundMap).map(r => ({
-        round: r.round,
-        group: r.group,
-        gp: r.matchCount,
-        diff: r.totalDiff,
-        sessionRating: parseFloat((r.ratingSum / r.matchCount).toFixed(2)),
-        base: r.group,
-      }));
+      const roundDetail = Object.values(roundMap).map(r => {
+        const avgBase = parseFloat((r.teamAvgBaseSum / r.matchCount).toFixed(2));
+        const isMixed = avgBase !== r.group;
+        return {
+          round: r.round,
+          group: r.group,           // player's own group
+          base: avgBase,            // actual base used in calculation (team avg)
+          isMixed,                  // true if partner was different group
+          gp: r.matchCount,
+          diff: r.totalDiff,
+          sessionRating: parseFloat((r.ratingSum / r.matchCount).toFixed(2)),
+        };
+      });
 
       if (debug && name.toLowerCase().includes(debug.toLowerCase())) {
         return Response.json({ playerFound: name, matches, roundDetail, baseRating, diffBonus, adjustedRating });
