@@ -189,15 +189,22 @@ Deno.serve(async (req) => {
       const totalMatches = matches.length;
       const totalDiff = matches.reduce((s, m) => s + m.diff, 0);
 
-      // Weighted average of match ratings (each match = weight 1)
+      // Pure performance rating (average of all match ratings)
       const avgRating = matches.reduce((s, m) => s + m.matchRating, 0) / totalMatches;
 
       // Current group = most recent round's group
       const sortedMatches = [...matches].sort((a, b) => parseInt(a.round) - parseInt(b.round));
       const currentGroup = sortedMatches[sortedMatches.length - 1].group;
 
+      // Option 3: Decay group anchor over time
+      // After N matches, performance rating fully takes over from assigned group
+      const N = 10;
+      const perfWeight = Math.min(totalMatches, N) / N;
+      const assignedGroup = currentGroup; // use current group as the anchor
+      const blendedRating = assignedGroup * (1 - perfWeight) + avgRating * perfWeight;
+
       const baseRating = parseFloat(avgRating.toFixed(2));
-      const adjustedRating = baseRating;
+      const adjustedRating = parseFloat(blendedRating.toFixed(2));
       const diffBonus = 0;
 
       // Group matches by round for the breakdown UI

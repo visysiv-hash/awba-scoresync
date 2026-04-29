@@ -116,8 +116,8 @@ export default function OverallRankings({ groups }) {
         </button>
         {showExplainer && (
           <div className="px-4 pb-4 text-xs text-slate-600 space-y-3 border-t pt-3">
-            <p><span className="font-bold">Formula (Veterans Method):</span> Each weekly session is treated as a separate tournament. Per session: <em>Session Rating = Group − (Diff ÷ (MP×2) ÷ 10)</em>. Final rating = weighted average of all session ratings, weighted by matches played. (MP is matches played; ×2 converts to games since each match = 2 games.)</p>
-<p>A <span className="font-semibold">lower rating</span> means a stronger player. Base starts at your group number (e.g. Group 3 = 3.0).</p>
+            <p><span className="font-bold">Formula:</span> Per match: <em>Match Rating = Group Base − (Diff ÷ 2 ÷ 10)</em>. These are averaged into a pure performance rating. Final rating blends your assigned group and performance rating — after <strong>10 matches</strong>, performance fully takes over.</p>
+            <p>A <span className="font-semibold">lower rating</span> means a stronger player. Early on, your group anchors the rating; over time, your actual results drive it completely.</p>
             <div className="bg-slate-50 rounded-lg p-3 space-y-1">
               <p className="font-semibold text-slate-700">Example — Alex in Group 3:</p>
               <p>• Week 1: 3 MP (6 games), diff <strong>+6</strong> → 3 − (6÷6÷10) = <strong>2.90</strong></p>
@@ -159,9 +159,17 @@ export default function OverallRankings({ groups }) {
                     <p className="text-xs text-muted-foreground">
                       {p.gp > 0 ? `${p.gp} MP · Diff ${p.diff >= 0 ? "+" : ""}${p.diff}` : "No games recorded"}
                     </p>
+                    {p.hasStats && p.gp < 10 && (
+                      <p className="text-xs text-purple-500">{p.gp}/10 MP — {Math.round((p.gp/10)*100)}% performance weight</p>
+                    )}
                   </div>
                   <div className="text-right shrink-0 flex items-center gap-2">
-                    <span className={`text-sm font-bold ${p.hasStats ? "text-yellow-600" : "text-slate-400"}`}>{p.rating}</span>
+                    <div className="text-right">
+                      <span className={`text-sm font-bold ${p.hasStats ? "text-yellow-600" : "text-slate-400"}`}>{p.rating}</span>
+                      {p.hasStats && p.baseRating !== p.rating && (
+                        <p className="text-xs text-slate-400">perf: {p.baseRating}</p>
+                      )}
+                    </div>
                     {isExpanded ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
                   </div>
                 </div>
