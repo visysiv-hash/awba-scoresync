@@ -46,7 +46,7 @@ function RatingBreakdown({ p }) {
           {rounds.map((r, i) => {
             const base = r.base;
             const adj = parseFloat((r.diff / (r.gp * 2) / 10).toFixed(3));
-            const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp * 2} ÷ 10) = ${base} − ${adj}`;
+            const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp * 2} ÷ 10) = ${r.sessionRating}`;
             return (
             <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
               <td className="px-2 py-1">Round {r.round}</td>
@@ -116,8 +116,8 @@ export default function OverallRankings({ groups }) {
         </button>
         {showExplainer && (
           <div className="px-4 pb-4 text-xs text-slate-600 space-y-3 border-t pt-3">
-            <p><span className="font-bold">Formula:</span> Per match: <em>Match Rating = Group Base − (Diff ÷ 2 ÷ 10)</em>. These are averaged into a pure performance rating. Final rating blends your assigned group and performance rating — after <strong>10 matches</strong>, performance fully takes over.</p>
-            <p>A <span className="font-semibold">lower rating</span> means a stronger player. Early on, your group anchors the rating; over time, your actual results drive it completely.</p>
+            <p><span className="font-bold">Formula (Rolling):</span> Round 1 starts from your assigned group. Each subsequent round: <em>Rating = Previous Round Rating − (Avg Diff per game ÷ 10)</em>. Ratings compound — a strong performance this week lowers your base for next week.</p>
+            <p>A <span className="font-semibold">lower rating</span> means a stronger player. The "Base Used" column shows what you started from each round.</p>
             <div className="bg-slate-50 rounded-lg p-3 space-y-1">
               <p className="font-semibold text-slate-700">Example — Alex in Group 3:</p>
               <p>• Week 1: 3 MP (6 games), diff <strong>+6</strong> → 3 − (6÷6÷10) = <strong>2.90</strong></p>

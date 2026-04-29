@@ -189,52 +189,56 @@ Deno.serve(async (req) => {
       const totalMatches = matches.length;
       const totalDiff = matches.reduce((s, m) => s + m.diff, 0);
 
-      // Pure performance rating (average of all match ratings)
-      const avgRating = matches.reduce((s, m) => s + m.matchRating, 0) / totalMatches;
-
-      // Current group = most recent round's group
+      // Sort matches chronologically
       const sortedMatches = [...matches].sort((a, b) => parseInt(a.round) - parseInt(b.round));
       const currentGroup = sortedMatches[sortedMatches.length - 1].group;
 
-      // Option 3: Decay group anchor over time
-      // After N matches, performance rating fully takes over from assigned group
-      const N = 10;
-      const perfWeight = Math.min(totalMatches, N) / N;
-      const assignedGroup = currentGroup; // use current group as the anchor
-      const blendedRating = assignedGroup * (1 - perfWeight) + avgRating * perfWeight;
+      // Option 4: Rolling compounding rating
+      // Each round uses the previous round's rating as the base instead of the assigned group.
+      // First round: use the player's assigned group as the starting base.
+      // Per round: roundRating = prevRating - (roundAvgDiff / 2 / 10)
+      //   where roundAvgDiff = totalDiff in that round / matchCount
 
-      const baseRating = parseFloat(avgRating.toFixed(2));
-      const adjustedRating = parseFloat(blendedRating.toFixed(2));
-      const diffBonus = 0;
-
-      // Group matches by round for the breakdown UI
+      // Group matches by round first
       const roundMap = {};
       for (const m of sortedMatches) {
         if (!roundMap[m.round]) {
-          roundMap[m.round] = { round: m.round, group: m.group, matchCount: 0, totalDiff: 0, ratingSum: 0, teamAvgBaseSum: 0 };
+          roundMap[m.round] = { round: m.round, group: m.group, matchCount: 0, totalDiff: 0, teamAvgBaseSum: 0 };
         }
         roundMap[m.round].matchCount++;
         roundMap[m.round].totalDiff += m.diff;
-        roundMap[m.round].ratingSum += m.matchRating;
         roundMap[m.round].teamAvgBaseSum += m.teamAvgBase;
       }
 
-      const roundDetail = Object.values(roundMap).map(r => {
+      const roundsSorted = Object.values(roundMap).sort((a, b) => parseInt(a.round) - parseInt(b.round));
+
+      // Seed: first round uses the player's group at that time as the base
+      let rollingRating = roundsSorted[0].group;
+      const roundDetail = [];
+
+      for (const r of roundsSorted) {
         const avgBase = parseFloat((r.teamAvgBaseSum / r.matchCount).toFixed(2));
         const isMixed = avgBase !== r.group;
-        return {
+        // Per round: adjust rolling rating by average diff per game ÷ 10
+        const avgDiffPerGame = r.totalDiff / (r.matchCount * 2); // each match = 2 games
+        const roundRating = parseFloat((rollingRating - avgDiffPerGame / 10).toFixed(3));
+        roundDetail.push({
           round: r.round,
-          group: r.group,           // player's own group
-          base: avgBase,            // actual base used in calculation (team avg)
-          isMixed,                  // true if partner was different group
+          group: r.group,
+          base: parseFloat(rollingRating.toFixed(2)), // the base used this round (prev round's rating)
+          isMixed,
           gp: r.matchCount,
           diff: r.totalDiff,
-          sessionRating: parseFloat((r.ratingSum / r.matchCount).toFixed(2)),
-        };
-      });
+          sessionRating: parseFloat(roundRating.toFixed(2)),
+        });
+        rollingRating = roundRating; // next round starts from this round's result
+      }
+
+      const finalRating = parseFloat(rollingRating.toFixed(2));
+      const diffBonus = 0;
 
       if (debug && name.toLowerCase().includes(debug.toLowerCase())) {
-        return Response.json({ playerFound: name, matches, roundDetail, baseRating, diffBonus, adjustedRating });
+        return Response.json({ playerFound: name, roundDetail, finalRating, currentGroup });
       }
 
       players.push({
@@ -243,8 +247,8 @@ Deno.serve(async (req) => {
         ratingBaseGroup: null,
         gp: totalMatches,
         diff: totalDiff,
-        rating: adjustedRating,
-        baseRating,
+        rating: finalRating,
+        baseRating: finalRating, // same as rating in option 4
         diffBonus,
         hasStats: true,
         rounds: roundDetail,

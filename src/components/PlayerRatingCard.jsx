@@ -40,7 +40,7 @@ function RatingBreakdown({ p }) {
           {rounds.map((r, i) => {
             const base = r.base;
             const adj = parseFloat((r.diff / (r.gp * 2) / 10).toFixed(3));
-            const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp * 2} ÷ 10) = ${base} − ${adj}`;
+            const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp * 2} ÷ 10) = ${r.sessionRating}`;
             return (
               <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
                 <td className="px-2 py-1">Round {r.round}</td>
