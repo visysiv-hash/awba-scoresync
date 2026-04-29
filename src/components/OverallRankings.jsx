@@ -138,10 +138,11 @@ export default function OverallRankings({ groups }) {
                 New Rating = Previous Rating − (Total Point Diff ÷ Games Played ÷ 30)
               </div>
               <ul className="list-disc ml-4 space-y-1 text-xs mt-2">
-                <li><strong>Total Point Diff</strong> = sum of (your team's score − opponent's score) across all games that round</li>
+                <li><strong>Point Diff</strong> = for each match, your team's score minus opponent's score — adjusted individually if teams were from different groups (see below), then summed across the round</li>
                 <li><strong>Games Played</strong> = total individual games in that round (3 matches × 2 games = 6)</li>
                 <li><strong>÷ 30</strong> = dampening factor so one big round doesn't swing things wildly</li>
                 <li>Ratings <strong>compound</strong> — your rating from last round becomes the base for the next</li>
+                <li>Each match's strength adjustment is applied <strong>individually</strong> — so only the specific match with a cross-group pairing gets adjusted, not the whole round</li>
               </ul>
             </div>
 
@@ -157,10 +158,11 @@ export default function OverallRankings({ groups }) {
               <p className="font-bold text-slate-800">⚖️ Mixed-group strength adjustment</p>
               <p className="text-xs">When players from different groups are paired together (e.g. a Group 2 player paired with a Group 4 player against a full Group 3 team), the system applies a fairness adjustment:</p>
               <ul className="list-disc ml-4 space-y-1 text-xs mt-1">
-                <li>If your team faced <strong>stronger</strong> opponents than usual — your loss is penalised less</li>
-                <li>If your team faced <strong>weaker</strong> opponents than usual — your win earns less credit</li>
-                <li>This only triggers when the group gap between teams is <strong>more than 0.5</strong> (e.g. avg Group 2 vs avg Group 3.5)</li>
-                <li>The adjustment = group difference × 2 points, subtracted from your diff</li>
+                <li>Each match is assessed <strong>independently</strong> — only that specific match's diff is adjusted based on its own pairing's group gap</li>
+                <li>If your team faced <strong>stronger</strong> opponents in a match — that match's diff is adjusted to soften the loss</li>
+                <li>If your team faced <strong>weaker</strong> opponents in a match — that match's diff is reduced to discount the win</li>
+                <li>Only triggers when the average group gap between the two teams in <strong>that match</strong> is more than 0.5</li>
+                <li>The adjustment = group difference × 2 points, applied to that match's diff only — other matches in the round are unaffected</li>
               </ul>
             </div>
 
