@@ -1,0 +1,22 @@
+{
+  "name": "ScoreSync - Albury Wodonga Badminton",
+  "short_name": "ScoreSync",
+  "description": "Albury Wodonga Badminton League - Scores, Leaderboard & Bookings",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e293b",
+  "theme_color": "#1e293b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
