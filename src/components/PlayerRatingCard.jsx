@@ -39,8 +39,9 @@ function RatingBreakdown({ p }) {
         <tbody>
           {rounds.map((r, i) => {
             const base = r.base;
-            const adj = parseFloat((r.diff / (r.gp * 2) / 10).toFixed(3));
-            const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp * 2} ÷ 40) = ${r.sessionRating}`;
+            const hasStrengthAdj = r.adjustedDiff != null && r.adjustedDiff !== r.diff;
+            const diffUsed = r.adjustedDiff ?? r.diff;
+            const calc = `${base} − (${diffUsed >= 0 ? "+" : ""}${diffUsed} ÷ ${r.gp * 2} ÷ 40) = ${r.sessionRating}`;
             return (
               <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
                 <td className="px-2 py-1">Round {r.round}</td>
@@ -52,7 +53,14 @@ function RatingBreakdown({ p }) {
                   {r.isMixed && <span className="ml-1 text-purple-400" title="Mixed group pairing — team avg used">⚡</span>}
                 </td>
                 <td className="text-center px-2 py-1">{r.gp}</td>
-                <td className="text-center px-2 py-1">{r.diff >= 0 ? "+" : ""}{r.diff}</td>
+                <td className="text-center px-2 py-1">
+                  {r.diff >= 0 ? "+" : ""}{r.diff}
+                  {hasStrengthAdj && (
+                    <span className="ml-1 text-green-600 font-semibold" title="Strength-adjusted diff">
+                      →{diffUsed >= 0 ? "+" : ""}{diffUsed}⚖️
+                    </span>
+                  )}
+                </td>
                 <td className="px-2 py-1 text-slate-400 font-mono">{calc}</td>
                 <td className="text-center px-2 py-1 font-semibold">{r.sessionRating}</td>
               </tr>

@@ -129,28 +129,41 @@ Deno.serve(async (req) => {
       const team1AvgGroup = getTeamAvgGroup(team1Players);
       const team2AvgGroup = getTeamAvgGroup(team2Players);
 
-      for (const [players, diff, teamAvgBase] of [
-        [team1Players, diff1, team1AvgGroup],
-        [team2Players, diff2, team2AvgGroup],
+      for (const [players, diff, teamAvgBase, opponentAvgBase] of [
+        [team1Players, diff1, team1AvgGroup, team2AvgGroup],
+        [team2Players, diff2, team2AvgGroup, team1AvgGroup],
       ]) {
         for (const playerName of players) {
           if (!playerName) continue;
           const ownGroup = playerRoundGroup[`${playerName.toLowerCase()}|${round}`];
-          if (!ownGroup) continue; // player not in standings for this round, skip
+          if (!ownGroup) continue;
 
-          // Use team average as base, fall back to player's own group if team avg unavailable
           const base = teamAvgBase ?? ownGroup;
-          const matchRating = base - (diff / 2 / 10);
+
+          // Strength factor: if opponent avg group differs by more than 1.0, adjust the diff
+          // Positive groupDiff = opponents are weaker (higher group number = weaker)
+          // Negative groupDiff = opponents are stronger
+          let adjustedDiff = diff;
+          if (opponentAvgBase != null && teamAvgBase != null) {
+            const groupDiff = opponentAvgBase - teamAvgBase; // positive = we're stronger, negative = they're stronger
+            if (Math.abs(groupDiff) > 1.0) {
+              // Scale: each group difference unit adjusts diff by 1 point per game (2 games per match)
+              const strengthAdjustment = groupDiff * 2;
+              adjustedDiff = diff - strengthAdjustment;
+            }
+          }
 
           const playerKey = playerName.toLowerCase();
           if (!playerMatches[playerKey]) playerMatches[playerKey] = [];
           playerMatches[playerKey].push({
             round,
             gameId,
-            group: ownGroup,          // player's own group (for display)
-            teamAvgBase: base,        // team avg used as calculation base (or own group if fallback)
+            group: ownGroup,
+            teamAvgBase: base,
+            opponentAvgBase: opponentAvgBase ?? null,
             diff,
-            matchRating: parseFloat(matchRating.toFixed(3)),
+            adjustedDiff,
+            matchRating: parseFloat((base - (adjustedDiff / 2 / 10)).toFixed(3)),
           });
         }
       }
@@ -203,35 +216,36 @@ Deno.serve(async (req) => {
       const roundMap = {};
       for (const m of sortedMatches) {
         if (!roundMap[m.round]) {
-          roundMap[m.round] = { round: m.round, group: m.group, matchCount: 0, totalDiff: 0, teamAvgBaseSum: 0 };
+          roundMap[m.round] = { round: m.round, group: m.group, matchCount: 0, totalDiff: 0, totalAdjustedDiff: 0, teamAvgBaseSum: 0 };
         }
         roundMap[m.round].matchCount++;
         roundMap[m.round].totalDiff += m.diff;
+        roundMap[m.round].totalAdjustedDiff += m.adjustedDiff;
         roundMap[m.round].teamAvgBaseSum += m.teamAvgBase;
       }
 
       const roundsSorted = Object.values(roundMap).sort((a, b) => parseInt(a.round) - parseInt(b.round));
 
-      // Seed: first round uses the player's group at that time as the base
       let rollingRating = roundsSorted[0].group;
       const roundDetail = [];
 
       for (const r of roundsSorted) {
         const avgBase = parseFloat((r.teamAvgBaseSum / r.matchCount).toFixed(2));
         const isMixed = avgBase !== r.group;
-        // Per round: adjust rolling rating by average diff per game ÷ 10
-        const avgDiffPerGame = r.totalDiff / (r.matchCount * 2); // each match = 2 games
-        const roundRating = parseFloat((rollingRating - avgDiffPerGame / 40).toFixed(3));
+        // Use adjustedDiff (strength-factor applied) for rating calculation
+        const avgAdjustedDiffPerGame = r.totalAdjustedDiff / (r.matchCount * 2);
+        const roundRating = parseFloat((rollingRating - avgAdjustedDiffPerGame / 40).toFixed(3));
         roundDetail.push({
           round: r.round,
           group: r.group,
-          base: parseFloat(rollingRating.toFixed(2)), // the base used this round (prev round's rating)
+          base: parseFloat(rollingRating.toFixed(2)),
           isMixed,
           gp: r.matchCount,
           diff: r.totalDiff,
+          adjustedDiff: r.totalAdjustedDiff,
           sessionRating: parseFloat(roundRating.toFixed(2)),
         });
-        rollingRating = roundRating; // next round starts from this round's result
+        rollingRating = roundRating;
       }
 
       const finalRating = parseFloat(rollingRating.toFixed(2));
