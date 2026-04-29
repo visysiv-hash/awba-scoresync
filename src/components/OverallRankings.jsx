@@ -123,16 +123,58 @@ export default function OverallRankings({ groups }) {
           {showExplainer ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
         {showExplainer && (
-          <div className="px-4 pb-4 text-xs text-slate-600 space-y-3 border-t pt-3">
-            <p><span className="font-bold">Formula (Rolling):</span> Round 1 starts from your assigned group. Each subsequent round: <em>Rating = Previous Round Rating − (Avg Diff per game ÷ 40)</em>. Ratings compound — a strong performance this week lowers your base for next week.</p>
-            <p>A <span className="font-semibold">lower rating</span> means a stronger player. The "Base Used" column shows what you started from each round.</p>
-            <div className="bg-slate-50 rounded-lg p-3 space-y-1">
-              <p className="font-semibold text-slate-700">Example — Alex in Group 3:</p>
-              <p>• Week 1: 3 MP (6 games), diff <strong>+6</strong> → 3 − (6÷6÷10) = <strong>2.90</strong></p>
-              <p>• Week 2: 3 MP (6 games), diff <strong>−3</strong> → 3 − (−3÷6÷10) = <strong>3.05</strong></p>
-              <p>• Final: (2.90×3 + 3.05×3) ÷ 6 = <strong>2.975</strong></p>
+          <div className="px-4 pb-4 text-sm text-slate-600 space-y-4 border-t pt-3">
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-800">🎯 What is the rating?</p>
+              <p>Your rating is a number that reflects your actual playing strength — <span className="font-semibold">lower is better</span>. A rating of <strong>2.7</strong> means you're performing above Group 3 level. A rating of <strong>3.4</strong> means you're performing below Group 3 level.</p>
+              <p>Everyone starts at their assigned group number (e.g. Group 4 → starting rating of 4.0). Your rating then moves up or down each round based on your results.</p>
             </div>
-            <p className="text-slate-400 italic">Any player with at least one round of data receives a calculated rating.</p>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-800">📐 How is each round calculated?</p>
+              <p>After each round, your rating updates using this formula:</p>
+              <div className="bg-slate-100 rounded-lg px-3 py-2 font-mono text-xs text-slate-700">
+                New Rating = Previous Rating − (Total Point Diff ÷ Games Played ÷ 30)
+              </div>
+              <ul className="list-disc ml-4 space-y-1 text-xs mt-2">
+                <li><strong>Total Point Diff</strong> = sum of (your team's score − opponent's score) across all games that round</li>
+                <li><strong>Games Played</strong> = total individual games in that round (3 matches × 2 games = 6)</li>
+                <li><strong>÷ 30</strong> = dampening factor so one big round doesn't swing things wildly</li>
+                <li>Ratings <strong>compound</strong> — your rating from last round becomes the base for the next</li>
+              </ul>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-1 text-xs">
+              <p className="font-semibold text-blue-900">Example — Sam in Group 3 (starting rating: 3.0)</p>
+              <p>• Round 1: 3 MP (6 games), diff <strong>+12</strong> → 3.0 − (12 ÷ 6 ÷ 30) = <strong>2.93</strong></p>
+              <p>• Round 2: 3 MP (6 games), diff <strong>−6</strong> → 2.93 − (−6 ÷ 6 ÷ 30) = <strong>2.96</strong></p>
+              <p>• Round 3: 3 MP (6 games), diff <strong>+18</strong> → 2.96 − (18 ÷ 6 ÷ 30) = <strong>2.86</strong></p>
+              <p className="text-blue-700 font-semibold mt-1">Final rating: 2.86 — Sam is performing above Group 3 level ✅</p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-800">⚖️ Mixed-group strength adjustment</p>
+              <p className="text-xs">When players from different groups are paired together (e.g. a Group 2 player paired with a Group 4 player against a full Group 3 team), the system applies a fairness adjustment:</p>
+              <ul className="list-disc ml-4 space-y-1 text-xs mt-1">
+                <li>If your team faced <strong>stronger</strong> opponents than usual — your loss is penalised less</li>
+                <li>If your team faced <strong>weaker</strong> opponents than usual — your win earns less credit</li>
+                <li>This only triggers when the group gap between teams is <strong>more than 0.5</strong> (e.g. avg Group 2 vs avg Group 3.5)</li>
+                <li>The adjustment = group difference × 2 points, subtracted from your diff</li>
+              </ul>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-800">🏅 What does the rating mean for groupings?</p>
+              <ul className="list-disc ml-4 space-y-1 text-xs">
+                <li>Ratings are used at the end of the season to recommend group placements for the next season</li>
+                <li>A rating well below your group number → you may be promoted up</li>
+                <li>A rating well above your group number → you may be moved to a lower group</li>
+                <li>Players with fewer than 10 match plays have their rating weighted proportionally</li>
+              </ul>
+            </div>
+
+            <p className="text-xs text-slate-400 italic">Tap any player's name in the rankings to see their full round-by-round breakdown.</p>
           </div>
         )}
       </div>
