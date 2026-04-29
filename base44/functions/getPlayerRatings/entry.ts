@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
           let adjustedDiff = diff;
           if (opponentAvgBase != null && teamAvgBase != null) {
             const groupDiff = opponentAvgBase - teamAvgBase; // positive = we're stronger, negative = they're stronger
-            if (Math.abs(groupDiff) > 0.0) {
+            if (Math.abs(groupDiff) > 0.5) {
               // Scale: each group difference unit adjusts diff by 1 point per game (2 games per match)
               const strengthAdjustment = groupDiff * 2;
               adjustedDiff = diff - strengthAdjustment;
