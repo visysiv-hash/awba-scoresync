@@ -41,7 +41,7 @@ function RatingBreakdown({ p }) {
             const base = r.base;
             const hasStrengthAdj = r.adjustedDiff != null && r.adjustedDiff !== r.diff;
             const diffUsed = r.adjustedDiff ?? r.diff;
-            const calc = `${base} − (${diffUsed >= 0 ? "+" : ""}${diffUsed} ÷ ${r.gp * 2} ÷ 40) = ${r.sessionRating}`;
+            const calc = `${base} − (${diffUsed >= 0 ? "+" : ""}${diffUsed} ÷ ${r.gp * 2} ÷ 30) = ${r.sessionRating}`;
             return (
               <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
                 <td className="px-2 py-1">Round {r.round}</td>
