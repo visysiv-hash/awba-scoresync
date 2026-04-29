@@ -119,6 +119,7 @@ Deno.serve(async (req) => {
 
       // Compute team average group (for fair mixed-pairing handling)
       // Each player uses the TEAM's average group as their base, not just their own
+      // Falls back to own group if partner's group is missing
       const getTeamAvgGroup = (players) => {
         const groups = players.map(n => playerRoundGroup[`${n}|${round}`]).filter(Boolean);
         if (groups.length === 0) return null;
@@ -132,21 +133,21 @@ Deno.serve(async (req) => {
         [team1Players, diff1, team1AvgGroup],
         [team2Players, diff2, team2AvgGroup],
       ]) {
-        if (!teamAvgBase) continue;
         for (const playerName of players) {
           if (!playerName) continue;
           const ownGroup = playerRoundGroup[`${playerName}|${round}`];
           if (!ownGroup) continue; // player not in standings for this round, skip
 
-          // Use team average as base — fairer for mixed-group pairings
-          const matchRating = teamAvgBase - (diff / 2 / 10);
+          // Use team average as base, fall back to player's own group if team avg unavailable
+          const base = teamAvgBase ?? ownGroup;
+          const matchRating = base - (diff / 2 / 10);
 
           if (!playerMatches[playerName]) playerMatches[playerName] = [];
           playerMatches[playerName].push({
             round,
             gameId,
             group: ownGroup,          // player's own group (for display)
-            teamAvgBase,              // team avg used as calculation base
+            teamAvgBase: base,        // team avg used as calculation base (or own group if fallback)
             diff,
             matchRating: parseFloat(matchRating.toFixed(3)),
           });
