@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const standingsId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
 
-    const { debug } = await req.json().catch(() => ({}));
+    const { debug, debugRound } = await req.json().catch(() => ({}));
 
     // Fetch all 3 sheets in parallel
     const [playersRes, gamesRes, rawRes, standingsRes] = await Promise.all([
@@ -252,7 +252,27 @@ Deno.serve(async (req) => {
       const diffBonus = 0;
 
       if (debug && name.toLowerCase().includes(debug.toLowerCase())) {
-        return Response.json({ playerFound: name, roundDetail, finalRating, currentGroup });
+        const matchDetail = sortedMatches
+          .filter(m => !debugRound || m.round === String(debugRound))
+          .map(m => {
+            const game = gamePlayerMap[m.gameId];
+            const groupDiff = m.opponentAvgBase != null ? m.opponentAvgBase - m.teamAvgBase : null;
+            const adjustmentApplied = groupDiff != null && Math.abs(groupDiff) > 1.0;
+            return {
+              gameId: m.gameId,
+              round: m.round,
+              players: game ? [game.p1, game.p2, game.p3, game.p4] : [],
+              ownGroup: m.group,
+              teamAvgBase: m.teamAvgBase,
+              opponentAvgBase: m.opponentAvgBase,
+              groupDiff: groupDiff != null ? parseFloat(groupDiff.toFixed(2)) : null,
+              thresholdExceeded: adjustmentApplied,
+              rawDiff: m.diff,
+              adjustedDiff: m.adjustedDiff,
+              strengthAdjustment: adjustmentApplied ? parseFloat((groupDiff * 2).toFixed(2)) : 0,
+            };
+          });
+        return Response.json({ playerFound: name, roundDetail, matchDetail, finalRating, currentGroup });
       }
 
       players.push({
