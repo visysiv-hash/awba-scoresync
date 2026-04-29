@@ -244,12 +244,24 @@ Deno.serve(async (req) => {
       let rollingRating = roundsSorted[0].group;
       const roundDetail = [];
 
+      // Divisor based on rolling base rating (continuous — more accurate than assigned group)
+      // e.g. base=1.85 → between groups 1-2 → divisor ~36; base=3.4 → between 3-4 → divisor ~27
+      const ratingDivisor = (base) => {
+        if (base <= 1) return 40;
+        if (base <= 2) return Math.round(40 - (base - 1) * 5);  // 40 → 35
+        if (base <= 3) return Math.round(35 - (base - 2) * 5);  // 35 → 30
+        if (base <= 4) return Math.round(30 - (base - 3) * 5);  // 30 → 25
+        if (base <= 5) return Math.round(25 - (base - 4) * 5);  // 25 → 20
+        return Math.max(15, Math.round(20 - (base - 5) * 5));   // 20 → 15
+      };
+
       for (const r of roundsSorted) {
         const avgBase = parseFloat((r.teamAvgBaseSum / r.matchCount).toFixed(2));
         const isMixed = avgBase !== r.group;
         // Use adjustedDiff (strength-factor applied) for rating calculation
         const avgAdjustedDiffPerGame = r.totalAdjustedDiff / (r.matchCount * 2);
-        const roundRating = parseFloat((rollingRating - avgAdjustedDiffPerGame / 30).toFixed(3));
+        const divisor = ratingDivisor(rollingRating); // use current rolling base, not assigned group
+        const roundRating = parseFloat((rollingRating - avgAdjustedDiffPerGame / divisor).toFixed(3));
         roundDetail.push({
           round: r.round,
           group: r.group,
@@ -258,6 +270,7 @@ Deno.serve(async (req) => {
           gp: r.matchCount,
           diff: r.totalDiff,
           adjustedDiff: r.totalAdjustedDiff,
+          divisor,
           sessionRating: parseFloat(roundRating.toFixed(2)),
         });
         rollingRating = roundRating;

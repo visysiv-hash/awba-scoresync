@@ -140,7 +140,7 @@ export default function OverallRankings({ groups }) {
               <ul className="list-disc ml-4 space-y-1 text-xs mt-2">
                 <li><strong>Point Diff</strong> = for each match, your team's score minus opponent's score — adjusted individually if teams were from different groups (see below), then summed across the round</li>
                 <li><strong>Games Played</strong> = total individual games in that round (3 matches × 2 games = 6)</li>
-                <li><strong>÷ divisor</strong> = dampening factor scaled by group: Group 1→÷40, 2→÷35, 3→÷30, 4→÷25, 5→÷20, 6→÷15. Higher groups move faster since there's more room to improve</li>
+                <li><strong>÷ divisor</strong> = dampening factor based on your <em>current rolling rating</em> (not just assigned group) — rating ~1.x→÷~38, ~2.x→÷~33, ~3.x→÷~28, ~4.x→÷~23, ~5.x→÷~18, ~6→÷15. Players performing better move faster</li>
                 <li>Ratings <strong>compound</strong> — your rating from last round becomes the base for the next</li>
                 <li>Each match's strength adjustment is applied <strong>individually</strong> — so only the specific match with a cross-group pairing gets adjusted, not the whole round</li>
               </ul>
