@@ -68,8 +68,17 @@ function RatingBreakdown({ p }) {
             <td className="text-center px-2 py-1">{p.gp}</td>
             <td className="text-center px-2 py-1">{p.diff >= 0 ? "+" : ""}{p.diff}</td>
             <td className="px-2 py-1"></td>
-            <td className="text-center px-2 py-1 text-yellow-700">avg: {p.rating}</td>
+            <td className="text-center px-2 py-1 text-yellow-700">avg: {p.baseRating}</td>
           </tr>
+          {p.diffBonus > 0 && (
+            <tr className="bg-green-100 text-green-800 font-semibold text-xs">
+              <td className="px-2 py-1" colSpan={4}>
+                🏆 Diff Bonus: +{p.diff} pts ÷ 100 = {Math.floor(p.diff / 100)} × 0.5 = −{p.diffBonus} improvement
+              </td>
+              <td className="px-2 py-1 text-right font-mono text-xs text-green-700">{p.baseRating} − {p.diffBonus} =</td>
+              <td className="text-center px-2 py-1 font-bold text-green-700">{p.rating}</td>
+            </tr>
+          )}
         </tfoot>
       </table>
     </div>
@@ -113,6 +122,7 @@ export default function OverallRankings({ groups }) {
         {showExplainer && (
           <div className="px-4 pb-4 text-xs text-slate-600 space-y-3 border-t pt-3">
             <p><span className="font-bold">Formula (Veterans Method):</span> Each weekly session is treated as a separate tournament. Per session: <em>Session Rating = Group − (Diff ÷ (MP×2) ÷ 10)</em>. Final rating = weighted average of all session ratings, weighted by matches played. (MP is matches played; ×2 converts to games since each match = 2 games.)</p>
+            <p><span className="font-bold text-green-700">Diff Bonus:</span> If your total season point difference is positive, you get an extra improvement of <strong>−0.5 per +100 points</strong> (e.g. +137 diff → −0.5 bonus, +200 diff → −1.0 bonus).</p>
             <p>A <span className="font-semibold">lower rating</span> means a stronger player. Base starts at your group number (e.g. Group 3 = 3.0).</p>
             <div className="bg-slate-50 rounded-lg p-3 space-y-1">
               <p className="font-semibold text-slate-700">Example — Alex in Group 3:</p>

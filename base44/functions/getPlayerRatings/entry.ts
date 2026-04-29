@@ -126,6 +126,10 @@ Deno.serve(async (req) => {
         hasStats = true;
       }
 
+      // --- Diff bonus: -0.5 per +100 total diff (only if diff is positive) ---
+      const diffBonus = totalDiff > 0 ? parseFloat((Math.floor(totalDiff / 100) * 0.5).toFixed(2)) : 0;
+      const adjustedRating = hasStats ? parseFloat((rating - diffBonus).toFixed(2)) : rating;
+
       // Build per-round detail for the breakdown table
       const roundDetail = rounds.map(r => {
         const base = ratingBaseGroup || r.group;
@@ -139,7 +143,7 @@ Deno.serve(async (req) => {
         };
       });
 
-      players.push({ player: name, currentGroup: baseGroup, ratingBaseGroup: ratingBaseGroup || null, gp: totalGP, diff: totalDiff, rating, hasStats, rounds: roundDetail });
+      players.push({ player: name, currentGroup: baseGroup, ratingBaseGroup: ratingBaseGroup || null, gp: totalGP, diff: totalDiff, rating: adjustedRating, baseRating: rating, diffBonus, hasStats, rounds: roundDetail });
     }
 
     players.sort((a, b) => a.rating - b.rating);

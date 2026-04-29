@@ -62,8 +62,17 @@ function RatingBreakdown({ p }) {
             <td className="text-center px-2 py-1">{p.gp}</td>
             <td className="text-center px-2 py-1">{p.diff >= 0 ? "+" : ""}{p.diff}</td>
             <td className="px-2 py-1"></td>
-            <td className="text-center px-2 py-1 text-yellow-700">avg: {p.rating}</td>
+            <td className="text-center px-2 py-1 text-yellow-700">avg: {p.baseRating}</td>
           </tr>
+          {p.diffBonus > 0 && (
+            <tr className="bg-green-100 text-green-800 font-semibold text-xs">
+              <td className="px-2 py-1" colSpan={4}>
+                🏆 Diff Bonus: +{p.diff} pts ÷ 100 = {Math.floor(p.diff / 100)} × 0.5 = −{p.diffBonus} improvement
+              </td>
+              <td className="px-2 py-1 text-right font-mono text-xs text-green-700">{p.baseRating} − {p.diffBonus} =</td>
+              <td className="text-center px-2 py-1 font-bold text-green-700">{p.rating}</td>
+            </tr>
+          )}
         </tfoot>
       </table>
     </div>
