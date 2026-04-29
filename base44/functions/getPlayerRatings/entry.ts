@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
 
       // --- Diff bonus: -0.5 per +100 total diff (only if diff is positive) ---
       const diffBonus = totalDiff > 0 ? parseFloat((Math.floor(totalDiff / 100) * 0.5).toFixed(2)) : 0;
-      const adjustedRating = hasStats ? parseFloat((rating - diffBonus).toFixed(2)) : rating;
+      const adjustedRating = hasStats ? Math.max(0, parseFloat((rating - diffBonus).toFixed(2))) : rating;
 
       // Build per-round detail for the breakdown table
       const roundDetail = rounds.map(r => {
