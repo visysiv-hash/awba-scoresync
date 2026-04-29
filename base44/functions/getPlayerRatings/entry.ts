@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       const iSGroup  = sHeaders.indexOf("group");
       for (let i = 1; i < standingsRows.length; i++) {
         const row = standingsRows[i];
-        const name  = (row[iSPlayer] || "").trim();
+        const name  = (row[iSPlayer] || "").trim().toLowerCase();
         const round = (row[iSRound]  || "").trim();
         const group = parseInt(row[iSGroup]) || 0;
         if (name && round && group) {
@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
       // Each player uses the TEAM's average group as their base, not just their own
       // Falls back to own group if partner's group is missing
       const getTeamAvgGroup = (players) => {
-        const groups = players.map(n => playerRoundGroup[`${n}|${round}`]).filter(Boolean);
+        const groups = players.map(n => playerRoundGroup[`${n.toLowerCase()}|${round}`]).filter(Boolean);
         if (groups.length === 0) return null;
         return groups.reduce((s, g) => s + g, 0) / groups.length;
       };
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       ]) {
         for (const playerName of players) {
           if (!playerName) continue;
-          const ownGroup = playerRoundGroup[`${playerName}|${round}`];
+          const ownGroup = playerRoundGroup[`${playerName.toLowerCase()}|${round}`];
           if (!ownGroup) continue; // player not in standings for this round, skip
 
           // Use team average as base, fall back to player's own group if team avg unavailable
@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       if (matches.length === 0) {
         // No data — find fallback group from Group_Round_Standings (most recent round)
         const groupEntries = Object.entries(playerRoundGroup)
-          .filter(([key]) => key.startsWith(`${name}|`))
+          .filter(([key]) => key.startsWith(`${name.toLowerCase()}|`))
           .map(([, g]) => g);
         const fallbackGroup = groupEntries.length > 0
           ? groupEntries[groupEntries.length - 1]
