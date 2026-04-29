@@ -196,14 +196,9 @@ Deno.serve(async (req) => {
       const sortedMatches = [...matches].sort((a, b) => parseInt(a.round) - parseInt(b.round));
       const currentGroup = sortedMatches[sortedMatches.length - 1].group;
 
-      // Diff bonus: -0.5 per +100 total diff, only for group 2+
-      const effectiveGroup = currentGroup;
-      const diffBonus = (totalDiff > 0 && effectiveGroup >= 2)
-        ? parseFloat((Math.floor(totalDiff / 100) * 0.5).toFixed(2))
-        : 0;
-
       const baseRating = parseFloat(avgRating.toFixed(2));
-      const adjustedRating = Math.max(0, parseFloat((baseRating - diffBonus).toFixed(2)));
+      const adjustedRating = baseRating;
+      const diffBonus = 0;
 
       // Group matches by round for the breakdown UI
       const roundMap = {};
