@@ -142,8 +142,9 @@ Deno.serve(async (req) => {
           const base = teamAvgBase ?? ownGroup;
           const matchRating = base - (diff / 2 / 10);
 
-          if (!playerMatches[playerName]) playerMatches[playerName] = [];
-          playerMatches[playerName].push({
+          const playerKey = playerName.toLowerCase();
+          if (!playerMatches[playerKey]) playerMatches[playerKey] = [];
+          playerMatches[playerKey].push({
             round,
             gameId,
             group: ownGroup,          // player's own group (for display)
@@ -159,12 +160,13 @@ Deno.serve(async (req) => {
     const players = [];
 
     for (const name of activePlayers) {
-      const matches = playerMatches[name] || [];
+      const matches = playerMatches[name.toLowerCase()] || [];
 
       if (matches.length === 0) {
         // No data — find fallback group from Group_Round_Standings (most recent round)
+        const nameLower = name.toLowerCase();
         const groupEntries = Object.entries(playerRoundGroup)
-          .filter(([key]) => key.startsWith(`${name.toLowerCase()}|`))
+          .filter(([key]) => key.startsWith(`${nameLower}|`))
           .map(([, g]) => g);
         const fallbackGroup = groupEntries.length > 0
           ? groupEntries[groupEntries.length - 1]
