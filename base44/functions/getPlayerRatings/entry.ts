@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const standingsId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
 
-    const { debug, debugRound } = await req.json().catch(() => ({}));
+    const { debug, debugRound, scanThreshold } = await req.json().catch(() => ({}));
 
     // Fetch all 3 sheets in parallel
     const [playersRes, gamesRes, rawRes, standingsRes] = await Promise.all([
@@ -91,6 +91,7 @@ Deno.serve(async (req) => {
 
     // playerMatches: name -> [{ round, gameId, group, diff, matchRating }]
     const playerMatches = {};
+    const allMatchDetails = []; // for scanThreshold mode
 
     for (let i = 1; i < rawRows.length; i++) {
       const row = rawRows[i];
@@ -154,6 +155,20 @@ Deno.serve(async (req) => {
           }
 
           const playerKey = playerName.toLowerCase();
+          if (scanThreshold && round === String(scanThreshold)) {
+            const groupDiff = opponentAvgBase != null && teamAvgBase != null ? opponentAvgBase - teamAvgBase : null;
+            allMatchDetails.push({
+              gameId,
+              playerName,
+              ownGroup,
+              teamAvgBase: teamAvgBase ?? ownGroup,
+              opponentAvgBase: opponentAvgBase ?? null,
+              groupDiff: groupDiff != null ? parseFloat(groupDiff.toFixed(2)) : null,
+              thresholdExceeded: groupDiff != null && Math.abs(groupDiff) > 1.0,
+              rawDiff: diff,
+              adjustedDiff,
+            });
+          }
           if (!playerMatches[playerKey]) playerMatches[playerKey] = [];
           playerMatches[playerKey].push({
             round,
@@ -287,6 +302,11 @@ Deno.serve(async (req) => {
         hasStats: true,
         rounds: roundDetail,
       });
+    }
+
+    if (scanThreshold) {
+      const exceeded = allMatchDetails.filter(m => m.thresholdExceeded);
+      return Response.json({ round: scanThreshold, totalMatches: allMatchDetails.length, thresholdExceeded: exceeded, allMatches: allMatchDetails });
     }
 
     players.sort((a, b) => a.rating - b.rating);
