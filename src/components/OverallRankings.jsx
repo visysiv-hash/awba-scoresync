@@ -146,12 +146,26 @@ export default function OverallRankings({ groups }) {
               </ul>
             </div>
 
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-1 text-xs">
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-2 text-xs">
               <p className="font-semibold text-blue-900">Example — Sam in Group 3 (starting rating: 3.0)</p>
-              <p>• Round 1: 3 MP (6 games), diff <strong>+12</strong> → 3.0 − (12 ÷ 6 ÷ 30) = <strong>2.93</strong></p>
-              <p>• Round 2: 3 MP (6 games), diff <strong>−6</strong> → 2.93 − (−6 ÷ 6 ÷ 30) = <strong>2.96</strong></p>
-              <p>• Round 3: 3 MP (6 games), diff <strong>+18</strong> → 2.96 − (18 ÷ 6 ÷ 30) = <strong>2.86</strong></p>
-              <p className="text-blue-700 font-semibold mt-1">Final rating: 2.86 — Sam is performing above Group 3 level ✅</p>
+
+              <div>
+                <p className="font-semibold text-slate-700">Round 1 — all same-group pairings, no adjustment:</p>
+                <p className="ml-2 text-slate-600">Match 1: diff <strong>+6</strong> → no adjustment → +6</p>
+                <p className="ml-2 text-slate-600">Match 2: diff <strong>+2</strong> → no adjustment → +2</p>
+                <p className="ml-2 text-slate-600">Match 3: diff <strong>+4</strong> → no adjustment → +4</p>
+                <p className="ml-2 font-semibold">Total adjusted diff: +12 → 3.0 − (12 ÷ 6 ÷ 30) = <strong>2.93</strong></p>
+              </div>
+
+              <div>
+                <p className="font-semibold text-slate-700">Round 2 — one cross-group match (Sam's team avg Grp 3 vs opponent avg Grp 1.5, gap = 1.5):</p>
+                <p className="ml-2 text-slate-600">Match 1: diff <strong>−2</strong> → no adjustment (same group) → −2</p>
+                <p className="ml-2 text-slate-600">Match 2: diff <strong>−8</strong> → gap 1.5 &gt; 0.5, adjustment = −(1.5×2) = −3 → adjusted diff = −8 − (−3) = <strong>−5</strong></p>
+                <p className="ml-2 text-slate-600">Match 3: diff <strong>+1</strong> → no adjustment → +1</p>
+                <p className="ml-2 font-semibold">Total adjusted diff: −6 → 2.93 − (−6 ÷ 6 ÷ 30) = <strong>2.96</strong></p>
+              </div>
+
+              <p className="text-blue-700 font-semibold mt-1">Final rating after Round 2: 2.96 — Sam is performing above Group 3 level ✅</p>
             </div>
 
             <div className="space-y-1">
