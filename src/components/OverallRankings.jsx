@@ -47,7 +47,7 @@ function RatingBreakdown({ p }) {
             const base = r.base;
             const hasStrengthAdj = r.adjustedDiff != null && r.adjustedDiff !== r.diff;
             const diffUsed = r.adjustedDiff ?? r.diff;
-            const calc = `${base} − (${diffUsed >= 0 ? "+" : ""}${diffUsed} ÷ ${r.gp * 2} ÷ 30) = ${r.sessionRating}`;
+            const calc = `${base} − (${diffUsed >= 0 ? "+" : ""}${diffUsed} ÷ ${r.gp * 2} ÷ ${r.divisor ?? 30}) = ${r.sessionRating}`;
             return (
             <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
               <td className="px-2 py-1">Round {r.round}</td>
@@ -140,7 +140,7 @@ export default function OverallRankings({ groups }) {
               <ul className="list-disc ml-4 space-y-1 text-xs mt-2">
                 <li><strong>Point Diff</strong> = for each match, your team's score minus opponent's score — adjusted individually if teams were from different groups (see below), then summed across the round</li>
                 <li><strong>Games Played</strong> = total individual games in that round (3 matches × 2 games = 6)</li>
-                <li><strong>÷ 30</strong> = dampening factor so one big round doesn't swing things wildly</li>
+                <li><strong>÷ divisor</strong> = dampening factor scaled by group: Group 1→÷40, 2→÷35, 3→÷30, 4→÷25, 5→÷20, 6→÷15. Higher groups move faster since there's more room to improve</li>
                 <li>Ratings <strong>compound</strong> — your rating from last round becomes the base for the next</li>
                 <li>Each match's strength adjustment is applied <strong>individually</strong> — so only the specific match with a cross-group pairing gets adjusted, not the whole round</li>
               </ul>
