@@ -46,7 +46,7 @@ function RatingBreakdown({ p }) {
           {rounds.map((r, i) => {
             const base = r.base;
             const adj = parseFloat((r.diff / (r.gp * 2) / 10).toFixed(3));
-            const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp * 2} ÷ 20) = ${r.sessionRating}`;
+            const calc = `${base} − (${r.diff >= 0 ? "+" : ""}${r.diff} ÷ ${r.gp * 2} ÷ 40) = ${r.sessionRating}`;
             return (
             <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}>
               <td className="px-2 py-1">Round {r.round}</td>
@@ -116,7 +116,7 @@ export default function OverallRankings({ groups }) {
         </button>
         {showExplainer && (
           <div className="px-4 pb-4 text-xs text-slate-600 space-y-3 border-t pt-3">
-            <p><span className="font-bold">Formula (Rolling):</span> Round 1 starts from your assigned group. Each subsequent round: <em>Rating = Previous Round Rating − (Avg Diff per game ÷ 10)</em>. Ratings compound — a strong performance this week lowers your base for next week.</p>
+            <p><span className="font-bold">Formula (Rolling):</span> Round 1 starts from your assigned group. Each subsequent round: <em>Rating = Previous Round Rating − (Avg Diff per game ÷ 40)</em>. Ratings compound — a strong performance this week lowers your base for next week.</p>
             <p>A <span className="font-semibold">lower rating</span> means a stronger player. The "Base Used" column shows what you started from each round.</p>
             <div className="bg-slate-50 rounded-lg p-3 space-y-1">
               <p className="font-semibold text-slate-700">Example — Alex in Group 3:</p>
