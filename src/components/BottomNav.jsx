@@ -14,13 +14,15 @@ export default function BottomNav() {
     { path: "/", label: "Home", icon: Home },
     { path: "/dashboard", label: "Results", icon: BarChart2 },
     { path: "/leaderboard", label: "Leaderboard", icon: Trophy },
-    // { path: "/bookings", label: "Book", icon: CalendarCheck },
+    { path: "/bookings", label: "Book", icon: CalendarCheck },
     { path: "/manual", label: "Manual", icon: BookOpen },
     { path: "/availability", label: "Available", icon: CalendarCheck },
-    // { path: "/register", label: "Register", icon: CalendarCheck },
-    ...(isAdmin ? [{ path: "/admin/scores", label: "Scores", icon: ShieldCheck }] : []),
-    // admin registrations tab hidden: { path: "/admin/registrations", label: "Regs", icon: ShieldCheck }
-    // admin sessions tab hidden: { path: "/admin/sessions", label: "Sessions", icon: CalendarCheck }
+    { path: "/register", label: "Register", icon: CalendarCheck },
+    ...(isAdmin ? [
+      { path: "/admin/scores", label: "Scores", icon: ShieldCheck },
+      { path: "/admin/registrations", label: "Regs", icon: ShieldCheck },
+      { path: "/admin/sessions", label: "Sessions", icon: CalendarCheck },
+    ] : []),
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-700 flex">
