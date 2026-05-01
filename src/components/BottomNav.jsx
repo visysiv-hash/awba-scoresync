@@ -14,14 +14,14 @@ export default function BottomNav() {
     { path: "/", label: "Home", icon: Home },
     { path: "/dashboard", label: "Results", icon: BarChart2 },
     { path: "/leaderboard", label: "Leaderboard", icon: Trophy },
-    { path: "/bookings", label: "Book", icon: CalendarCheck },
+    // { path: "/bookings", label: "Book", icon: CalendarCheck },
     { path: "/manual", label: "Manual", icon: BookOpen },
     { path: "/availability", label: "Available", icon: CalendarCheck },
-    { path: "/register", label: "Register", icon: CalendarCheck },
+    // { path: "/register", label: "Register", icon: CalendarCheck },
     ...(isAdmin ? [
       { path: "/admin/scores", label: "Scores", icon: ShieldCheck },
-      { path: "/admin/registrations", label: "Regs", icon: ShieldCheck },
-      { path: "/admin/sessions", label: "Sessions", icon: CalendarCheck },
+      // { path: "/admin/registrations", label: "Regs", icon: ShieldCheck },
+      // { path: "/admin/sessions", label: "Sessions", icon: CalendarCheck },
     ] : []),
   ];
   return (
