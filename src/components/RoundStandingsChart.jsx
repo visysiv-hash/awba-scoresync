@@ -21,14 +21,22 @@ export default function RoundStandingsChart({ playerName }) {
     setRounds(r || []);
     setData(d || {});
     if (r && r.length > 0) {
-      // Pick the last round that has a date (most recently played)
-      const lastWithDate = [...r].reverse().find(round => rdm && rdm[round]);
-      setSelectedRound(lastWithDate || r[r.length - 1]);
+      setSelectedRound(r[r.length - 1]);
     }
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // When playerName changes, jump to the last round they have data in
+  useEffect(() => {
+    if (!playerName || rounds.length === 0 || Object.keys(data).length === 0) return;
+    const lastPlayerRound = [...rounds].reverse().find(r => {
+      const rows = data[r] || [];
+      return rows.some(row => (row.player || row.name || Object.values(row)[0] || "").toLowerCase() === playerName.toLowerCase());
+    });
+    if (lastPlayerRound) setSelectedRound(lastPlayerRound);
+  }, [playerName, rounds, data]);
 
   useEffect(() => {
     if (!selectedRound || !playerName) { setGames([]); return; }
