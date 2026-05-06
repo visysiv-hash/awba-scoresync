@@ -18,10 +18,11 @@ export default function RoundStandingsChart({ playerName }) {
     const res = await base44.functions.invoke("getRoundStandings", {});
     const { rounds: r, data: d, roundDateMap: rdm } = res.data;
     setRoundDateMap(rdm || {});
-    setRounds(r || []);
+    const sorted = (r || []).slice().sort((a, b) => parseInt(a) - parseInt(b));
+    setRounds(sorted);
     setData(d || {});
-    if (r && r.length > 0) {
-      setSelectedRound(r[r.length - 1]);
+    if (sorted.length > 0) {
+      setSelectedRound(sorted[sorted.length - 1]);
     }
     setLoading(false);
   }, []);
