@@ -188,9 +188,37 @@ Deno.serve(async (req) => {
     }
 
     // --- 5. Aggregate per player ---
+    // Also include players who appear in round standings but may not be in the Players sheet
+    const allPlayerNames = new Set([...activePlayers]);
+    for (const key of Object.keys(playerRoundGroup)) {
+      const name = key.split("|")[0];
+      // Find the canonical casing from playerRoundGroup keys
+      // We need to find the original-cased name from the standings data
+      allPlayerNames.add(name); // add lowercase version; we'll resolve casing below
+    }
+
+    // Build a casing map from standings data
+    const canonicalNames = {}; // lowercase -> canonical cased name
+    for (const n of activePlayers) canonicalNames[n.toLowerCase()] = n;
+    for (const row of standingsRows.slice(1)) {
+      const iSPlayer = (standingsRows[0] || []).map(h => (h || "").trim().toLowerCase()).indexOf("player");
+      if (iSPlayer >= 0) {
+        const n = (row[iSPlayer] || "").trim();
+        if (n && !canonicalNames[n.toLowerCase()]) canonicalNames[n.toLowerCase()] = n;
+      }
+    }
+
+    // Build final set using canonical names
+    const finalPlayers = new Set([...activePlayers]);
+    for (const key of Object.keys(playerRoundGroup)) {
+      const nameLower = key.split("|")[0];
+      const canonical = canonicalNames[nameLower] || nameLower;
+      finalPlayers.add(canonical);
+    }
+
     const players = [];
 
-    for (const name of activePlayers) {
+    for (const name of finalPlayers) {
       const matches = playerMatches[name.toLowerCase()] || [];
 
       if (matches.length === 0) {

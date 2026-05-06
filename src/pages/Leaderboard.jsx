@@ -153,9 +153,6 @@ export default function Leaderboard() {
             {/* 1. Games cards and stats */}
             {selectedPlayer && playerData.length > 0 && <PlayerStats playerName={selectedPlayer} />}
 
-            {/* 2. Weekly standings */}
-            {selectedPlayer && <RoundStandingsChart playerName={selectedPlayer} />}
-
             {/* 4. Group standings - show all groups player played in */}
             {selectedPlayer && playerData.length > 0 && (
               <div className="space-y-6">
@@ -237,6 +234,9 @@ export default function Leaderboard() {
                 })}
               </div>
             )}
+
+            {/* 2. Weekly standings - moved below group cards */}
+            {selectedPlayer && <RoundStandingsChart playerName={selectedPlayer} />}
 
           </div>
         )}
