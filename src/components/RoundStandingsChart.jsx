@@ -20,7 +20,7 @@ export default function RoundStandingsChart({ playerName }) {
     setRoundDateMap(rdm || {});
     setRounds(r || []);
     setData(d || {});
-    if (r && r.length > 0) setSelectedRound(r[0]);
+    if (r && r.length > 0) setSelectedRound(r[r.length - 1]);
     setLoading(false);
   }, []);
 
