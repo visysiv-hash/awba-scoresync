@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const DOT = { W: "✅", L: "❌", D: "🟡" };
@@ -19,6 +19,7 @@ function FormGuide({ games }) {
 export default function PlayerStats({ playerName }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
 
   useEffect(() => {
@@ -59,6 +60,17 @@ export default function PlayerStats({ playerName }) {
 
   return (
     <div className="space-y-4 mt-4 border-t pt-4">
+
+      {/* Expand toggle */}
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors text-sm font-semibold text-slate-700"
+      >
+        <span>Match Stats & Charts</span>
+        {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </button>
+
+      {!expanded ? null : <>
 
       {/* Form Guide */}
       <div className="bg-slate-50 rounded-lg p-4">
@@ -133,6 +145,7 @@ export default function PlayerStats({ playerName }) {
         </div>
       )}
 
+      </>}
     </div>
   );
 }
