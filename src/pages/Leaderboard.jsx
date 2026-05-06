@@ -150,6 +150,9 @@ export default function Leaderboard() {
             {/* Rating card - first */}
             {selectedPlayer && playerData.length > 0 && <PlayerRatingCard playerName={selectedPlayer} />}
 
+            {/* Weekly standings - immediately below rating card */}
+            {selectedPlayer && <RoundStandingsChart playerName={selectedPlayer} />}
+
             {/* 1. Games cards and stats */}
             {selectedPlayer && playerData.length > 0 && <PlayerStats playerName={selectedPlayer} />}
 
@@ -234,9 +237,6 @@ export default function Leaderboard() {
                 })}
               </div>
             )}
-
-            {/* 2. Weekly standings - moved below group cards */}
-            {selectedPlayer && <RoundStandingsChart playerName={selectedPlayer} />}
 
           </div>
         )}

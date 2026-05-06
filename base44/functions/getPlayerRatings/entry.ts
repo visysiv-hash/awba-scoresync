@@ -139,7 +139,17 @@ Deno.serve(async (req) => {
       ]) {
         for (const playerName of players) {
           if (!playerName) continue;
-          const ownGroup = playerRoundGroup[`${playerName.toLowerCase()}|${round}`];
+          let ownGroup = playerRoundGroup[`${playerName.toLowerCase()}|${round}`];
+          if (!ownGroup) {
+            // Try to infer group from teammates in same game
+            const allGamePlayers = [game.p1, game.p2, game.p3, game.p4].filter(n => n && n !== playerName);
+            const knownGroups = allGamePlayers
+              .map(n => playerRoundGroup[`${n.toLowerCase()}|${round}`])
+              .filter(Boolean);
+            ownGroup = knownGroups.length > 0
+              ? Math.round(knownGroups.reduce((s, g) => s + g, 0) / knownGroups.length)
+              : null;
+          }
           if (!ownGroup) continue;
 
           const base = teamAvgBase ?? ownGroup;
@@ -187,31 +197,42 @@ Deno.serve(async (req) => {
       }
     }
 
-    // --- 5. Aggregate per player ---
-    // Also include players who appear in round standings but may not be in the Players sheet
-    const allPlayerNames = new Set([...activePlayers]);
-    for (const key of Object.keys(playerRoundGroup)) {
-      const name = key.split("|")[0];
-      // Find the canonical casing from playerRoundGroup keys
-      // We need to find the original-cased name from the standings data
-      allPlayerNames.add(name); // add lowercase version; we'll resolve casing below
-    }
-
-    // Build a casing map from standings data
+    // --- 5. Build canonical name map ---
+    // Priority: activePlayers > Group_Round_Standings > Games sheet
     const canonicalNames = {}; // lowercase -> canonical cased name
     for (const n of activePlayers) canonicalNames[n.toLowerCase()] = n;
-    for (const row of standingsRows.slice(1)) {
-      const iSPlayer = (standingsRows[0] || []).map(h => (h || "").trim().toLowerCase()).indexOf("player");
-      if (iSPlayer >= 0) {
-        const n = (row[iSPlayer] || "").trim();
+
+    // From Group_Round_Standings
+    if (standingsRows.length > 1) {
+      const iSPlayer = standingsRows[0].map(h => (h || "").trim().toLowerCase()).indexOf("player");
+      for (let i = 1; i < standingsRows.length; i++) {
+        const n = iSPlayer >= 0 ? (standingsRows[i][iSPlayer] || "").trim() : "";
         if (n && !canonicalNames[n.toLowerCase()]) canonicalNames[n.toLowerCase()] = n;
       }
     }
 
-    // Build final set using canonical names
+    // From Games sheet (player columns)
+    if (gamesRows.length > 1) {
+      const gHeaders = gamesRows[0].map(h => (h || "").trim().toLowerCase());
+      const pCols = ["player 1","player 2","player 3","player 4"].map(h => gHeaders.indexOf(h));
+      for (let i = 1; i < gamesRows.length; i++) {
+        for (const col of pCols) {
+          if (col < 0) continue;
+          const n = (gamesRows[i][col] || "").trim();
+          if (n && !canonicalNames[n.toLowerCase()]) canonicalNames[n.toLowerCase()] = n;
+        }
+      }
+    }
+
+    // Build final player set: active players + anyone with round group data
     const finalPlayers = new Set([...activePlayers]);
     for (const key of Object.keys(playerRoundGroup)) {
       const nameLower = key.split("|")[0];
+      const canonical = canonicalNames[nameLower] || nameLower;
+      finalPlayers.add(canonical);
+    }
+    // Also add anyone who has match data from raw responses (Games sheet players)
+    for (const nameLower of Object.keys(playerMatches)) {
       const canonical = canonicalNames[nameLower] || nameLower;
       finalPlayers.add(canonical);
     }
