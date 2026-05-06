@@ -78,10 +78,9 @@ function RatingBreakdown({ p }) {
             <td className="px-2 py-1" colSpan={2}>Total MP: {p.gp}</td>
             <td className="text-center px-2 py-1">{p.gp}</td>
             <td className="text-center px-2 py-1">{p.diff >= 0 ? "+" : ""}{p.diff}</td>
-            <td className="px-2 py-1"></td>
+            <td className="px-2 py-1" colSpan={2}></td>
             <td className="text-center px-2 py-1 text-yellow-700">avg: {p.baseRating}</td>
           </tr>
-
         </tfoot>
       </table>
     </div>
