@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
   const scoreSpreadsheetId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
 
   // Fetch round-date mapping from Raw Responses sheet (col A = date, col K = round)
-  const rawRange = encodeURIComponent("Raw_Responses!A2:K2000");
+  const rawRange = encodeURIComponent("Raw_Responses!A2:K5000");
   const rawRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${scoreSpreadsheetId}/values/${rawRange}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
