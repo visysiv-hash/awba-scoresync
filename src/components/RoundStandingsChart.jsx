@@ -22,7 +22,9 @@ export default function RoundStandingsChart({ playerName }) {
     setRounds(sorted);
     setData(d || {});
     if (sorted.length > 0) {
-      setSelectedRound(sorted[sorted.length - 1]);
+      // Default to the last round that has a date (i.e. has actually been played)
+      const lastPlayedRound = [...sorted].reverse().find(round => (rdm || {})[round]);
+      setSelectedRound(lastPlayedRound || sorted[sorted.length - 1]);
     }
     setLoading(false);
   }, []);
