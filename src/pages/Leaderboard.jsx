@@ -4,11 +4,12 @@ import PlayerStats from "../components/PlayerStats";
 import PlayerRatingCard from "../components/PlayerRatingCard";
 import RoundStandingsChart from "../components/RoundStandingsChart";
 import OverallRankings from "../components/OverallRankings";
+import GroupStandingsSection from "../components/GroupStandingsSection";
 import LeaderboardSkeleton from "../components/LeaderboardSkeleton";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, Trophy, Flame } from "lucide-react";
+import { RefreshCw, Trophy, Flame, ChevronDown, ChevronUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const GROUP_NAMES = [
@@ -158,84 +159,12 @@ export default function Leaderboard() {
 
             {/* 4. Group standings - show all groups player played in */}
             {selectedPlayer && playerData.length > 0 && (
-              <div className="space-y-6">
-                {playerData.filter(p => Number(p.gp) > 0).map((playerInGroup) => {
-                  const groupName = playerInGroup.group;
-                  const gp = Number(playerInGroup.gp);
-                  const wr = gp > 0 ? Math.round((Number(playerInGroup.wins) / gp) * 100) : 0;
-                  const streak = getStreak(playerInGroup);
-                  const chartData = getChartDataForGroup(groupName);
-
-                  return (
-                    <Card key={groupName} className="shadow-2xl">
-                      <CardHeader>
-                        <CardTitle className="text-lg">{groupName}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-2">
-                          <span className="font-semibold">{selectedPlayer}</span>
-                          {playerInGroup.rank && <> · Rank: <span className="font-bold text-blue-600">#{playerInGroup.rank}</span></>}
-                          {streak && (
-                            <span className={`inline-flex items-center gap-1 font-bold text-xs px-2 py-0.5 rounded-full bg-orange-50 ${streak.color}`}>
-                              <Flame className="w-3 h-3" /> {streak.label}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Stats grid */}
-                        <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-                          {[
-                            { label: "MP", value: gp },
-                            { label: "Wins", value: playerInGroup.wins, color: "text-green-600" },
-                            { label: "Losses", value: playerInGroup.losses, color: "text-red-500" },
-                            { label: "Draws", value: playerInGroup.draws ?? "—" },
-                            { label: "Pts For", value: playerInGroup.pointsFor ?? "—", color: "text-blue-600" },
-                            { label: "Pts Against", value: playerInGroup.pointsAgainst ?? "—", color: "text-slate-500" },
-                          ].map(stat => (
-                            <div key={stat.label} className="bg-slate-50 rounded-lg p-3 text-center">
-                              <p className="text-xs text-muted-foreground">{stat.label}</p>
-                              <p className={`text-xl font-bold ${stat.color || ""}`}>{stat.value}</p>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Derived stats */}
-                        <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-between flex-wrap gap-3">
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Point Diff: </span>
-                            <span className={`font-bold text-lg ${Number(playerInGroup.diff) >= 0 ? "text-green-600" : "text-red-500"}`}>
-                              {Number(playerInGroup.diff) >= 0 ? "+" : ""}{playerInGroup.diff}
-                            </span>
-                          </div>
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Win Rate: </span>
-                            <span className="font-bold text-lg text-purple-600">{wr}%</span>
-                          </div>
-                        </div>
-
-                        {/* Win% Chart */}
-                        <div className="border-t pt-4 space-y-3">
-                          <p className="text-sm font-semibold">Win % in {groupName.replace(" Leaderboard", "")}</p>
-                          {chartData.length === 0 ? (
-                            <p className="text-muted-foreground text-center py-4 text-sm">No games played in this group yet.</p>
-                          ) : (
-                            <ResponsiveContainer width="100%" height={220}>
-                              <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} />
-                                <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
-                                <Tooltip formatter={(val) => `${val}%`} />
-                                <Legend verticalAlign="top" />
-                                <Bar dataKey="winPct" fill="#7c3aed" name="Win %" />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+              <GroupStandingsSection
+                playerData={playerData}
+                selectedPlayer={selectedPlayer}
+                getStreak={getStreak}
+                getChartDataForGroup={getChartDataForGroup}
+              />
             )}
 
           </div>
