@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  const range = encodeURIComponent("Group_Round_Standings!A1:Z2000");
+  const range = encodeURIComponent("Group_Round_Standings!A1:Z5000");
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
 
   const res = await fetch(url, {
