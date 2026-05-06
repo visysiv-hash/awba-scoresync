@@ -28,15 +28,17 @@ export default function RoundStandingsChart({ playerName }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // When playerName changes, jump to the last round they have data in
+  // When playerName or data changes, jump to the last round they have data in
   useEffect(() => {
     if (!playerName || rounds.length === 0 || Object.keys(data).length === 0) return;
     const lastPlayerRound = [...rounds].reverse().find(r => {
       const rows = data[r] || [];
-      return rows.some(row => (row.player || row.name || Object.values(row)[0] || "").toLowerCase() === playerName.toLowerCase());
+      return rows.some(row => (row.player || "").toLowerCase() === playerName.toLowerCase());
     });
-    if (lastPlayerRound) setSelectedRound(lastPlayerRound);
-  }, [playerName, rounds, data]);
+    if (lastPlayerRound) {
+      setSelectedRound(lastPlayerRound);
+    }
+  }, [playerName, JSON.stringify(Object.keys(data))]);
 
   useEffect(() => {
     if (!selectedRound || !playerName) { setGames([]); return; }
