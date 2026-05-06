@@ -103,17 +103,33 @@ function GroupCard({ playerInGroup, selectedPlayer, getStreak, getChartDataForGr
 }
 
 export default function GroupStandingsSection({ playerData, selectedPlayer, getStreak, getChartDataForGroup }) {
+  const [expanded, setExpanded] = useState(false);
+  const filtered = playerData.filter(p => Number(p.gp) > 0);
+  if (filtered.length === 0) return null;
+
   return (
-    <div className="space-y-6">
-      {playerData.filter(p => Number(p.gp) > 0).map((playerInGroup) => (
-        <GroupCard
-          key={playerInGroup.group}
-          playerInGroup={playerInGroup}
-          selectedPlayer={selectedPlayer}
-          getStreak={getStreak}
-          getChartDataForGroup={getChartDataForGroup}
-        />
-      ))}
+    <div className="space-y-3">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white shadow-md hover:bg-slate-50 transition-colors text-base font-bold text-slate-800"
+      >
+        <span>Group Leaderboard</span>
+        {expanded ? <ChevronUp className="w-5 h-5 text-slate-500" /> : <ChevronDown className="w-5 h-5 text-slate-500" />}
+      </button>
+
+      {expanded && (
+        <div className="space-y-4">
+          {filtered.map((playerInGroup) => (
+            <GroupCard
+              key={playerInGroup.group}
+              playerInGroup={playerInGroup}
+              selectedPlayer={selectedPlayer}
+              getStreak={getStreak}
+              getChartDataForGroup={getChartDataForGroup}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
