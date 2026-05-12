@@ -47,17 +47,13 @@ Deno.serve(async (req) => {
       const team1 = row[2];
       const team2 = row[3];
 
-      const t1 = team1.toLowerCase().trim();
-      const t2 = team2.toLowerCase().trim();
       const scoreRow = scoresRows.find(s =>
-        (String(s[0]).trim() === net && String(s[1]).trim() === game) ||
-        (!s[0]?.trim() && String(s[1]).trim() === net && (
-          String(s[2]).toLowerCase().trim() === t1 || String(s[2]).toLowerCase().trim() === t2
-        ))
+        String(s[0]).trim() === net && String(s[1]).trim() === game
       );
 
       if (scoreRow) {
-        const isManual = !scoreRow[0]?.trim();
+        // App-submitted: E=r1s1. Manually-entered: E=blank, F=r1s1
+        const isManual = !scoreRow[4]?.trim();
         return {
           net, game, team1, team2,
           submitted: true,

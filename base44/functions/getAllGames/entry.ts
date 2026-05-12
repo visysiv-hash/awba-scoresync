@@ -32,21 +32,15 @@ Deno.serve(async (req) => {
         const team1 = row[2] || "";
         const team2 = row[3] || "";
 
-        // Match by net+game (app-submitted: A=net, B=game)
-        // OR manually-entered: A=blank, B=net, C=team1 (no game col) — match by net+team names
-        const t1 = team1.toLowerCase().trim();
-        const t2 = team2.toLowerCase().trim();
+        // Match by net+game — both app-submitted and manual rows have A=net, B=game
         const scoreRow = scoresRows.find(s =>
-          (String(s[0]).trim() === net && String(s[1]).trim() === game) ||
-          (!s[0]?.trim() && String(s[1]).trim() === net && (
-            String(s[2]).toLowerCase().trim() === t1 || String(s[2]).toLowerCase().trim() === t2
-          ))
+          String(s[0]).trim() === net && String(s[1]).trim() === game
         );
 
         if (scoreRow) {
-          // App-submitted: A=net,B=game,C=t1,D=t2,E=r1s1,F=r1s2,G=r2s1,H=r2s2,I=tot1,J=tot2,K=ts (cols 0-10)
-          // Manually-entered: A=blank,B=net,C=t1,D=t2,E=blank,F=r1s1,G=r1s2,H=r2s1,I=r2s2,J=tot1,K=tot2 (cols 0-10)
-          const isManual = !scoreRow[0]?.trim();
+          // App-submitted: A=net,B=game,C=t1,D=t2,E=r1s1,F=r1s2,G=r2s1,H=r2s2,I=tot1,J=tot2,K=ts
+          // Manually-entered: A=net,B=game,C=t1,D=t2,E=blank,F=r1s1,G=r1s2,H=r2s1,I=r2s2,J=tot1,K=tot2
+          const isManual = !scoreRow[4]?.trim();
           return {
             net, game, team1, team2,
             scored: true,
