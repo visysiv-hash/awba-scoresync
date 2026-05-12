@@ -7,7 +7,7 @@ const SORT_OPTIONS = [
   { key: "pointsAgainst", label: "Pts Against" },
   { key: "diff", label: "Diff" },
   { key: "wins", label: "Wins" },
-  { key: "gp", label: "MP" },
+  { key: "gp", label: "GP" },
 ];
 
 export default function PointsTable({ groups }) {
