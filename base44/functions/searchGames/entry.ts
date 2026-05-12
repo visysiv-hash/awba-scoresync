@@ -47,23 +47,30 @@ Deno.serve(async (req) => {
       const team1 = row[2];
       const team2 = row[3];
 
+      const t1 = team1.toLowerCase().trim();
+      const t2 = team2.toLowerCase().trim();
       const scoreRow = scoresRows.find(s =>
         (String(s[0]).trim() === net && String(s[1]).trim() === game) ||
-        (!s[0]?.trim() && String(s[1]).trim() === net && String(s[2]).trim() === game)
+        (!s[0]?.trim() && String(s[1]).trim() === net && (
+          String(s[2]).toLowerCase().trim() === t1 || String(s[2]).toLowerCase().trim() === t2
+        ))
       );
 
       if (scoreRow) {
-        const offset = !scoreRow[0]?.trim() ? 1 : 0;
+        const isManual = !scoreRow[0]?.trim();
         return {
           net, game, team1, team2,
           submitted: true,
-          rounds: [
-            { score1: scoreRow[4 + offset], score2: scoreRow[5 + offset] },
-            { score1: scoreRow[6 + offset], score2: scoreRow[7 + offset] },
+          rounds: isManual ? [
+            { score1: scoreRow[5], score2: scoreRow[6] },
+            { score1: scoreRow[7], score2: scoreRow[8] },
+          ] : [
+            { score1: scoreRow[4], score2: scoreRow[5] },
+            { score1: scoreRow[6], score2: scoreRow[7] },
           ],
-          total1: scoreRow[8 + offset],
-          total2: scoreRow[9 + offset],
-          timestamp: scoreRow[10 + offset],
+          total1: isManual ? scoreRow[9] : scoreRow[8],
+          total2: isManual ? scoreRow[10] : scoreRow[9],
+          timestamp: isManual ? null : scoreRow[10],
         };
       }
 
