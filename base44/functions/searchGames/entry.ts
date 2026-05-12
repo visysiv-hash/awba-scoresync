@@ -48,20 +48,22 @@ Deno.serve(async (req) => {
       const team2 = row[3];
 
       const scoreRow = scoresRows.find(s =>
-        String(s[0]).trim() === net && String(s[1]).trim() === game
+        (String(s[0]).trim() === net && String(s[1]).trim() === game) ||
+        (!s[0]?.trim() && String(s[1]).trim() === net && String(s[2]).trim() === game)
       );
 
       if (scoreRow) {
+        const offset = !scoreRow[0]?.trim() ? 1 : 0;
         return {
           net, game, team1, team2,
           submitted: true,
           rounds: [
-            { score1: scoreRow[4], score2: scoreRow[5] },
-            { score1: scoreRow[6], score2: scoreRow[7] },
+            { score1: scoreRow[4 + offset], score2: scoreRow[5 + offset] },
+            { score1: scoreRow[6 + offset], score2: scoreRow[7 + offset] },
           ],
-          total1: scoreRow[8],
-          total2: scoreRow[9],
-          timestamp: scoreRow[10],
+          total1: scoreRow[8 + offset],
+          total2: scoreRow[9 + offset],
+          timestamp: scoreRow[10 + offset],
         };
       }
 
