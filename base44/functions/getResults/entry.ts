@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     const data = await response.json();
-    const rows = (data.values || []).slice(1); // skip header
+    const rows = (data.values || []); // no header row in Scores sheet
 
     // Filter to today's results (Australia/Sydney timezone)
     const todayStr = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' });

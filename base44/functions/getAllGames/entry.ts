@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     const scheduleData = await scheduleRes.json();
     const scoresData = await scoresRes.json();
     const scheduleRows = (scheduleData.values || []).slice(1);
-    const scoresRows = (scoresData.values || []).slice(1);
+    const scoresRows = (scoresData.values || []); // no header row in Scores sheet
 
     const games = scheduleRows
       .filter(row => row[0] && row[1])

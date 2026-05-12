@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     const scoresData = await scoresRes.json();
-    const scoresRows = (scoresData.values || []).slice(1); // skip header
+    const scoresRows = (scoresData.values || []); // no header row in Scores sheet
 
     const q = query.toLowerCase();
 
