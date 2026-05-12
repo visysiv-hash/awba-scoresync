@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       const names1 = team1.split(/[/,&]/).map(n => n.trim());
       const names2 = team2.split(/[/,&]/).map(n => n.trim());
       const allNames = [...names1, ...names2];
-      return allNames.some(name => name === q) || team1 === q || team2 === q;
+      return allNames.some(name => name.includes(q)) || team1.includes(q) || team2.includes(q);
     });
 
     // Build results with score data if available, sorted by game number
