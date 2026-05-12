@@ -5,6 +5,7 @@ import PlayerRatingCard from "../components/PlayerRatingCard";
 import RoundStandingsChart from "../components/RoundStandingsChart";
 import OverallRankings from "../components/OverallRankings";
 import GroupStandingsSection from "../components/GroupStandingsSection";
+import PointsTable from "../components/PointsTable";
 import LeaderboardSkeleton from "../components/LeaderboardSkeleton";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,7 @@ export default function Leaderboard() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-4">
-          {[{ id: "search", label: "Player Search" }, { id: "rankings", label: "🏆 Ratings" }].map(tab => (
+          {[{ id: "search", label: "Player Search" }, { id: "rankings", label: "🏆 Ratings" }, { id: "points", label: "📊 Points" }].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -119,6 +120,8 @@ export default function Leaderboard() {
           <LeaderboardSkeleton />
         ) : activeTab === "rankings" ? (
           <OverallRankings groups={groups} />
+        ) : activeTab === "points" ? (
+          <PointsTable groups={groups} />
         ) : (
           <div className="space-y-6">
 
