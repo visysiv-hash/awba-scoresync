@@ -48,7 +48,7 @@ const tiles = [
 const adminTiles = [
 {
   label: "Availability",
-  description: "Mark your session availability",
+  description: "Players Available",
   icon: CalendarCheck,
   to: "/availability",
   gradient: "from-purple-500 to-purple-700"
