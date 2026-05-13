@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
   const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
   const spreadsheetId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
 
-  const range = encodeURIComponent("Group_Leaderboards!A1:K500");
+  const range = encodeURIComponent("Group_Leaderboards!A1:K1000");
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
 
   const res = await fetch(url, {
@@ -41,6 +41,13 @@ Deno.serve(async (req) => {
     }
 
     if (!currentGroup || !firstCell) continue;
+
+    // Deduplicate: skip if this player name already exists in this group (case-insensitive)
+    const normalised = firstCell.trim().toLowerCase();
+    const isDuplicate = groups[currentGroup].some(
+      p => p.player.trim().toLowerCase() === normalised
+    );
+    if (isDuplicate) continue;
 
     groups[currentGroup].push({
       player: row[0] || "",
