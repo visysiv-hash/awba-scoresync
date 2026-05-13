@@ -47,7 +47,7 @@ const tiles = [
 
 const adminTiles = [
 {
-  label: "Availability",
+  label: "Scheduling",
   description: "Players Available",
   icon: CalendarCheck,
   to: "/availability",
