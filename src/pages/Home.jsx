@@ -1,81 +1,146 @@
 import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import {
+  ClipboardList, BarChart2, Trophy, CalendarCheck,
+  User, BookOpen, ShieldCheck, Shield
+} from "lucide-react";
 
-import ScoreEntry from "../components/ScoreEntry";
-import GameSearch from "../components/GameSearch";
+const tiles = [
+  {
+    label: "Match Details",
+    description: "Search & submit match scores",
+    icon: ClipboardList,
+    to: "/match-details",
+    gradient: "from-blue-500 to-blue-700",
+  },
+  {
+    label: "Results",
+    description: "View all game results",
+    icon: BarChart2,
+    to: "/dashboard",
+    gradient: "from-emerald-500 to-emerald-700",
+  },
+  {
+    label: "Leaderboard",
+    description: "Player standings & stats",
+    icon: Trophy,
+    to: "/leaderboard?tab=rankings",
+    gradient: "from-yellow-400 to-orange-500",
+  },
+  {
+    label: "Availability",
+    description: "Mark your session availability",
+    icon: CalendarCheck,
+    to: "/availability",
+    gradient: "from-purple-500 to-purple-700",
+  },
+  {
+    label: "Player Profile",
+    description: "View your stats & history",
+    icon: User,
+    to: "/player",
+    gradient: "from-pink-500 to-rose-600",
+  },
+  {
+    label: "User Manual",
+    description: "How to use ScoreSync",
+    icon: BookOpen,
+    to: "/manual",
+    gradient: "from-slate-500 to-slate-700",
+  },
+];
+
+const adminTiles = [
+  {
+    label: "Edit Scores",
+    description: "Correct submitted scores",
+    icon: ShieldCheck,
+    to: "/admin/scores",
+    gradient: "from-red-500 to-red-700",
+  },
+  {
+    label: "Registrations",
+    description: "Manage player registrations",
+    icon: ShieldCheck,
+    to: "/admin/registrations",
+    gradient: "from-orange-500 to-orange-600",
+  },
+  {
+    label: "Sessions",
+    description: "Create & manage sessions",
+    icon: CalendarCheck,
+    to: "/admin/sessions",
+    gradient: "from-rose-500 to-pink-700",
+  },
+];
+
+function Tile({ label, description, icon: Icon, to, gradient }) {
+  return (
+    <Link
+      to={to}
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-5 flex flex-col gap-3 shadow-md hover:shadow-xl active:scale-95 transition-all duration-150`}
+    >
+      {/* decorative circles */}
+      <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-white/10" />
+      <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/5" />
+
+      <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+        <Icon className="w-5 h-5 text-white" />
+      </div>
+      <div>
+        <p className="text-white font-bold text-base leading-tight">{label}</p>
+        <p className="text-white/75 text-xs mt-0.5">{description}</p>
+      </div>
+    </Link>
+  );
+}
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("search");
-  const [prefilledGame, setPrefilledGame] = useState(null);
-  const [totalVisits, setTotalVisits] = useState(null);
-  // Track locally submitted scores so GameSearch can show ✓ Scored instantly
-  const [submittedScores, setSubmittedScores] = useState({});
-  // Persist search state across tab switches
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    base44.entities.PageVisit.create({ page: 'home' });
-    base44.entities.PageVisit.list().then(visits => setTotalVisits(visits.length));
+    base44.entities.PageVisit.create({ page: 'landing' });
+    base44.auth.me().then(user => {
+      if (user?.role === 'admin') setIsAdmin(true);
+    }).catch(() => {});
   }, []);
 
-  const handleSelectGame = (game) => {
-    setPrefilledGame(game);
-    setActiveTab("entry");
-  };
-
-  const handleScoreSubmitted = ({ net, game, rounds, total1, total2, goBack }) => {
-    if (net && game) {
-      const key = `${net}-${game}`;
-      setSubmittedScores(prev => ({
-        ...prev,
-        [key]: { submitted: true, rounds, total1, total2 }
-      }));
-    }
-    // Always go back to search after submission
-    setActiveTab("search");
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        <div className="text-center mb-6">
-          <img src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png" alt="Albury Wodonga Badminton" className="mx-auto mb-2 h-16 object-contain" />
-          <h1 className="text-3xl font-bold text-white">Score Entry</h1>
-          {totalVisits !== null && (
-            <p className="text-xs text-slate-400 mt-1">{totalVisits} total app visits</p>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 pb-24">
+      <div className="max-w-lg mx-auto">
+        {/* Header */}
+        <div className="text-center pt-6 pb-8">
+          <img
+            src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png"
+            alt="AWBA"
+            className="mx-auto mb-3 h-16 object-contain"
+          />
+          <h1 className="text-3xl font-bold text-white">AWBA ScoreSync</h1>
+          <p className="text-sm text-slate-400 mt-1">Select a section to get started</p>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 space-y-1 mb-4">
-          <p><span className="font-semibold">Game:</span> A single play to 21 points; first to reach 21 wins.</p>
-          <p><span className="font-semibold">Match:</span> A contest against one opponent consisting of two games.</p>
+        {/* Main tiles */}
+        <div className="grid grid-cols-2 gap-3">
+          {tiles.map(tile => <Tile key={tile.label} {...tile} />)}
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full mb-4">
-            <TabsTrigger value="search" className="flex-1">Search Match</TabsTrigger>
-          </TabsList>
-          <TabsContent value="search">
-            <GameSearch
-              onSelectGame={handleSelectGame}
-              submittedScores={submittedScores}
-              query={searchQuery}
-              onQueryChange={setSearchQuery}
-              results={searchResults}
-              onResultsChange={setSearchResults}
-            />
-          </TabsContent>
-          <TabsContent value="entry">
-            <ScoreEntry
-              prefilledGame={prefilledGame}
-              onPrefilledUsed={() => setPrefilledGame(null)}
-              onScoreSubmitted={handleScoreSubmitted}
-            />
-          </TabsContent>
-        </Tabs>
-
+        {/* Admin section */}
+        {isAdmin && (
+          <div className="mt-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 h-px bg-slate-700" />
+              <div className="flex items-center gap-1.5 text-slate-400 text-xs font-semibold tracking-widest uppercase">
+                <Shield className="w-3.5 h-3.5" />
+                Admin
+              </div>
+              <div className="flex-1 h-px bg-slate-700" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {adminTiles.map(tile => <Tile key={tile.label} {...tile} />)}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

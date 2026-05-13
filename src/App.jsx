@@ -17,6 +17,7 @@ import AdminScoreEdit from './pages/AdminScoreEdit';
 import PlayerProfile from './pages/PlayerProfile';
 import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
+import MatchDetails from './pages/MatchDetails';
 import PlayerAvailability from './pages/PlayerAvailability';
 import Leaderboard from './pages/Leaderboard';
 import Dashboard from './pages/Dashboard';
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/scores" element={<AdminScoreEdit />} />
           <Route path="/bookings" element={<BookingSessions />} />
           <Route path="/admin/sessions" element={<AdminSessions />} />
+          <Route path="/match-details" element={<MatchDetails />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/registrations" element={<AdminRegistrations />} />
 
