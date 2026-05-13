@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield } from
+  User, BookOpen, ShieldCheck, Shield, CalendarDays } from
 "lucide-react";
 import AdminPinGate from "../components/AdminPinGate";
 
@@ -42,6 +42,13 @@ const tiles = [
   icon: BookOpen,
   to: "/manual",
   gradient: "from-slate-500 to-slate-700"
+},
+{
+  label: "Book a Session",
+  description: "View & book available sessions",
+  icon: CalendarDays,
+  to: "/bookings",
+  gradient: "from-teal-500 to-cyan-700"
 }];
 
 
