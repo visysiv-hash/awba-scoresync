@@ -21,8 +21,8 @@ export default function BookingModal({ session, user, onBooked, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={onClose}>
-      <div className="bg-white w-full max-w-lg rounded-t-2xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="bg-white w-full max-w-lg rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-lg">Confirm Booking</h2>
           <button onClick={onClose}><X className="w-5 h-5 text-slate-500" /></button>
