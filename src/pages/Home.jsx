@@ -30,13 +30,6 @@ const tiles = [
   gradient: "from-yellow-400 to-orange-500"
 },
 {
-  label: "Availability",
-  description: "Mark your session availability",
-  icon: CalendarCheck,
-  to: "/availability",
-  gradient: "from-purple-500 to-purple-700"
-},
-{
   label: "Player Profile",
   description: "View your stats & history",
   icon: User,
@@ -53,6 +46,13 @@ const tiles = [
 
 
 const adminTiles = [
+{
+  label: "Availability",
+  description: "Mark your session availability",
+  icon: CalendarCheck,
+  to: "/availability",
+  gradient: "from-purple-500 to-purple-700"
+},
 {
   label: "Edit Scores",
   description: "Correct submitted scores",
