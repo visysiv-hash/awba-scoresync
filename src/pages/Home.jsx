@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
   User, BookOpen, ShieldCheck, Shield
 } from "lucide-react";
+import AdminPinGate from "../components/AdminPinGate";
 
 const tiles = [
   {
@@ -75,10 +76,11 @@ const adminTiles = [
   },
 ];
 
-function Tile({ label, description, icon: Icon, to, gradient }) {
+function Tile({ label, description, icon: Icon, to, gradient, onClick }) {
   return (
     <Link
       to={to}
+      onClick={onClick}
       className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-5 flex flex-col gap-3 shadow-md hover:shadow-xl active:scale-95 transition-all duration-150`}
     >
       {/* decorative circles */}
@@ -98,6 +100,8 @@ function Tile({ label, description, icon: Icon, to, gradient }) {
 
 export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [pendingRoute, setPendingRoute] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     base44.entities.PageVisit.create({ page: 'landing' });
@@ -105,6 +109,17 @@ export default function Home() {
       if (user?.role === 'admin') setIsAdmin(true);
     }).catch(() => {});
   }, []);
+
+  const handleAdminTileClick = (e, to) => {
+    e.preventDefault();
+    setPendingRoute(to);
+  };
+
+  const handlePinSuccess = () => {
+    const route = pendingRoute;
+    setPendingRoute(null);
+    navigate(route);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 pb-24">
@@ -137,11 +152,24 @@ export default function Home() {
               <div className="flex-1 h-px bg-slate-700" />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {adminTiles.map(tile => <Tile key={tile.label} {...tile} />)}
+              {adminTiles.map(tile => (
+                <Tile
+                  key={tile.label}
+                  {...tile}
+                  onClick={(e) => handleAdminTileClick(e, tile.to)}
+                />
+              ))}
             </div>
           </div>
         )}
       </div>
+
+      {pendingRoute && (
+        <AdminPinGate
+          onSuccess={handlePinSuccess}
+          onCancel={() => setPendingRoute(null)}
+        />
+      )}
     </div>
   );
 }
