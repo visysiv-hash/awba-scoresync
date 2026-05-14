@@ -153,13 +153,13 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 pb-24">
       <div className="max-w-lg mx-auto">
         {/* Header */}
-        <div className="text-center pt-2 pb-4">
+        <div className="text-center pt-0 pb-2">
           <img
             src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png"
             alt="AWBA"
-            className="mx-auto mb-3 h-16 object-contain" />
+            className="mx-auto mb-1 h-16 object-contain" />
           
-          <p className="text-sm text-slate-400 mt-1">Select a section to get started</p>
+          <p className="text-sm text-slate-400 mt-0">Select a section to get started</p>
         </div>
 
         {/* Sponsor Strip */}
