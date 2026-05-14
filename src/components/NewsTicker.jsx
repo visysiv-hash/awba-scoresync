@@ -32,15 +32,15 @@ export default function NewsTicker({ onSelectPost }) {
 
   return (
     <div
-      className="bg-slate-800 border-t border-slate-700 flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-slate-700 transition-colors"
+      className="bg-white border-t border-slate-200 flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-slate-50 transition-colors"
       onClick={() => navigate('/news')}
     >
       <div className="flex items-center gap-1.5 shrink-0">
-        <Newspaper className="w-3.5 h-3.5 text-violet-400" />
-        <span className="text-violet-400 text-xs font-bold uppercase tracking-wide">News</span>
+        <Newspaper className="w-3.5 h-3.5 text-violet-600" />
+        <span className="text-violet-600 text-xs font-bold uppercase tracking-wide">News</span>
       </div>
-      <div className="w-px h-4 bg-slate-600 shrink-0" />
-      <p className="text-white text-xs truncate flex-1 leading-none">{post.title}</p>
+      <div className="w-px h-4 bg-slate-300 shrink-0" />
+      <p className="text-slate-900 text-xs truncate flex-1 leading-none">{post.title}</p>
       {posts.length > 1 && (
         <div className="flex gap-1 shrink-0">
           {posts.map((_, i) => (
