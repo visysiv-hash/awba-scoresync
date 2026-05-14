@@ -111,18 +111,18 @@ function Tile({ label, description, icon: Icon, to, gradient, onClick }) {
     <Link
       to={to}
       onClick={onClick}
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-3 flex flex-col gap-2 shadow-md hover:shadow-xl active:scale-95 transition-all duration-150`}>
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-2 flex flex-col gap-1 shadow-md hover:shadow-xl active:scale-95 transition-all duration-150`}>
       
       {/* decorative circles */}
       <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-white/10" />
       <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/5" />
 
-      <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-        <Icon className="w-3.5 h-3.5 text-white" />
+      <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
+        <Icon className="w-3 h-3 text-white" />
       </div>
-      <div className="min-w-0 flex-1">
+      <div>
         <p className="text-white font-bold text-xs leading-tight">{label}</p>
-        <p className="text-white/75 text-xs leading-tight">{description}</p>
+        <p className="text-white/75 text-[10px] leading-tight">{description}</p>
       </div>
     </Link>);
 
