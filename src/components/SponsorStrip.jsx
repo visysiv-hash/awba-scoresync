@@ -17,9 +17,6 @@ export default function SponsorStrip() {
 
   return (
     <div className="bg-white border-t border-slate-200 py-2 overflow-hidden">
-      <div className="flex items-center gap-1 mb-1 px-3">
-        <span className="text-slate-500 text-xs uppercase tracking-widest font-semibold">Our Sponsors</span>
-      </div>
       <div className="overflow-hidden relative">
         <div
           className="flex gap-6 items-center"

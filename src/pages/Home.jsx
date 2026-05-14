@@ -146,8 +146,13 @@ export default function Home() {
         </div>
 
         {/* Sponsor Strip */}
-        <div className="mt-3 rounded-xl overflow-hidden">
-          <SponsorStrip />
+        <div className="mt-4">
+          <div className="px-1 mb-2">
+            <span className="text-slate-400 text-xs uppercase tracking-widest font-semibold">Our Sponsors</span>
+          </div>
+          <div className="rounded-xl overflow-hidden">
+            <SponsorStrip />
+          </div>
         </div>
 
         {/* News Ticker */}
