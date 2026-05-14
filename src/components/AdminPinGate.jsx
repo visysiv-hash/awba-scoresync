@@ -17,11 +17,17 @@ export default function AdminPinGate({ onSuccess, onCancel }) {
     e.preventDefault();
     setPinLoading(true);
     setPinError(false);
-    const res = await base44.functions.invoke("verifyAdminPin", { pin });
-    setPinLoading(false);
-    if (res.data?.success) {
-      onSuccess();
-    } else {
+    try {
+      const res = await base44.functions.invoke("verifyAdminPin", { pin });
+      setPinLoading(false);
+      if (res.data?.success) {
+        onSuccess();
+      } else {
+        setPinError(true);
+        setPin("");
+      }
+    } catch {
+      setPinLoading(false);
       setPinError(true);
       setPin("");
     }
