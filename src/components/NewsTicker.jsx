@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Newspaper, X } from "lucide-react";
+import { Newspaper } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function NewsTicker({ onSelectPost }) {
   const [posts, setPosts] = useState([]);
   const [current, setCurrent] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     base44.entities.NewsPost.filter({ published: true }, "-created_date", 20).then(all => {
@@ -31,7 +33,7 @@ export default function NewsTicker({ onSelectPost }) {
   return (
     <div
       className="bg-slate-800 border-t border-slate-700 flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-slate-700 transition-colors"
-      onClick={() => onSelectPost(post)}
+      onClick={() => navigate('/news')}
     >
       <div className="flex items-center gap-1.5 shrink-0">
         <Newspaper className="w-3.5 h-3.5 text-violet-400" />

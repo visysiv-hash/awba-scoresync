@@ -8,7 +8,6 @@ User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown,
 import AdminPinGate from "../components/AdminPinGate";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
-import NewsModal from "../components/NewsModal";
 
 const tiles = [
 {
@@ -130,17 +129,13 @@ function Tile({ label, description, icon: Icon, to, gradient, onClick }) {
 }
 
 export default function Home() {
-  const [isAdmin, setIsAdmin] = useState(false);
   const [pendingRoute, setPendingRoute] = useState(null);
   const [adminExpanded, setAdminExpanded] = useState(false);
-  const [selectedPost, setSelectedPost] = useState(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
     base44.entities.PageVisit.create({ page: 'landing' });
-    base44.auth.me().then((user) => {
-      if (user?.role === 'admin') setIsAdmin(true);
-    }).catch(() => {});
   }, []);
 
   const handleAdminTileClick = (e, to) => {
@@ -175,7 +170,7 @@ export default function Home() {
 
         {/* News Ticker */}
         <div className="mt-2 rounded-xl overflow-hidden">
-          <NewsTicker onSelectedPost={setSelectedPost} />
+          <NewsTicker />
         </div>
 
         {/* Main tiles */}
@@ -184,8 +179,7 @@ export default function Home() {
         </div>
 
         {/* Admin section */}
-        {isAdmin && (
-          <div className="mt-6">
+        <div className="mt-6">
             <button
               onClick={() => setAdminExpanded(v => !v)}
               className="w-full flex items-center gap-3 py-2"
@@ -210,7 +204,6 @@ export default function Home() {
               </div>
             )}
           </div>
-        )}
       </div>
 
       {pendingRoute && (
@@ -219,9 +212,7 @@ export default function Home() {
           onCancel={() => setPendingRoute(null)}
         />
       )}
-      {selectedPost && (
-        <NewsModal post={selectedPost} onClose={() => setSelectedPost(null)} />
-      )}
+
     </div>);
 
 }
