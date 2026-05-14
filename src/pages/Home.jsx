@@ -37,6 +37,13 @@ const tiles = [
   gradient: "from-pink-500 to-rose-600"
 },
 {
+  label: "News",
+  description: "Latest updates & announcements",
+  icon: Newspaper,
+  to: "/news",
+  gradient: "from-violet-500 to-purple-600"
+},
+{
   label: "User Manual",
   description: "How to use ScoreSync",
   icon: BookOpen,
