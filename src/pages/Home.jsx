@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
 ClipboardList, BarChart2, Trophy, CalendarCheck,
 User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp } from
 "lucide-react";
-import AdminPinGate from "../components/AdminPinGate";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
 
@@ -129,25 +128,11 @@ function Tile({ label, description, icon: Icon, to, gradient, onClick }) {
 }
 
 export default function Home() {
-  const [pendingRoute, setPendingRoute] = useState(null);
   const [adminExpanded, setAdminExpanded] = useState(false);
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     base44.entities.PageVisit.create({ page: 'landing' });
   }, []);
-
-  const handleAdminTileClick = (e, to) => {
-    e.preventDefault();
-    setPendingRoute(to);
-  };
-
-  const handlePinSuccess = () => {
-    const route = pendingRoute;
-    setPendingRoute(null);
-    navigate(route);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 pb-24">
@@ -192,23 +177,12 @@ export default function Home() {
             {adminExpanded && (
               <div className="grid grid-cols-2 gap-2 mt-3">
                 {adminTiles.map((tile) => (
-                  <Tile
-                    key={tile.label}
-                    {...tile}
-                    onClick={(e) => handleAdminTileClick(e, tile.to)}
-                  />
+                  <Tile key={tile.label} {...tile} />
                 ))}
               </div>
             )}
           </div>
       </div>
-
-      {pendingRoute && (
-        <AdminPinGate
-          onSuccess={handlePinSuccess}
-          onCancel={() => setPendingRoute(null)}
-        />
-      )}
 
     </div>);
 
