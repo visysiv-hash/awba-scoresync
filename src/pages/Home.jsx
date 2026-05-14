@@ -117,12 +117,12 @@ function Tile({ label, description, icon: Icon, to, gradient, onClick }) {
       <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-white/10" />
       <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/5" />
 
-      <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-        <Icon className="w-4 h-4 text-white" />
+      <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+        <Icon className="w-3.5 h-3.5 text-white" />
       </div>
-      <div>
-        <p className="text-white font-bold text-sm leading-tight">{label}</p>
-        <p className="text-white/75 text-xs mt-0.5">{description}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-white font-bold text-xs leading-tight">{label}</p>
+        <p className="text-white/75 text-xs leading-tight">{description}</p>
       </div>
     </Link>);
 
