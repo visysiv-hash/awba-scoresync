@@ -18,7 +18,7 @@ export default function AdminPinGate({ onSuccess, onCancel }) {
     setPinLoading(true);
     setPinError(false);
     try {
-      const res = await base44.functions.invoke("verifyAdminPin", { pin });
+      const res = await base44.functions.invoke("verifyAdminPin", { pin: pin.trim() });
       setPinLoading(false);
       if (res.data?.success) {
         onSuccess();
