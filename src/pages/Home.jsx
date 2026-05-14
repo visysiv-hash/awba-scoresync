@@ -3,9 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
 ClipboardList, BarChart2, Trophy, CalendarCheck,
-User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star } from
+User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp } from
 "lucide-react";
 import AdminPinGate from "../components/AdminPinGate";
+import NewsTicker from "../components/NewsTicker";
+import SponsorStrip from "../components/SponsorStrip";
+import NewsModal from "../components/NewsModal";
 
 const tiles = [
 {
@@ -129,6 +132,8 @@ function Tile({ label, description, icon: Icon, to, gradient, onClick }) {
 export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingRoute, setPendingRoute] = useState(null);
+  const [adminExpanded, setAdminExpanded] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -168,36 +173,55 @@ export default function Home() {
           {tiles.map((tile) => <Tile key={tile.label} {...tile} />)}
         </div>
 
+        {/* Sponsor Strip */}
+        <div className="mt-4 rounded-xl overflow-hidden">
+          <SponsorStrip />
+        </div>
+
+        {/* News Ticker */}
+        <div className="mt-3 rounded-xl overflow-hidden">
+          <NewsTicker onSelectPost={setSelectedPost} />
+        </div>
+
         {/* Admin section */}
-        {isAdmin &&
-        <div className="mt-8">
-            <div className="flex items-center gap-3 mb-4">
+        {isAdmin && (
+          <div className="mt-6">
+            <button
+              onClick={() => setAdminExpanded(v => !v)}
+              className="w-full flex items-center gap-3 py-2"
+            >
               <div className="flex-1 h-px bg-slate-700" />
               <div className="flex items-center gap-1.5 text-slate-400 text-xs font-semibold tracking-widest uppercase">
                 <Shield className="w-3.5 h-3.5" />
                 Admin
+                {adminExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </div>
               <div className="flex-1 h-px bg-slate-700" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {adminTiles.map((tile) =>
-            <Tile
-              key={tile.label}
-              {...tile}
-              onClick={(e) => handleAdminTileClick(e, tile.to)} />
-
+            </button>
+            {adminExpanded && (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                {adminTiles.map((tile) => (
+                  <Tile
+                    key={tile.label}
+                    {...tile}
+                    onClick={(e) => handleAdminTileClick(e, tile.to)}
+                  />
+                ))}
+              </div>
             )}
-            </div>
           </div>
-        }
+        )}
       </div>
 
-      {pendingRoute &&
-      <AdminPinGate
-        onSuccess={handlePinSuccess}
-        onCancel={() => setPendingRoute(null)} />
-
-      }
+      {pendingRoute && (
+        <AdminPinGate
+          onSuccess={handlePinSuccess}
+          onCancel={() => setPendingRoute(null)}
+        />
+      )}
+      {selectedPost && (
+        <NewsModal post={selectedPost} onClose={() => setSelectedPost(null)} />
+      )}
     </div>);
 
 }

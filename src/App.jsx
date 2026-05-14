@@ -1,5 +1,4 @@
 import { Toaster } from "@/components/ui/toaster"
-import { useState } from "react";
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -13,15 +12,11 @@ import BookingSessions from './pages/BookingSessions';
 import Register from './pages/Register';
 import AdminRegistrations from './pages/AdminRegistrations';
 import AdminSessions from './pages/AdminSessions';
-
 import ExplainerDownload from './pages/ExplainerDownload';
 import UserManual from './pages/UserManual';
 import AdminScoreEdit from './pages/AdminScoreEdit';
 import PlayerProfile from './pages/PlayerProfile';
 import BottomNav from './components/BottomNav';
-import NewsTicker from './components/NewsTicker';
-import SponsorStrip from './components/SponsorStrip';
-import NewsModal from './components/NewsModal';
 import AdminSponsors from './pages/AdminSponsors';
 import Home from './pages/Home';
 import MatchDetails from './pages/MatchDetails';
@@ -31,7 +26,6 @@ import Dashboard from './pages/Dashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
-  const [selectedNewsPost, setSelectedNewsPost] = useState(null);
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -56,7 +50,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <>
-      <div className="pb-28">
+      <div className="pb-16">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -79,13 +73,8 @@ const AuthenticatedApp = () => {
         </Routes>
       </div>
       <div className="fixed bottom-0 left-0 right-0 z-40">
-        <NewsTicker onSelectPost={setSelectedNewsPost} />
-        <SponsorStrip />
         <BottomNav />
       </div>
-      {selectedNewsPost && (
-        <NewsModal post={selectedNewsPost} onClose={() => setSelectedNewsPost(null)} />
-      )}
     </>
   );
 };
