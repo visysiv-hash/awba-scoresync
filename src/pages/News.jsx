@@ -25,10 +25,21 @@ export default function News() {
   useEffect(() => {
     const load = async () => {
       const all = await base44.entities.NewsPost.filter({ published: true }, "-created_date", 200);
+
+      // Fetch content from URL if needed
+      const withContent = await Promise.all(all.map(async (post) => {
+        if (post.content && post.content.startsWith("http")) {
+          const res = await fetch(post.content);
+          const html = await res.text();
+          return { ...post, content: html };
+        }
+        return post;
+      }));
+
       // Pinned first, then by created_date desc
       const sorted = [
-        ...all.filter(p => p.pinned).sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
-        ...all.filter(p => !p.pinned).sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
+        ...withContent.filter(p => p.pinned).sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
+        ...withContent.filter(p => !p.pinned).sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
       ];
       setPosts(sorted);
       setLoading(false);

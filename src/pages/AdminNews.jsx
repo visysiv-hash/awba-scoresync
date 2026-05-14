@@ -48,10 +48,16 @@ export default function AdminNews() {
     load();
   }, []);
 
-  const startEdit = (post) => {
+  const startEdit = async (post) => {
+    let content = post.content || "";
+    // If content is a URL, fetch the actual HTML
+    if (content.startsWith("http")) {
+      const res = await fetch(content);
+      content = await res.text();
+    }
     setForm({
       title: post.title,
-      content: post.content || "",
+      content,
       category: post.category || "General",
       pinned: post.pinned || false,
       published: post.published || false,
@@ -70,12 +76,23 @@ export default function AdminNews() {
   const handleSave = async () => {
     if (!form.title.trim()) { toast.error("Title is required."); return; }
     setSaving(true);
+
+    let saveData = { ...form };
+
+    // Upload content as a file if it's large (or always, to be safe)
+    if (form.content) {
+      const blob = new Blob([form.content], { type: "text/html" });
+      const file = new File([blob], "content.html", { type: "text/html" });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      saveData = { ...saveData, content: file_url };
+    }
+
     if (editingId) {
-      const updated = await base44.entities.NewsPost.update(editingId, form);
+      const updated = await base44.entities.NewsPost.update(editingId, saveData);
       setPosts(prev => prev.map(p => p.id === editingId ? updated : p));
       toast.success("Post updated!");
     } else {
-      const created = await base44.entities.NewsPost.create(form);
+      const created = await base44.entities.NewsPost.create(saveData);
       setPosts(prev => [created, ...prev]);
       toast.success("Post created!");
     }
