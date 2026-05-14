@@ -27,7 +27,8 @@ export default function AdminSponsors() {
 
   useEffect(() => {
     const load = async () => {
-      const u = await base44.auth.me();
+      let u = null;
+      try { u = await base44.auth.me(); } catch {}
       setUser(u);
       if (u?.role !== "admin") { setLoading(false); return; }
       const all = await base44.entities.Sponsor.list("display_order", 100);

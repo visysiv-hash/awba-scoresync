@@ -28,7 +28,8 @@ export default function AdminSessions() {
 
   useEffect(() => {
     const load = async () => {
-      const u = await base44.auth.me();
+      let u = null;
+      try { u = await base44.auth.me(); } catch {}
       setUser(u);
       if (u?.role !== "admin") { setLoading(false); return; }
       const [s, b] = await Promise.all([
