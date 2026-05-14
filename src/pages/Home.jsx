@@ -157,9 +157,7 @@ export default function Home() {
           <img
             src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png"
             alt="AWBA"
-            className="mx-auto mb-1 h-16 object-contain" />
-          
-          <p className="text-sm text-slate-400 mt-0">Select a section to get started</p>
+            className="mx-auto h-16 object-contain" />
         </div>
 
         {/* Sponsor Strip */}
