@@ -17,8 +17,9 @@ export default function BookingSessions() {
 
   useEffect(() => {
     const load = async () => {
-      const [u, allSessions, allBookings] = await Promise.all([
-        base44.auth.me(),
+      let u = null;
+      try { u = await base44.auth.me(); } catch {}
+      const [allSessions, allBookings] = await Promise.all([
         base44.entities.Session.list("date", 100),
         base44.entities.Booking.list("-created_date", 500),
       ]);
