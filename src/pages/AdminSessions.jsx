@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import AdminPinGate from "../components/AdminPinGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,31 +18,25 @@ const emptyForm = () => ({
 });
 
 export default function AdminSessions() {
-  const [user, setUser] = useState(null);
+  const [pinUnlocked, setPinUnlocked] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [showForm, setShowForm] = useState(false);
   const [expandedSession, setExpandedSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      let u = null;
-      try { u = await base44.auth.me(); } catch {}
-      setUser(u);
-      if (u?.role !== "admin") { setLoading(false); return; }
-      const [s, b] = await Promise.all([
-        base44.entities.Session.list("-date", 200),
-        base44.entities.Booking.list("-created_date", 1000),
-      ]);
-      setSessions(s);
-      setBookings(b);
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const loadData = async () => {
+    setLoading(true);
+    const [s, b] = await Promise.all([
+      base44.entities.Session.list("-date", 200),
+      base44.entities.Booking.list("-created_date", 1000),
+    ]);
+    setSessions(s);
+    setBookings(b);
+    setLoading(false);
+  };
 
   const sessionBookings = (sessionId) => bookings.filter(b => b.session_id === sessionId && b.status !== "cancelled");
 
@@ -88,15 +83,18 @@ export default function AdminSessions() {
     toast.success("Session deleted.");
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-white" />
+  if (!pinUnlocked) return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700">
+      <AdminPinGate
+        onSuccess={() => { setPinUnlocked(true); loadData(); }}
+        onCancel={() => window.history.back()}
+      />
     </div>
   );
 
-  if (user?.role !== "admin") return (
+  if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center">
-      <p className="text-white">Access denied — admins only.</p>
+      <Loader2 className="w-8 h-8 animate-spin text-white" />
     </div>
   );
 

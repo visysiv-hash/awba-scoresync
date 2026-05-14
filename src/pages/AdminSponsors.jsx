@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import AdminPinGate from "../components/AdminPinGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,27 +17,21 @@ const emptyForm = () => ({
 });
 
 export default function AdminSponsors() {
-  const [user, setUser] = useState(null);
+  const [pinUnlocked, setPinUnlocked] = useState(false);
   const [sponsors, setSponsors] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(emptyForm());
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      let u = null;
-      try { u = await base44.auth.me(); } catch {}
-      setUser(u);
-      if (u?.role !== "admin") { setLoading(false); return; }
-      const all = await base44.entities.Sponsor.list("display_order", 100);
-      setSponsors(all);
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const loadData = async () => {
+    setLoading(true);
+    const all = await base44.entities.Sponsor.list("display_order", 100);
+    setSponsors(all);
+    setLoading(false);
+  };
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
@@ -95,15 +90,18 @@ export default function AdminSponsors() {
     setSponsors(prev => prev.map(s => s.id === sponsor.id ? updated : s));
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-white" />
+  if (!pinUnlocked) return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700">
+      <AdminPinGate
+        onSuccess={() => { setPinUnlocked(true); loadData(); }}
+        onCancel={() => window.history.back()}
+      />
     </div>
   );
 
-  if (user?.role !== "admin") return (
+  if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center">
-      <p className="text-white">Access denied — admins only.</p>
+      <Loader2 className="w-8 h-8 animate-spin text-white" />
     </div>
   );
 

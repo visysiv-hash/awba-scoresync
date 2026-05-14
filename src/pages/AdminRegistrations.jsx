@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import AdminPinGate from "../components/AdminPinGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,19 +13,21 @@ const statusColor = { pending: "bg-yellow-100 text-yellow-800", approved: "bg-gr
 const paymentColor = { unpaid: "bg-slate-100 text-slate-600", paid: "bg-emerald-100 text-emerald-700" };
 
 export default function AdminRegistrations() {
+  const [pinUnlocked, setPinUnlocked] = useState(false);
   const [seasons, setSeasons] = useState([]);
   const [registrations, setRegistrations] = useState([]);
   const [selectedSeason, setSelectedSeason] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [expandedReg, setExpandedReg] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "", start_date: "", end_date: "", fee: "",
     bank_name: "", bsb: "", account_number: "", account_name: "",
     payment_reference_instructions: "", notes: "", registration_open: true
   });
 
-  useEffect(() => {
+  const loadData = () => {
+    setLoading(true);
     Promise.all([
       base44.entities.Season.list("-created_date"),
       base44.entities.Registration.list("-created_date")
@@ -33,7 +36,7 @@ export default function AdminRegistrations() {
       setRegistrations(r);
       if (s.length > 0) setSelectedSeason(s[0]);
     }).finally(() => setLoading(false));
-  }, []);
+  };
 
   const handleCreateSeason = async () => {
     if (!form.name) { toast.error("Season name is required."); return; }
@@ -59,6 +62,15 @@ export default function AdminRegistrations() {
   const pending = seasonRegs.filter(r => r.status === "pending");
   const approved = seasonRegs.filter(r => r.status === "approved");
   const rejected = seasonRegs.filter(r => r.status === "rejected");
+
+  if (!pinUnlocked) return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700">
+      <AdminPinGate
+        onSuccess={() => { setPinUnlocked(true); loadData(); }}
+        onCancel={() => window.history.back()}
+      />
+    </div>
+  );
 
   if (loading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin w-8 h-8" /></div>;
 
