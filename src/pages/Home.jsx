@@ -140,7 +140,7 @@ export default function Home() {
         {/* Header */}
         <div className="text-center pt-0 pb-2">
           <img
-            src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png"
+            src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/bc1751c88_AWBA.png"
             alt="AWBA"
             className="mx-auto h-16 object-contain" />
         </div>
