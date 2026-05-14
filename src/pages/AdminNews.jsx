@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Loader2, Pin, Eye, EyeOff } from "lucide-react";
 import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 const CATEGORIES = ["General", "Match Updates", "Events", "Announcements"];
 
@@ -144,13 +145,22 @@ export default function AdminNews() {
 
               <div className="space-y-1">
                 <Label>Content</Label>
-                <div className="rounded-md border bg-white min-h-[200px]">
+                <div className="rounded-md border bg-white">
                   <ReactQuill
                     theme="snow"
                     value={form.content}
                     onChange={val => setForm(p => ({ ...p, content: val }))}
                     placeholder="Write your post content here..."
-                    style={{ minHeight: 180 }}
+                    modules={{
+                      toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ list: "ordered" }, { list: "bullet" }],
+                        ["link", "image"],
+                        ["clean"],
+                      ],
+                    }}
+                    style={{ minHeight: 200 }}
                   />
                 </div>
               </div>
