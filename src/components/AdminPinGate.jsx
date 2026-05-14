@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { appParams } from "@/lib/app-params";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -18,9 +18,15 @@ export default function AdminPinGate({ onSuccess, onCancel }) {
     setPinLoading(true);
     setPinError(false);
     try {
-      const res = await base44.functions.invoke("verifyAdminPin", { pin: pin.trim() });
+      const baseUrl = appParams.appBaseUrl || window.location.origin;
+      const res = await fetch(`${baseUrl}/functions/verifyAdminPin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: pin.trim() }),
+      });
+      const data = await res.json();
       setPinLoading(false);
-      if (res.data?.success) {
+      if (data?.success) {
         onSuccess();
       } else {
         setPinError(true);
