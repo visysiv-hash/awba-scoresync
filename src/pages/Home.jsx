@@ -158,7 +158,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 pb-24">
       <div className="max-w-lg mx-auto">
         {/* Header */}
-        <div className="text-center pt-6 pb-8">
+        <div className="text-center pt-6 pb-4">
           <img
             src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png"
             alt="AWBA"
@@ -168,19 +168,19 @@ export default function Home() {
           <p className="text-sm text-slate-400 mt-1">Select a section to get started</p>
         </div>
 
-        {/* Main tiles */}
-        <div className="grid grid-cols-2 gap-3">
-          {tiles.map((tile) => <Tile key={tile.label} {...tile} />)}
-        </div>
-
         {/* Sponsor Strip */}
-        <div className="mt-4 rounded-xl overflow-hidden">
+        <div className="mt-3 rounded-xl overflow-hidden">
           <SponsorStrip />
         </div>
 
         {/* News Ticker */}
-        <div className="mt-3 rounded-xl overflow-hidden">
-          <NewsTicker onSelectPost={setSelectedPost} />
+        <div className="mt-2 rounded-xl overflow-hidden">
+          <NewsTicker onSelectedPost={setSelectedPost} />
+        </div>
+
+        {/* Main tiles */}
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          {tiles.map((tile) => <Tile key={tile.label} {...tile} />)}
         </div>
 
         {/* Admin section */}
