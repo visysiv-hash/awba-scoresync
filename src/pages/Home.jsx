@@ -111,17 +111,17 @@ function Tile({ label, description, icon: Icon, to, gradient, onClick }) {
     <Link
       to={to}
       onClick={onClick}
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-5 flex flex-col gap-3 shadow-md hover:shadow-xl active:scale-95 transition-all duration-150`}>
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-3 flex flex-col gap-2 shadow-md hover:shadow-xl active:scale-95 transition-all duration-150`}>
       
       {/* decorative circles */}
       <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-white/10" />
       <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/5" />
 
-      <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-        <Icon className="w-5 h-5 text-white" />
+      <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+        <Icon className="w-4 h-4 text-white" />
       </div>
       <div>
-        <p className="text-white font-bold text-base leading-tight">{label}</p>
+        <p className="text-white font-bold text-sm leading-tight">{label}</p>
         <p className="text-white/75 text-xs mt-0.5">{description}</p>
       </div>
     </Link>);
@@ -174,7 +174,7 @@ export default function Home() {
         </div>
 
         {/* Main tiles */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-2 gap-2 mt-4">
           {tiles.map((tile) => <Tile key={tile.label} {...tile} />)}
         </div>
 
@@ -193,7 +193,7 @@ export default function Home() {
               <div className="flex-1 h-px bg-slate-700" />
             </button>
             {adminExpanded && (
-              <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="grid grid-cols-2 gap-2 mt-3">
                 {adminTiles.map((tile) => (
                   <Tile
                     key={tile.label}
