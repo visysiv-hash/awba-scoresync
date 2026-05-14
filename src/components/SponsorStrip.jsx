@@ -16,7 +16,7 @@ export default function SponsorStrip() {
   const items = [...sponsors, ...sponsors];
 
   return (
-    <div className="bg-slate-900 border-t border-slate-700 py-2 overflow-hidden">
+    <div className="bg-white border-t border-slate-200 py-2 overflow-hidden">
       <div className="flex items-center gap-1 mb-1 px-3">
         <span className="text-slate-500 text-xs uppercase tracking-widest font-semibold">Our Sponsors</span>
       </div>
