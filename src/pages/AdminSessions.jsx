@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Users, Loader2 } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw } from "lucide-react";
+import { addWeeks } from "date-fns";
 
 const emptyForm = () => ({
   title: "", date: "", start_time: "", end_time: "",
-  location: "", max_spots: 10, payment_required: false, price: "", notes: ""
+  location: "", max_spots: 10, max_waitlist: "", payment_required: false, price: "", notes: "",
+  // recurring
+  recurring: false, recur_weeks: 4,
 });
 
 export default function AdminSessions() {
@@ -47,16 +50,34 @@ export default function AdminSessions() {
       return;
     }
     setSaving(true);
-    const created = await base44.entities.Session.create({
-      ...form,
+
+    const baseData = {
+      title: form.title,
+      start_time: form.start_time,
+      end_time: form.end_time || undefined,
+      location: form.location || undefined,
       max_spots: Number(form.max_spots),
+      max_waitlist: form.max_waitlist !== "" ? Number(form.max_waitlist) : undefined,
+      payment_required: form.payment_required,
       price: form.price ? Number(form.price) : undefined,
-    });
-    setSessions(prev => [created, ...prev]);
+      notes: form.notes || undefined,
+    };
+
+    const weeks = form.recurring ? Number(form.recur_weeks) : 1;
+    const created = [];
+
+    for (let i = 0; i < weeks; i++) {
+      const dateObj = addWeeks(new Date(form.date + "T00:00:00"), i);
+      const dateStr = dateObj.toISOString().split("T")[0];
+      const session = await base44.entities.Session.create({ ...baseData, date: dateStr });
+      created.push(session);
+    }
+
+    setSessions(prev => [...created.reverse(), ...prev]);
     setForm(emptyForm());
     setShowForm(false);
     setSaving(false);
-    toast.success("Session created!");
+    toast.success(weeks > 1 ? `${weeks} sessions created!` : "Session created!");
   };
 
   const handleDelete = async (id) => {
@@ -114,6 +135,10 @@ export default function AdminSessions() {
                   <Input type="time" value={form.end_time} onChange={e => setForm(p => ({ ...p, end_time: e.target.value }))} />
                 </div>
                 <div className="col-span-2 space-y-1">
+                  <Label>Max Waitlist Spots <span className="text-muted-foreground font-normal text-xs">(leave blank for unlimited)</span></Label>
+                  <Input type="number" value={form.max_waitlist} onChange={e => setForm(p => ({ ...p, max_waitlist: e.target.value }))} placeholder="e.g. 5" />
+                </div>
+                <div className="col-span-2 space-y-1">
                   <Label>Location</Label>
                   <Input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="e.g. Albury Stadium" />
                 </div>
@@ -128,10 +153,34 @@ export default function AdminSessions() {
                     <Input type="number" className="w-24 ml-auto" placeholder="$AUD" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} />
                   )}
                 </div>
+
+                {/* Recurring option */}
+                <div className="col-span-2 border-t pt-3 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <input type="checkbox" id="recurring" checked={form.recurring} onChange={e => setForm(p => ({ ...p, recurring: e.target.checked }))} />
+                    <Label htmlFor="recurring" className="flex items-center gap-1.5">
+                      <RefreshCw className="w-3.5 h-3.5" /> Recurring (weekly)
+                    </Label>
+                  </div>
+                  {form.recurring && (
+                    <div className="flex items-center gap-2 pl-6">
+                      <Label className="shrink-0 text-sm">Repeat for</Label>
+                      <Input
+                        type="number"
+                        min={2}
+                        max={52}
+                        className="w-20"
+                        value={form.recur_weeks}
+                        onChange={e => setForm(p => ({ ...p, recur_weeks: e.target.value }))}
+                      />
+                      <span className="text-sm text-muted-foreground">weeks</span>
+                    </div>
+                  )}
+                </div>
               </div>
               <Button className="w-full" onClick={handleCreate} disabled={saving}>
                 {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Save Session
+                {form.recurring ? `Create ${form.recur_weeks} Sessions` : "Save Session"}
               </Button>
             </CardContent>
           </Card>
@@ -151,9 +200,16 @@ export default function AdminSessions() {
                     <div className="flex-1">
                       <p className="font-semibold text-sm">{session.title}</p>
                       <p className="text-xs text-muted-foreground">{session.date} · {session.start_time}{session.end_time ? ` – ${session.end_time}` : ""}</p>
-                      <div className="flex gap-2 mt-1">
+                      <div className="flex gap-2 mt-1 flex-wrap">
                         <Badge variant="outline" className="text-xs">{confirmed.length}/{session.max_spots} confirmed</Badge>
-                        {waitlisted.length > 0 && <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">{waitlisted.length} waitlisted</Badge>}
+                        {session.max_waitlist != null && (
+                          <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                            {waitlisted.length}/{session.max_waitlist} waitlist
+                          </Badge>
+                        )}
+                        {session.max_waitlist == null && waitlisted.length > 0 && (
+                          <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">{waitlisted.length} waitlisted</Badge>
+                        )}
                         {session.payment_required && <Badge variant="outline" className="text-xs text-blue-600 border-blue-300">💳 ${session.price}</Badge>}
                       </div>
                     </div>

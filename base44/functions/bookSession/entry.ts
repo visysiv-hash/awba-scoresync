@@ -16,11 +16,22 @@ Deno.serve(async (req) => {
   const active = existingBookings.find(b => b.status === 'confirmed' || b.status === 'waitlisted');
   if (active) return Response.json({ error: 'You already have a booking for this session.' }, { status: 400 });
 
-  // Count confirmed bookings
+  // Count confirmed and waitlisted bookings
   const allBookings = await base44.asServiceRole.entities.Booking.filter({ session_id: sessionId });
   const confirmedCount = allBookings.filter(b => b.status === 'confirmed').length;
+  const waitlistedCount = allBookings.filter(b => b.status === 'waitlisted').length;
 
-  const status = confirmedCount < session.max_spots ? 'confirmed' : 'waitlisted';
+  let status;
+  if (confirmedCount < session.max_spots) {
+    status = 'confirmed';
+  } else if (session.max_waitlist && waitlistedCount < session.max_waitlist) {
+    status = 'waitlisted';
+  } else if (!session.max_waitlist) {
+    // No waitlist limit set — allow unlimited waitlist (legacy behaviour)
+    status = 'waitlisted';
+  } else {
+    return Response.json({ error: 'This session is full and the waitlist is also full.' }, { status: 400 });
+  }
 
   const booking = await base44.asServiceRole.entities.Booking.create({
     session_id: sessionId,

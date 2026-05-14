@@ -26,6 +26,10 @@
       "type": "number",
       "title": "Max Spots"
     },
+    "max_waitlist": {
+      "type": "number",
+      "title": "Max Waitlist Spots"
+    },
     "payment_required": {
       "type": "boolean",
       "title": "Payment Required"
