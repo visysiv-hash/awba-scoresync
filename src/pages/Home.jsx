@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield, CalendarDays } from
+  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper } from
 "lucide-react";
 import AdminPinGate from "../components/AdminPinGate";
 
@@ -80,6 +80,13 @@ const adminTiles = [
   icon: CalendarCheck,
   to: "/admin/sessions",
   gradient: "from-rose-500 to-pink-700"
+},
+{
+  label: "News",
+  description: "Manage news & announcements",
+  icon: Newspaper,
+  to: "/admin/news",
+  gradient: "from-indigo-500 to-indigo-700"
 }];
 
 

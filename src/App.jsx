@@ -6,6 +6,8 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 // Add page imports here
+import News from './pages/News';
+import AdminNews from './pages/AdminNews';
 import BookingSessions from './pages/BookingSessions';
 import Register from './pages/Register';
 import AdminRegistrations from './pages/AdminRegistrations';
@@ -63,6 +65,8 @@ const AuthenticatedApp = () => {
           <Route path="/match-details" element={<MatchDetails />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/registrations" element={<AdminRegistrations />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/admin/news" element={<AdminNews />} />
 
           <Route path="*" element={<PageNotFound />} />
         </Routes>

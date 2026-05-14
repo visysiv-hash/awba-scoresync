@@ -1,0 +1,36 @@
+{
+  "name": "NewsPost",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "content": {
+      "type": "string",
+      "title": "Content (HTML)"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category",
+      "enum": [
+        "General",
+        "Match Updates",
+        "Events",
+        "Announcements"
+      ]
+    },
+    "pinned": {
+      "type": "boolean",
+      "title": "Pinned"
+    },
+    "published": {
+      "type": "boolean",
+      "title": "Published"
+    }
+  },
+  "required": [
+    "title",
+    "category"
+  ]
+}
