@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
-  ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper } from
+ClipboardList, BarChart2, Trophy, CalendarCheck,
+User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star } from
 "lucide-react";
 import AdminPinGate from "../components/AdminPinGate";
 
@@ -89,11 +89,18 @@ const adminTiles = [
   gradient: "from-rose-500 to-pink-700"
 },
 {
-  label: "News",
-  description: "Manage news & announcements",
-  icon: Newspaper,
-  to: "/admin/news",
-  gradient: "from-indigo-500 to-indigo-700"
+label: "News",
+description: "Manage news & announcements",
+icon: Newspaper,
+to: "/admin/news",
+gradient: "from-indigo-500 to-indigo-700"
+},
+{
+label: "Sponsors",
+description: "Manage sponsor logos",
+icon: Star,
+to: "/admin/sponsors",
+gradient: "from-yellow-500 to-amber-600"
 }];
 
 

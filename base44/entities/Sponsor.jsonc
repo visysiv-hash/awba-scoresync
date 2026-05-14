@@ -1,0 +1,29 @@
+{
+  "name": "Sponsor",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Sponsor Name"
+    },
+    "logo_url": {
+      "type": "string",
+      "title": "Logo URL"
+    },
+    "website_url": {
+      "type": "string",
+      "title": "Website URL"
+    },
+    "display_order": {
+      "type": "number",
+      "title": "Display Order"
+    },
+    "active": {
+      "type": "boolean",
+      "title": "Active"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
