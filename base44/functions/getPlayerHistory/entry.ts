@@ -22,7 +22,8 @@ Deno.serve(async (req) => {
       const gameChoice = (row[1] || "").trim(); // "netId | P1 & P2 & P3 & P4"
       const parts = gameChoice.split("|");
       const teamsStr = (parts[1]?.trim() || gameChoice);
-      const players = teamsStr.split("&").map(p => p.trim());
+      // Split by both "Vs" and "&" to handle all name formats
+      const players = teamsStr.split(/\s*Vs\s*/i).flatMap(side => side.split("&")).map(p => p.trim());
 
       // Exact name match (case-insensitive)
       const myIdx = players.findIndex(p => p.toLowerCase() === playerLower);
