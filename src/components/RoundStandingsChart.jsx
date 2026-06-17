@@ -137,7 +137,10 @@ export default function RoundStandingsChart({ playerName }) {
             ) : (
               <div className="space-y-3">
                 {games.map((g, i) => {
-                  const players = g.gameChoice.split("&").map(p => p.trim());
+                  // Split by "Vs" first to separate teams, then by "&" for individual players
+                  const teams = g.gameChoice.split(/\s*Vs\s*/i);
+                  const team1Players = (teams[0] || "").split("&").map(p => p.trim());
+                  const team2Players = (teams[1] || "").split("&").map(p => p.trim());
                   const score1 = Number(g.team1Score);
                   const score2 = Number(g.team2Score);
                   const team1Won = score1 === 42;
@@ -154,9 +157,9 @@ export default function RoundStandingsChart({ playerName }) {
                       <div className="flex-1 min-w-0">
 
                         <p className="text-sm font-medium leading-snug">
-                          <span className="text-blue-600 inline-flex items-center gap-1 flex-wrap">{renderTeam(players.slice(0, 2))}</span>{" "}
+                          <span className="text-blue-600 inline-flex items-center gap-1 flex-wrap">{renderTeam(team1Players)}</span>{" "}
                           <span className="text-red-500 font-bold">Vs</span>{" "}
-                          <span className="text-purple-600 inline-flex items-center gap-1 flex-wrap">{renderTeam(players.slice(2))}</span>
+                          <span className="text-purple-600 inline-flex items-center gap-1 flex-wrap">{renderTeam(team2Players)}</span>
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
