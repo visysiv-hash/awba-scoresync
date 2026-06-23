@@ -37,7 +37,7 @@ export default function SponsorStrip() {
                 <img
                   src={s.logo_url}
                   alt={s.name}
-                  className="h-8 max-w-[80px] object-contain filter brightness-75 hover:brightness-100 transition-all"
+                  className="h-16 max-w-[220px] object-contain filter brightness-75 hover:brightness-100 transition-all"
                 />
               ) : (
                 <span className="text-slate-400 text-xs font-semibold px-2 whitespace-nowrap hover:text-white transition-colors">
