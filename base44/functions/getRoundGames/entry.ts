@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     const json = await res.json();
     const rows = json.values || [];
 
-    const playerLower = (player || "").toLowerCase();
+    const playerLower = (player || "").trim().toLowerCase();
     const games = [];
 
     for (const row of rows) {
