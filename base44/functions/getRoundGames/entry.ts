@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
     const { player, round } = await req.json();
 
     const sid = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
-    const range = encodeURIComponent("Raw_Responses!A2:K2000");
+    const range = encodeURIComponent("Raw_Responses!A2:K5000");
     const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${range}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
