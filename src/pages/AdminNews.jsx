@@ -29,7 +29,7 @@ const categoryColors = {
 };
 
 export default function AdminNews() {
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(emptyForm());
@@ -43,6 +43,8 @@ export default function AdminNews() {
     setPosts(all);
     setLoading(false);
   };
+
+  useEffect(() => { if (pinUnlocked) loadData(); }, [pinUnlocked]);
 
   const startEdit = async (post) => {
     let content = post.content || "";

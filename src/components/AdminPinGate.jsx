@@ -27,6 +27,7 @@ export default function AdminPinGate({ onSuccess, onCancel }) {
       const data = await res.json();
       setPinLoading(false);
       if (data?.success) {
+        sessionStorage.setItem("adminPinUnlocked", "true");
         onSuccess();
       } else {
         setPinError(true);

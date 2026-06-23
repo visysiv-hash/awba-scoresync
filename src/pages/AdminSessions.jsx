@@ -18,7 +18,7 @@ const emptyForm = () => ({
 });
 
 export default function AdminSessions() {
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
   const [sessions, setSessions] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [form, setForm] = useState(emptyForm());
@@ -37,6 +37,8 @@ export default function AdminSessions() {
     setBookings(b);
     setLoading(false);
   };
+
+  useEffect(() => { if (pinUnlocked) loadData(); }, [pinUnlocked]);
 
   const sessionBookings = (sessionId) => bookings.filter(b => b.session_id === sessionId && b.status !== "cancelled");
 

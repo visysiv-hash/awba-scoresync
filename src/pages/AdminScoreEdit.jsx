@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import RoundScores from "../components/RoundScores";
 import AdminPinGate from "../components/AdminPinGate";
 
 export default function AdminScoreEdit() {
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingKey, setEditingKey] = useState(null);
@@ -23,6 +23,8 @@ export default function AdminScoreEdit() {
     const scored = (res.data?.games || []).filter(g => g.scored);
     setGames(scored);
   };
+
+  useEffect(() => { if (pinUnlocked) loadGames(); }, [pinUnlocked]);
 
   const startEdit = (g) => {
     setEditingKey(`${g.net}-${g.game}`);

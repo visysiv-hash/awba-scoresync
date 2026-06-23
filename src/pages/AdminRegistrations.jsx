@@ -13,7 +13,7 @@ const statusColor = { pending: "bg-yellow-100 text-yellow-800", approved: "bg-gr
 const paymentColor = { unpaid: "bg-slate-100 text-slate-600", paid: "bg-emerald-100 text-emerald-700" };
 
 export default function AdminRegistrations() {
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
   const [seasons, setSeasons] = useState([]);
   const [registrations, setRegistrations] = useState([]);
   const [selectedSeason, setSelectedSeason] = useState(null);
@@ -37,6 +37,8 @@ export default function AdminRegistrations() {
       if (s.length > 0) setSelectedSeason(s[0]);
     }).finally(() => setLoading(false));
   };
+
+  useEffect(() => { if (pinUnlocked) loadData(); }, [pinUnlocked]);
 
   const handleCreateSeason = async () => {
     if (!form.name) { toast.error("Season name is required."); return; }

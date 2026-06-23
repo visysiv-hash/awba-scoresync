@@ -17,7 +17,7 @@ const emptyForm = () => ({
 });
 
 export default function AdminSponsors() {
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
   const [sponsors, setSponsors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(emptyForm());
@@ -32,6 +32,8 @@ export default function AdminSponsors() {
     setSponsors(all);
     setLoading(false);
   };
+
+  useEffect(() => { if (pinUnlocked) loadData(); }, [pinUnlocked]);
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
