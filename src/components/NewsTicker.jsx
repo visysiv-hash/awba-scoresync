@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Newspaper } from "lucide-react";
+import { Newspaper, Pin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function NewsTicker({ onSelectPost }) {
   const [posts, setPosts] = useState([]);
-  const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,40 +17,29 @@ export default function NewsTicker({ onSelectPost }) {
     }).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (posts.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrent(c => (c + 1) % posts.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [posts.length]);
-
   if (posts.length === 0) return null;
 
-  const post = posts[current];
-
   return (
-    <div
-      className="bg-white border-t border-slate-200 flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-slate-50 transition-colors"
-      onClick={() => navigate('/news')}
-    >
-      <div className="flex items-center gap-1.5 shrink-0">
+    <div className="bg-white border-t border-slate-200">
+      <div className="flex items-center gap-1.5 px-3 py-1 border-b border-slate-100">
         <Newspaper className="w-3.5 h-3.5 text-violet-600" />
         <span className="text-violet-600 text-xs font-bold uppercase tracking-wide">News</span>
       </div>
-      <div className="w-px h-4 bg-slate-300 shrink-0" />
-      <p className="text-slate-900 text-xs truncate flex-1 leading-none">{post.title}</p>
-      {posts.length > 1 && (
-        <div className="flex gap-1 shrink-0">
-          {posts.map((_, i) => (
-            <button
-              key={i}
-              onClick={e => { e.stopPropagation(); setCurrent(i); }}
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${i === current ? "bg-violet-400" : "bg-slate-600"}`}
-            />
-          ))}
-        </div>
-      )}
+      <div className="divide-y divide-slate-100">
+        {posts.map(post => (
+          <button
+            key={post.id}
+            onClick={() => navigate('/news')}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-50 transition-colors"
+          >
+            {post.pinned && <Pin className="w-3 h-3 text-yellow-500 shrink-0" />}
+            <p className="text-slate-900 text-xs truncate flex-1 leading-snug">{post.title}</p>
+            <span className="text-slate-400 text-[10px] shrink-0">
+              {new Date(post.created_date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
