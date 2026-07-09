@@ -9,10 +9,9 @@ export default function RoundStandingsChart({ playerName }) {
   const [rounds, setRounds] = useState([]);
   const [roundDateMap, setRoundDateMap] = useState({});
   const [selectedRound, setSelectedRound] = useState("");
-  const [allPlayerGames, setAllPlayerGames] = useState([]);
+  const [games, setGames] = useState([]);
   const [gamesLoading, setGamesLoading] = useState(false);
 
-  // Load round metadata once
   const load = useCallback(async () => {
     setLoading(true);
     const res = await base44.functions.invoke("getRoundStandings", {});
@@ -29,27 +28,20 @@ export default function RoundStandingsChart({ playerName }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Fetch ALL games for the player in one call — no per-round race condition
+  // Fetch games for the selected round — with cancellation guard against stale responses
   useEffect(() => {
-    if (!playerName) { setAllPlayerGames([]); return; }
+    if (!selectedRound || !playerName) { setGames([]); return; }
+    let cancelled = false;
     setGamesLoading(true);
-    base44.functions.invoke("getRoundGames", { player: playerName.trim(), round: "__ALL__" })
-      .then(res => { setAllPlayerGames(res.data?.games || []); })
-      .catch(() => { setAllPlayerGames([]); })
-      .finally(() => setGamesLoading(false));
-  }, [playerName]);
-
-  // Auto-select the player's most recent round with games
-  useEffect(() => {
-    if (!playerName || allPlayerGames.length === 0 || rounds.length === 0) return;
-    const playerRounds = [...new Set(allPlayerGames.map(g => g.round))].sort((a, b) => parseInt(b) - parseInt(a));
-    if (playerRounds.length > 0 && roundDateMap[playerRounds[0]]) {
-      setSelectedRound(playerRounds[0]);
-    }
-  }, [playerName, allPlayerGames, rounds, roundDateMap]);
-
-  // Filter games for the selected round locally — no fetch needed
-  const games = allPlayerGames.filter(g => String(g.round) === String(selectedRound));
+    base44.functions.invoke("getRoundGames", { player: playerName.trim(), round: selectedRound })
+      .then(res => {
+        if (cancelled) return;
+        setGames(res.data?.games || []);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setGamesLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedRound, playerName]);
 
   // Compute stats from actual game scores
   const computedStats = games.reduce((acc, g) => {
