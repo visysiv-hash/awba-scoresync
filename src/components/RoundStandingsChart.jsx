@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,7 +12,6 @@ export default function RoundStandingsChart({ playerName }) {
   const [selectedRound, setSelectedRound] = useState("");
   const [games, setGames] = useState([]);
   const [gamesLoading, setGamesLoading] = useState(false);
-  const fetchIdRef = useRef(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,21 +47,13 @@ export default function RoundStandingsChart({ playerName }) {
   useEffect(() => {
     if (!selectedRound || !playerName) { setGames([]); return; }
     setGamesLoading(true);
-    const fetchId = ++fetchIdRef.current;
     base44.functions.invoke("getRoundGames", { player: playerName.trim(), round: selectedRound })
       .then(res => {
-        if (fetchId !== fetchIdRef.current) return; // stale response, discard
         const raw = res.data?.games || [];
-        // Deduplicate by netId (keep first occurrence)
-        const seen = new Set();
-        const unique = raw.filter(g => {
-          if (seen.has(g.netId)) return false;
-          seen.add(g.netId);
-          return true;
-        });
-        setGames(unique);
+        setGames(raw);
       })
-      .finally(() => { if (fetchId === fetchIdRef.current) setGamesLoading(false); });
+      .catch(() => {})
+      .finally(() => setGamesLoading(false));
   }, [selectedRound, playerName]);
 
   const clean = (val) => (typeof val === "string" && val.startsWith("#")) ? "—" : val;
