@@ -20,12 +20,13 @@ Deno.serve(async (req) => {
     const rows = json.values || [];
 
     const playerLower = (player || "").trim().toLowerCase();
+    const fetchAll = String(round) === "__ALL__";
     const games = [];
 
     for (const row of rows) {
       const rowRound = (row[10] || "").trim(); // col K
       const gameChoice = (row[1] || "").trim(); // col B e.g. "310 | Saideep & Ravi & Russell & Suryan"
-      if (rowRound !== String(round)) continue;
+      if (!fetchAll && rowRound !== String(round)) continue;
       const parts0 = gameChoice.split("|");
       const teamsStr0 = (parts0[1]?.trim() || gameChoice);
       // Split by both "Vs" and "&" to handle all name formats
@@ -44,6 +45,7 @@ Deno.serve(async (req) => {
         team1Score: row[2] || "—",
         team2Score: row[3] || "—",
         timestamp: (row[0] || "").split(" ")[0],
+        round: rowRound,
       });
     }
 

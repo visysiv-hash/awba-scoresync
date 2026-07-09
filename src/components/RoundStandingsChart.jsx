@@ -7,22 +7,20 @@ import { Loader2 } from "lucide-react";
 export default function RoundStandingsChart({ playerName }) {
   const [loading, setLoading] = useState(true);
   const [rounds, setRounds] = useState([]);
-  const [data, setData] = useState({});
   const [roundDateMap, setRoundDateMap] = useState({});
   const [selectedRound, setSelectedRound] = useState("");
-  const [games, setGames] = useState([]);
+  const [allPlayerGames, setAllPlayerGames] = useState([]);
   const [gamesLoading, setGamesLoading] = useState(false);
 
+  // Load round metadata once
   const load = useCallback(async () => {
     setLoading(true);
     const res = await base44.functions.invoke("getRoundStandings", {});
-    const { rounds: r, data: d, roundDateMap: rdm } = res.data;
+    const { rounds: r, roundDateMap: rdm } = res.data;
     setRoundDateMap(rdm || {});
     const sorted = (r || []).slice().sort((a, b) => parseInt(a) - parseInt(b));
     setRounds(sorted);
-    setData(d || {});
     if (sorted.length > 0) {
-      // Default to the last round that has a date (i.e. has actually been played)
       const lastPlayedRound = [...sorted].reverse().find(round => (rdm || {})[round]);
       setSelectedRound(lastPlayedRound || sorted[sorted.length - 1]);
     }
@@ -31,34 +29,29 @@ export default function RoundStandingsChart({ playerName }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // When playerName or data changes, jump to the last round they have data in AND has a date
+  // Fetch ALL games for the player in one call — no per-round race condition
   useEffect(() => {
-    if (!playerName || rounds.length === 0 || Object.keys(data).length === 0) return;
-    const lastPlayerRound = [...rounds].reverse().find(r => {
-      const rows = data[r] || [];
-      const hasPlayer = rows.some(row => (row.player || "").toLowerCase() === playerName.toLowerCase());
-      return hasPlayer && roundDateMap[r];
-    });
-    if (lastPlayerRound) {
-      setSelectedRound(lastPlayerRound);
-    }
-  }, [playerName, JSON.stringify(Object.keys(data)), JSON.stringify(roundDateMap)]);
-
-  useEffect(() => {
-    if (!selectedRound || !playerName) { setGames([]); return; }
-    let cancelled = false;
+    if (!playerName) { setAllPlayerGames([]); return; }
     setGamesLoading(true);
-    base44.functions.invoke("getRoundGames", { player: playerName.trim(), round: selectedRound })
-      .then(res => {
-        if (cancelled) return;
-        setGames(res.data?.games || []);
-      })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setGamesLoading(false); });
-    return () => { cancelled = true; };
-  }, [selectedRound, playerName]);
+    base44.functions.invoke("getRoundGames", { player: playerName.trim(), round: "__ALL__" })
+      .then(res => { setAllPlayerGames(res.data?.games || []); })
+      .catch(() => { setAllPlayerGames([]); })
+      .finally(() => setGamesLoading(false));
+  }, [playerName]);
 
-  // Compute stats from actual game scores (more reliable than standings sheet which can lag)
+  // Auto-select the player's most recent round with games
+  useEffect(() => {
+    if (!playerName || allPlayerGames.length === 0 || rounds.length === 0) return;
+    const playerRounds = [...new Set(allPlayerGames.map(g => g.round))].sort((a, b) => parseInt(b) - parseInt(a));
+    if (playerRounds.length > 0 && roundDateMap[playerRounds[0]]) {
+      setSelectedRound(playerRounds[0]);
+    }
+  }, [playerName, allPlayerGames, rounds, roundDateMap]);
+
+  // Filter games for the selected round locally — no fetch needed
+  const games = allPlayerGames.filter(g => String(g.round) === String(selectedRound));
+
+  // Compute stats from actual game scores
   const computedStats = games.reduce((acc, g) => {
     const teams = (g.gameChoice || "").split(/\s*Vs\s*/i);
     const team1 = (teams[0] || "").split("&").map(p => p.trim().toLowerCase());
