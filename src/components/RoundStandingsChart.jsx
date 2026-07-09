@@ -46,22 +46,39 @@ export default function RoundStandingsChart({ playerName }) {
 
   useEffect(() => {
     if (!selectedRound || !playerName) { setGames([]); return; }
+    let cancelled = false;
     setGamesLoading(true);
     base44.functions.invoke("getRoundGames", { player: playerName.trim(), round: selectedRound })
       .then(res => {
-        const raw = res.data?.games || [];
-        setGames(raw);
+        if (cancelled) return;
+        setGames(res.data?.games || []);
       })
       .catch(() => {})
-      .finally(() => setGamesLoading(false));
+      .finally(() => { if (!cancelled) setGamesLoading(false); });
+    return () => { cancelled = true; };
   }, [selectedRound, playerName]);
 
-  const clean = (val) => (typeof val === "string" && val.startsWith("#")) ? "—" : val;
-
-  const selectedRoundRows = data[selectedRound] || [];
-  const player = selectedRound
-    ? selectedRoundRows.find(r => (r.player || r.name || Object.values(r)[0] || "").toLowerCase() === playerName.toLowerCase())
-    : null;
+  // Compute stats from actual game scores (more reliable than standings sheet which can lag)
+  const computedStats = games.reduce((acc, g) => {
+    const teams = (g.gameChoice || "").split(/\s*Vs\s*/i);
+    const team1 = (teams[0] || "").split("&").map(p => p.trim().toLowerCase());
+    const team2 = (teams[1] || "").split("&").map(p => p.trim().toLowerCase());
+    const pl = playerName.toLowerCase();
+    const onTeam1 = team1.includes(pl);
+    const onTeam2 = team2.includes(pl);
+    if (!onTeam1 && !onTeam2) return acc;
+    const myScore = Number(onTeam1 ? g.team1Score : g.team2Score);
+    const oppScore = Number(onTeam1 ? g.team2Score : g.team1Score);
+    const won = myScore === 42;
+    const lost = oppScore === 42;
+    if (won) acc.wins++;
+    else if (lost) acc.losses++;
+    else acc.draws++;
+    acc.ptsFor += myScore;
+    acc.ptsAgainst += oppScore;
+    return acc;
+  }, { wins: 0, losses: 0, draws: 0, ptsFor: 0, ptsAgainst: 0 });
+  computedStats.diff = computedStats.ptsFor - computedStats.ptsAgainst;
 
   return (
     <div className="space-y-4">
@@ -91,15 +108,17 @@ export default function RoundStandingsChart({ playerName }) {
                   <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
                     Week {selectedRound} — Stats{roundDateMap[selectedRound] ? ` · ${roundDateMap[selectedRound]}` : ""}
                   </p>
-                  {player ? (
+                  {gamesLoading ? (
+                    <div className="flex justify-center py-2"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+                  ) : games.length > 0 ? (
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { label: "Wins", value: clean(player.wins ?? "—"), color: "text-green-600" },
-                        { label: "Losses", value: clean(player.losses ?? "—"), color: "text-red-500" },
-                        { label: "Draws", value: clean(player.draws ?? "—"), color: "text-yellow-500" },
-                        { label: "Pts For", value: clean(player["points for"] ?? player.pointsFor ?? "—"), color: "text-blue-600" },
-                        { label: "Pts Against", value: clean(player["points against"] ?? player.pointsAgainst ?? "—"), color: "text-slate-500" },
-                        { label: "Diff", value: clean(player.diff ?? "—"), color: Number(player.diff) >= 0 ? "text-green-600" : "text-red-500" },
+                        { label: "Wins", value: computedStats.wins, color: "text-green-600" },
+                        { label: "Losses", value: computedStats.losses, color: "text-red-500" },
+                        { label: "Draws", value: computedStats.draws, color: "text-yellow-500" },
+                        { label: "Pts For", value: computedStats.ptsFor, color: "text-blue-600" },
+                        { label: "Pts Against", value: computedStats.ptsAgainst, color: "text-slate-500" },
+                        { label: "Diff", value: computedStats.diff, color: computedStats.diff >= 0 ? "text-green-600" : "text-red-500" },
                       ].map(stat => (
                         <div key={stat.label} className="text-center">
                           <p className="text-xs text-muted-foreground">{stat.label}</p>
