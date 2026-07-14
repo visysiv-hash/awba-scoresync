@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,51 +9,64 @@ export default function RoundStandingsChart({ playerName }) {
   const [rounds, setRounds] = useState([]);
   const [roundDateMap, setRoundDateMap] = useState({});
   const [selectedRound, setSelectedRound] = useState("");
-  const [games, setGames] = useState([]);
+  const [allGames, setAllGames] = useState([]);
   const [gamesLoading, setGamesLoading] = useState(false);
 
+  // Load round metadata once
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await base44.functions.invoke("getRoundStandings", {});
-    const { rounds: r, roundDateMap: rdm } = res.data;
-    setRoundDateMap(rdm || {});
-    const sorted = (r || []).slice().sort((a, b) => parseInt(a) - parseInt(b));
-    setRounds(sorted);
-    if (sorted.length > 0) {
-      const lastPlayedRound = [...sorted].reverse().find(round => (rdm || {})[round]);
-      setSelectedRound(lastPlayedRound || sorted[sorted.length - 1]);
-    }
+    try {
+      const res = await base44.functions.invoke("getRoundStandings", {});
+      const { rounds: r, roundDateMap: rdm } = res.data;
+      setRoundDateMap(rdm || {});
+      const sorted = (r || []).slice().sort((a, b) => parseInt(a) - parseInt(b));
+      setRounds(sorted);
+      if (sorted.length > 0) {
+        const lastPlayedRound = [...sorted].reverse().find(round => (rdm || {})[round]);
+        setSelectedRound(lastPlayedRound || sorted[sorted.length - 1]);
+      }
+    } catch (e) { /* ignore */ }
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  // Fetch games for the selected round — with cancellation guard against stale responses
+  // Fetch ALL games for the player in ONE call — no per-round race condition possible
   useEffect(() => {
-    if (!selectedRound || !playerName) { setGames([]); return; }
+    if (!playerName) { setAllGames([]); return; }
     let cancelled = false;
     setGamesLoading(true);
-    base44.functions.invoke("getRoundGames", { player: playerName.trim(), round: selectedRound })
+    base44.functions.invoke("getPlayerHistory", { player: playerName.trim(), opponent: "" })
       .then(res => {
         if (cancelled) return;
-        setGames(res.data?.games || []);
+        const games = res.data?.games || [];
+        // Sort by round ascending for consistent display
+        games.sort((a, b) => parseInt(a.round || "0") - parseInt(b.round || "0"));
+        setAllGames(games);
+
+        // Auto-select the player's most recent round that has a date
+        if (games.length > 0) {
+          const playerRounds = [...new Set(games.map(g => String(g.round)))].sort((a, b) => parseInt(b) - parseInt(a));
+          const rdm = {}; // roundDateMap may not be loaded yet; just pick most recent
+          // Only override if user hasn't manually selected yet or current round has no games
+          setSelectedRound(prev => {
+            if (prev && games.some(g => String(g.round) === String(prev))) return prev;
+            return playerRounds[0] || prev;
+          });
+        }
       })
-      .catch(() => {})
+      .catch(() => { if (!cancelled) setAllGames([]); })
       .finally(() => { if (!cancelled) setGamesLoading(false); });
     return () => { cancelled = true; };
-  }, [selectedRound, playerName]);
+  }, [playerName]);
 
-  // Compute stats from actual game scores
+  // Filter games for the selected round locally — instant, no fetch
+  const games = allGames.filter(g => String(g.round) === String(selectedRound));
+
+  // Compute stats from the filtered games (uses myScore/oppScore from getPlayerHistory)
   const computedStats = games.reduce((acc, g) => {
-    const teams = (g.gameChoice || "").split(/\s*Vs\s*/i);
-    const team1 = (teams[0] || "").split("&").map(p => p.trim().toLowerCase());
-    const team2 = (teams[1] || "").split("&").map(p => p.trim().toLowerCase());
-    const pl = playerName.toLowerCase();
-    const onTeam1 = team1.includes(pl);
-    const onTeam2 = team2.includes(pl);
-    if (!onTeam1 && !onTeam2) return acc;
-    const myScore = Number(onTeam1 ? g.team1Score : g.team2Score);
-    const oppScore = Number(onTeam1 ? g.team2Score : g.team1Score);
+    const myScore = Number(g.myScore);
+    const oppScore = Number(g.oppScore);
     const won = myScore === 42;
     const lost = oppScore === 42;
     if (won) acc.wins++;
@@ -135,38 +148,35 @@ export default function RoundStandingsChart({ playerName }) {
             ) : (
               <div className="space-y-3">
                 {games.map((g, i) => {
-                  // Split by "Vs" first to separate teams, then by "&" for individual players
-                  const teams = g.gameChoice.split(/\s*Vs\s*/i);
-                  const team1Players = (teams[0] || "").split("&").map(p => p.trim());
-                  const team2Players = (teams[1] || "").split("&").map(p => p.trim());
-                  const score1 = Number(g.team1Score);
-                  const score2 = Number(g.team2Score);
-                  const team1Won = score1 === 42;
-                  const team2Won = score2 === 42;
-                  const isDraw = !team1Won && !team2Won;
-                  const renderTeam = (teamPlayers) => teamPlayers.map((p, idx) => (
-                    <span key={idx}>
-                      {idx > 0 && " & "}
-                      <span className={p.toLowerCase().includes(playerName.toLowerCase()) ? "underline font-bold" : ""}>{p}</span>
-                    </span>
-                  ));
+                  const myScore = Number(g.myScore);
+                  const oppScore = Number(g.oppScore);
+                  const won = myScore === 42;
+                  const lost = oppScore === 42;
+                  const renderTeam = (teamStr) => {
+                    const players = (teamStr || "").split("&").map(p => p.trim());
+                    return players.map((p, idx) => (
+                      <span key={idx}>
+                        {idx > 0 && " & "}
+                        <span className={p.toLowerCase().includes(playerName.toLowerCase()) ? "underline font-bold" : ""}>{p}</span>
+                      </span>
+                    ));
+                  };
                   return (
                     <div key={i} className="bg-slate-50 rounded-lg p-3 flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
-
                         <p className="text-sm font-medium leading-snug">
-                          <span className="text-blue-600 inline-flex items-center gap-1 flex-wrap">{renderTeam(team1Players)}</span>{" "}
+                          <span className="text-blue-600 inline-flex items-center gap-1 flex-wrap">{renderTeam(g.myTeam)}</span>{" "}
                           <span className="text-red-500 font-bold">Vs</span>{" "}
-                          <span className="text-purple-600 inline-flex items-center gap-1 flex-wrap">{renderTeam(team2Players)}</span>
+                          <span className="text-purple-600 inline-flex items-center gap-1 flex-wrap">{renderTeam(g.opponent)}</span>
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-xl font-bold ${team1Won ? "text-green-600" : team2Won ? "text-red-500" : "text-yellow-500"}`}>
-                          {g.team1Score}
+                        <span className={`text-xl font-bold ${won ? "text-green-600" : lost ? "text-red-500" : "text-yellow-500"}`}>
+                          {myScore}
                         </span>
                         <span className="text-muted-foreground text-sm">–</span>
-                        <span className={`text-xl font-bold ${team2Won ? "text-green-600" : team1Won ? "text-red-500" : "text-yellow-500"}`}>
-                          {g.team2Score}
+                        <span className={`text-xl font-bold ${lost ? "text-green-600" : won ? "text-red-500" : "text-yellow-500"}`}>
+                          {oppScore}
                         </span>
                       </div>
                     </div>
