@@ -24,10 +24,11 @@ const GROUP_NAMES = [
 
 export default function Leaderboard() {
   const navigate = useNavigate();
+  const urlParams = new URLSearchParams(window.location.search);
   const [groups, setGroups] = useState({});
   const [loading, setLoading] = useState(true);
-  const [selectedPlayer, setSelectedPlayer] = useState("");
-  const [activeTab, setActiveTab] = useState("search");
+  const [selectedPlayer, setSelectedPlayer] = useState(urlParams.get("name") || "");
+  const [activeTab, setActiveTab] = useState(urlParams.get("tab") || "rankings");
   const [visitCount, setVisitCount] = useState(null);
 
   useEffect(() => {

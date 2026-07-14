@@ -34,7 +34,7 @@ const tiles = [
   label: "Player Profile",
   description: "View your stats & history",
   icon: User,
-  to: "/player",
+  to: "/leaderboard?tab=search",
   gradient: "from-pink-500 to-rose-600"
 },
 {
