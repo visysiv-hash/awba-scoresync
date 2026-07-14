@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,20 +11,16 @@ export default function RoundStandingsChart({ playerName }) {
   const [selectedRound, setSelectedRound] = useState("");
   const [allGames, setAllGames] = useState([]);
   const [gamesLoading, setGamesLoading] = useState(false);
+  const [userSelected, setUserSelected] = useState(false);
 
-  // Load round metadata once
+  // Load round metadata once — does NOT touch selectedRound
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("getRoundStandings", {});
       const { rounds: r, roundDateMap: rdm } = res.data;
       setRoundDateMap(rdm || {});
-      const sorted = (r || []).slice().sort((a, b) => parseInt(a) - parseInt(b));
-      setRounds(sorted);
-      if (sorted.length > 0) {
-        const lastPlayedRound = [...sorted].reverse().find(round => (rdm || {})[round]);
-        setSelectedRound(lastPlayedRound || sorted[sorted.length - 1]);
-      }
+      setRounds((r || []).slice().sort((a, b) => parseInt(a) - parseInt(b)));
     } catch (e) { /* ignore */ }
     setLoading(false);
   }, []);
@@ -39,31 +35,30 @@ export default function RoundStandingsChart({ playerName }) {
     base44.functions.invoke("getPlayerHistory", { player: playerName.trim(), opponent: "" })
       .then(res => {
         if (cancelled) return;
-        const games = res.data?.games || [];
-        // Sort by round ascending for consistent display
-        games.sort((a, b) => parseInt(a.round || "0") - parseInt(b.round || "0"));
+        const games = (res.data?.games || []).sort((a, b) => parseInt(a.round || "0") - parseInt(b.round || "0"));
         setAllGames(games);
-
-        // Auto-select the player's most recent round that has a date
-        if (games.length > 0) {
-          const playerRounds = [...new Set(games.map(g => String(g.round)))].sort((a, b) => parseInt(b) - parseInt(a));
-          const rdm = {}; // roundDateMap may not be loaded yet; just pick most recent
-          // Only override if user hasn't manually selected yet or current round has no games
-          setSelectedRound(prev => {
-            if (prev && games.some(g => String(g.round) === String(prev))) return prev;
-            return playerRounds[0] || prev;
-          });
-        }
       })
       .catch(() => { if (!cancelled) setAllGames([]); })
       .finally(() => { if (!cancelled) setGamesLoading(false); });
     return () => { cancelled = true; };
   }, [playerName]);
 
+  // Auto-select round ONCE when both rounds + games are loaded and user hasn't picked manually.
+  // This is the ONLY place that auto-sets selectedRound — no race with load().
+  useEffect(() => {
+    if (userSelected || selectedRound || rounds.length === 0 || allGames.length === 0) return;
+    const playerRounds = new Set(allGames.map(g => String(g.round)));
+    // Pick the most recent round the player actually played in (descending order)
+    const bestRound = [...rounds].reverse().find(r => playerRounds.has(r));
+    if (bestRound) setSelectedRound(bestRound);
+  }, [rounds, allGames, userSelected, selectedRound]);
+
+  const onSelectRound = (r) => { setUserSelected(true); setSelectedRound(r); };
+
   // Filter games for the selected round locally — instant, no fetch
   const games = allGames.filter(g => String(g.round) === String(selectedRound));
 
-  // Compute stats from the filtered games (uses myScore/oppScore from getPlayerHistory)
+  // Compute stats from the filtered games
   const computedStats = games.reduce((acc, g) => {
     const myScore = Number(g.myScore);
     const oppScore = Number(g.oppScore);
@@ -93,7 +88,7 @@ export default function RoundStandingsChart({ playerName }) {
             <>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground font-medium">Select Week</p>
-                <Select value={selectedRound} onValueChange={setSelectedRound}>
+                <Select value={selectedRound} onValueChange={onSelectRound}>
                   <SelectTrigger><SelectValue placeholder="Select round" /></SelectTrigger>
                   <SelectContent>
                     {rounds.map(r => <SelectItem key={r} value={r}>Week {r}{roundDateMap[r] ? ` (${roundDateMap[r]})` : ""}</SelectItem>)}
