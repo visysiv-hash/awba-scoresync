@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import AdminPinGate from "../components/AdminPinGate";
+import PageBanner from "../components/PageBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,6 +112,7 @@ export default function AdminSponsors() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 p-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-6 pt-2">
+          <PageBanner className="h-14 mb-2" />
           <h1 className="text-2xl font-bold text-white">Manage Sponsors</h1>
           <p className="text-slate-400 text-sm mt-1">Add and manage sponsor logos</p>
         </div>

@@ -7,6 +7,7 @@ import OverallRankings from "../components/OverallRankings";
 import GroupStandingsSection from "../components/GroupStandingsSection";
 import PointsTable from "../components/PointsTable";
 import LeaderboardSkeleton from "../components/LeaderboardSkeleton";
+import PageBanner from "../components/PageBanner";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,11 +86,7 @@ export default function Leaderboard() {
             <RefreshCw className="w-4 h-4" />
           </Button>
           <div className="flex-1 text-center">
-            <img
-              src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png"
-              alt="Albury Wodonga Badminton"
-              className="mx-auto h-12 object-contain mb-1"
-            />
+            <PageBanner className="h-12 mb-1" />
             <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
               <Trophy className="w-6 h-6 text-yellow-400" /> League Leaderboard
             </h1>

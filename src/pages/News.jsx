@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Pin, ArrowLeft } from "lucide-react";
+import PageBanner from "../components/PageBanner";
 
 const categoryColors = {
   "General": "bg-slate-100 text-slate-700",
@@ -56,6 +57,7 @@ export default function News() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 p-4 pb-24">
       <div className="max-w-lg mx-auto">
+        <PageBanner className="h-14 mb-2" />
         <div className="flex items-center gap-3 pt-2 mb-6">
           <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CalendarDays, MapPin, Users, Clock, Loader2, CheckSquare, Square } from "lucide-react";
 import MultiBookingModal from "../components/booking/MultiBookingModal";
+import PageBanner from "../components/PageBanner";
 
 export default function BookingSessions() {
   const [sessions, setSessions] = useState([]);
@@ -74,6 +75,7 @@ export default function BookingSessions() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 p-4 pb-32">
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-4 pt-2">
+          <PageBanner className="h-14 mb-2" />
           <h1 className="text-2xl font-bold text-white">Book a Session</h1>
           <p className="text-slate-400 text-sm mt-1">Tap sessions to select, then book all at once</p>
         </div>

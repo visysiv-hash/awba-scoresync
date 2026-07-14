@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import PageBanner from "../components/PageBanner";
 
 export default function Register() {
   const [season, setSeason] = useState(null);
@@ -91,7 +92,7 @@ export default function Register() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <img src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/38fc332c7_image.png" alt="Logo" className="mx-auto mb-2 h-14 object-contain" />
+          <PageBanner className="h-14 mb-2" />
           <h1 className="text-2xl font-bold text-white">Register for {season.name}</h1>
           {season.fee && <p className="text-slate-300 text-sm mt-1">Registration fee: ${season.fee} AUD</p>}
           {season.start_date && <p className="text-slate-400 text-xs mt-1">Season starts {season.start_date}</p>}

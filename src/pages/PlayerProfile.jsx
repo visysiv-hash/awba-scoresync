@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import PageBanner from "../components/PageBanner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function PlayerProfile() {
@@ -72,6 +73,7 @@ export default function PlayerProfile() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
+        <PageBanner className="h-14 mb-4" />
         <div className="mb-6 flex items-center gap-4">
           <Button variant="ghost" onClick={() => navigate("/leaderboard")} className="text-white hover:bg-white/10">
             <ArrowLeft className="w-4 h-4" />

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
+import PageBanner from "../components/PageBanner";
 
 const FILTERS = ["All", "Scored", "Unscored"];
 
@@ -26,6 +27,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 p-4">
       <div className="max-w-3xl mx-auto">
+        <PageBanner className="h-14 mb-4" />
         <div className="flex items-center gap-3 mb-6">
           <Link to="/">
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import AdminPinGate from "../components/AdminPinGate";
+import PageBanner from "../components/PageBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,6 +79,7 @@ export default function AdminRegistrations() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 space-y-4 max-w-2xl mx-auto">
+      <PageBanner className="h-14 mb-2" />
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-800">Registrations</h1>
         <Button size="sm" onClick={() => setShowForm(!showForm)}>

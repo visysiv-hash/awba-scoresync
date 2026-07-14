@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import AdminPinGate from "../components/AdminPinGate";
+import PageBanner from "../components/PageBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,6 +105,7 @@ export default function AdminSessions() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 p-4">
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-6 pt-2">
+          <PageBanner className="h-14 mb-2" />
           <h1 className="text-2xl font-bold text-white">Manage Sessions</h1>
         </div>
 

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import PageBanner from "../components/PageBanner";
 
 const CONTENT = `
 PARTNER-ADJUSTED WIN RATE — EXPLANATION
@@ -92,6 +93,7 @@ export default function ExplainerDownload() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 text-center space-y-4">
+        <PageBanner className="h-14 mb-2" />
         <h1 className="text-2xl font-bold text-slate-800">Partner-Adjusted WR</h1>
         <p className="text-slate-500 text-sm">
           Full explanation of the partner-adjusted win rate system, including the

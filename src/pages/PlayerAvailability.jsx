@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SuggestedGroups from "../components/SuggestedGroups";
+import PageBanner from "../components/PageBanner";
 
 export default function PlayerAvailability() {
   const [availablePlayers, setAvailablePlayers] = useState([]);
@@ -89,6 +90,7 @@ export default function PlayerAvailability() {
     <div className="min-h-screen bg-slate-900 text-white p-4 pb-20">
       <div className="max-w-lg mx-auto space-y-4">
         {/* Header */}
+        <PageBanner className="h-14 mb-2" />
         <div className="flex items-center gap-3 pt-2 pb-1">
           <Users className="w-6 h-6 text-yellow-400" />
           <div>

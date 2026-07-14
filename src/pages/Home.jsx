@@ -7,6 +7,7 @@ User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown,
 "lucide-react";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
+import PageBanner from "../components/PageBanner";
 
 const tiles = [
 {
@@ -139,10 +140,7 @@ export default function Home() {
       <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="text-center pt-0 pb-2">
-          <img
-            src="https://media.base44.com/images/public/69c519111fbf9fefe3d69538/bc1751c88_AWBA.png"
-            alt="AWBA"
-            className="mx-auto h-16 object-contain" />
+          <PageBanner className="h-16" />
         </div>
 
         {/* Sponsor Strip */}

@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Download, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import PageBanner from "../components/PageBanner";
 
 const IMAGES = {
   search: "https://media.base44.com/images/public/69c519111fbf9fefe3d69538/e93f5e5d2_generated_image.png",
@@ -133,6 +134,7 @@ export default function UserManual() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 p-4 md:p-8">
       <div className="max-w-3xl mx-auto">
+        <PageBanner className="h-14 mb-4" />
         {/* Header */}
         <div className="bg-slate-800 text-white px-6 py-5 rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center gap-3">
