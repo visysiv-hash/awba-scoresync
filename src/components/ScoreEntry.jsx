@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import RoundScores from "./RoundScores";
@@ -20,6 +21,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showZeroConfirm, setShowZeroConfirm] = useState(false);
 
   // Load prefilled game from search
   useEffect(() => {
@@ -72,8 +74,9 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
     return true;
   };
 
-  const handleSubmit = async () => {
-    if (!validateRounds()) return;
+  const hasZeroScore = () => rounds.some(r => Number(r.score1) === 0 || Number(r.score2) === 0);
+
+  const doSubmit = async () => {
     setSubmitting(true);
     const total1 = rounds.reduce((sum, r) => sum + Number(r.score1), 0);
     const total2 = rounds.reduce((sum, r) => sum + Number(r.score2), 0);
@@ -96,6 +99,15 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
     } else {
       toast.error(res.data?.error || "Failed to submit scores. Please try again.");
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateRounds()) return;
+    if (hasZeroScore()) {
+      setShowZeroConfirm(true);
+      return;
+    }
+    await doSubmit();
   };
 
   const handleReset = () => {
@@ -165,6 +177,23 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
             </Button>
           </div>
         )}
+
+        <AlertDialog open={showZeroConfirm} onOpenChange={setShowZeroConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm score of 0?</AlertDialogTitle>
+              <AlertDialogDescription>
+                One or more rounds contain a score of 0. Please confirm this is correct before submitting.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Go back</AlertDialogCancel>
+              <AlertDialogAction onClick={async () => { setShowZeroConfirm(false); await doSubmit(); }}>
+                Confirm & Submit
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {submitted && (
           <div className="border-t pt-5 text-center space-y-3">
