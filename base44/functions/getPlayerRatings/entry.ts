@@ -118,8 +118,10 @@ Deno.serve(async (req) => {
       // Team 1 = p1 & p2, Team 2 = p3 & p4
       const team1Players = [game.p1, game.p2].filter(Boolean);
       const team2Players = [game.p3, game.p4].filter(Boolean);
-      const diff1 = score1 - score2;
-      const diff2 = score2 - score1;
+      // 21-point penalty when a team scores 0 — deducted from that team's diff
+      const PENALTY = 21;
+      const diff1 = score1 - score2 - (score1 === 0 ? PENALTY : 0);
+      const diff2 = score2 - score1 - (score2 === 0 ? PENALTY : 0);
 
       // Compute team average group (for fair mixed-pairing handling)
       // Each player uses the TEAM's average group as their base, not just their own
