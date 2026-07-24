@@ -58,7 +58,8 @@ export default function RoundStandingsChart({ playerName }) {
   // Filter games for the selected round locally — instant, no fetch
   const games = allGames.filter(g => String(g.round) === String(selectedRound));
 
-  // Compute stats from the filtered games
+  // Compute stats from the filtered games (0 score = 21-point penalty on Pts For)
+  const PENALTY = 21;
   const computedStats = games.reduce((acc, g) => {
     const myScore = Number(g.myScore);
     const oppScore = Number(g.oppScore);
@@ -67,10 +68,11 @@ export default function RoundStandingsChart({ playerName }) {
     if (won) acc.wins++;
     else if (lost) acc.losses++;
     else acc.draws++;
-    acc.ptsFor += myScore;
+    acc.ptsFor += myScore - (myScore === 0 ? PENALTY : 0);
     acc.ptsAgainst += oppScore;
+    acc.penalties += myScore === 0 ? 1 : 0;
     return acc;
-  }, { wins: 0, losses: 0, draws: 0, ptsFor: 0, ptsAgainst: 0 });
+  }, { wins: 0, losses: 0, draws: 0, ptsFor: 0, ptsAgainst: 0, penalties: 0 });
   computedStats.diff = computedStats.ptsFor - computedStats.ptsAgainst;
 
   return (
