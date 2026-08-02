@@ -47,8 +47,13 @@ Deno.serve(async (req) => {
       const team1 = row[2];
       const team2 = row[3];
 
+      // Match by net+game AND team names — prevents cross-round collisions
+      const norm = (v) => String(v || "").trim().toLowerCase();
+      const t1 = norm(team1);
+      const t2 = norm(team2);
       const scoreRow = scoresRows.find(s =>
-        String(s[0]).trim() === net && String(s[1]).trim() === game
+        String(s[0]).trim() === net && String(s[1]).trim() === game &&
+        ((norm(s[2]) === t1 && norm(s[3]) === t2) || (norm(s[2]) === t2 && norm(s[3]) === t1))
       );
 
       if (scoreRow) {
