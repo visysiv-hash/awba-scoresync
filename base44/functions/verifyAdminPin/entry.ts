@@ -1,7 +1,7 @@
 Deno.serve(async (req) => {
   try {
     const { pin } = await req.json();
-    const correctPin = Deno.env.get("ADMIN_PIN");
+    const correctPin = (Deno.env.get("ADMIN_PIN") || "").trim();
 
     if (!correctPin || pin !== correctPin) {
       return Response.json({ success: false });
