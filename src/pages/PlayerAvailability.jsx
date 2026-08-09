@@ -17,7 +17,7 @@ export default function PlayerAvailability() {
   useEffect(() => {
     Promise.all([
       base44.functions.invoke("getPlayerAvailability", {}),
-      base44.functions.invoke("getPlayerRatings", {}),
+      base44.functions.invoke("getPlayerRatingsV2", {}),
     ]).then(([availRes, ratingsRes]) => {
       setAvailablePlayers(availRes.data?.players || []);
       setRatings(ratingsRes.data?.players || []);
