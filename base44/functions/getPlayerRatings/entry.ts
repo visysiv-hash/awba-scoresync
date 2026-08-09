@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 Deno.serve(async (req) => {
   try {
@@ -96,6 +96,9 @@ Deno.serve(async (req) => {
     const playerMatches = {};
     const allMatchDetails = []; // for scanThreshold mode
 
+    // 21-point penalty when a team scores 0 (including 0-0) — deducted from that team's diff
+    const PENALTY = 21;
+
     for (let i = 1; i < rawRows.length; i++) {
       const row = rawRows[i];
       const gameId  = (row[9]  || "").trim(); // Game ID Clean (col J, index 9)
@@ -118,10 +121,12 @@ Deno.serve(async (req) => {
       // Team 1 = p1 & p2, Team 2 = p3 & p4
       const team1Players = [game.p1, game.p2].filter(Boolean);
       const team2Players = [game.p3, game.p4].filter(Boolean);
-      // 21-point penalty when a team scores 0 — deducted from that team's diff
-      const PENALTY = 21;
-      const diff1 = score1 - score2 - (score1 === 0 ? PENALTY : 0);
-      const diff2 = score2 - score1 - (score2 === 0 ? PENALTY : 0);
+
+      // Apply 21-point penalty whenever a side scores 0 (covers 0-21, 21-0, and 0-0)
+      const t1Zero = Number(score1) === 0;
+      const t2Zero = Number(score2) === 0;
+      const diff1 = score1 - score2 - (t1Zero ? PENALTY : 0);
+      const diff2 = score2 - score1 - (t2Zero ? PENALTY : 0);
 
       // Compute team average group (for fair mixed-pairing handling)
       // Each player uses the TEAM's average group as their base, not just their own
