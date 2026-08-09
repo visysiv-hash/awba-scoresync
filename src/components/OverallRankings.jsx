@@ -96,7 +96,7 @@ export default function OverallRankings({ groups }) {
   const [showExplainer, setShowExplainer] = useState(false);
 
   useEffect(() => {
-    base44.functions.invoke("getPlayerRatings", {})
+    base44.functions.invoke("getPlayerRatingsV2", {})
       .then(res => setRatings(res.data?.players || []))
       .finally(() => setLoadingRatings(false));
   }, []);
