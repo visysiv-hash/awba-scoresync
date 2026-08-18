@@ -10,6 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw } from "lucide-react";
 import { addWeeks } from "date-fns";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const emptyForm = () => ({
   title: "", date: "", start_time: "", end_time: "",
@@ -27,6 +31,7 @@ export default function AdminSessions() {
   const [expandedSession, setExpandedSession] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -86,6 +91,19 @@ export default function AdminSessions() {
     toast.success("Session deleted.");
   };
 
+  const handleDeleteAll = async () => {
+    setDeletingAll(true);
+    try {
+      await base44.entities.Session.deleteMany({});
+      setSessions([]);
+      toast.success("All sessions deleted.");
+    } catch (e) {
+      toast.error("Failed to delete all sessions.");
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
   if (!pinUnlocked) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700">
       <AdminPinGate
@@ -109,9 +127,36 @@ export default function AdminSessions() {
           <h1 className="text-2xl font-bold text-white">Manage Sessions</h1>
         </div>
 
-        <Button className="w-full mb-4" onClick={() => setShowForm(!showForm)}>
-          <Plus className="w-4 h-4 mr-2" /> {showForm ? "Cancel" : "Create New Session"}
-        </Button>
+        <div className="flex gap-2 mb-4">
+          <Button className="flex-1" onClick={() => setShowForm(!showForm)}>
+            <Plus className="w-4 h-4 mr-2" /> {showForm ? "Cancel" : "Create New Session"}
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={sessions.length === 0 || deletingAll}>
+                {deletingAll ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                Delete All
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete all sessions?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all {sessions.length} session{sessions.length === 1 ? "" : "s"}. Existing bookings will remain but will no longer be linked to a session. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAll}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Yes, delete all
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
 
         {showForm && (
           <Card className="mb-4 shadow-lg">
