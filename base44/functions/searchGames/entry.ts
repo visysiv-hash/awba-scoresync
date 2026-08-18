@@ -11,20 +11,15 @@ Deno.serve(async (req) => {
       ? rawId.split("/spreadsheets/d/")[1].split("/")[0].split("?")[0]
       : rawId.split("/")[0].split("?")[0];
 
-    // Fetch schedule sheet
+    // Fetch schedule + scores sheets in parallel
     const scheduleUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A:E`;
-    const scheduleRes = await fetch(scheduleUrl, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    const scheduleData = await scheduleRes.json();
-    const scheduleRows = (scheduleData.values || []).slice(1); // skip header
-
-    // Fetch scores sheet
     const scoresUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!A:K`;
-    const scoresRes = await fetch(scoresUrl, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    const scoresData = await scoresRes.json();
+    const [scheduleRes, scoresRes] = await Promise.all([
+      fetch(scheduleUrl, { headers: { Authorization: `Bearer ${accessToken}` } } ),
+      fetch(scoresUrl, { headers: { Authorization: `Bearer ${accessToken}` } } ),
+    ]);
+    const [scheduleData, scoresData] = await Promise.all([scheduleRes.json(), scoresRes.json()]);
+    const scheduleRows = (scheduleData.values || []).slice(1); // skip header
     const scoresRows = (scoresData.values || []); // no header row in Scores sheet
 
     const q = query.toLowerCase();
