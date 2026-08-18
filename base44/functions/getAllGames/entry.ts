@@ -24,6 +24,19 @@ Deno.serve(async (req) => {
     const scheduleRows = (scheduleData.values || []).slice(1);
     const scoresRows = (scoresData.values || []); // no header row in Scores sheet
 
+    // Build a hash map of scores for O(1) lookup (keyed by net|game|teamA|teamB, both orderings)
+    const norm = (v) => String(v || "").trim().toLowerCase();
+    const scoreMap = new Map();
+    for (const s of scoresRows) {
+      const net = String(s[0]).trim();
+      const game = String(s[1]).trim();
+      const a = norm(s[2]);
+      const b = norm(s[3]);
+      if (!net || !game) continue;
+      scoreMap.set(`${net}|${game}|${a}|${b}`, s);
+      scoreMap.set(`${net}|${game}|${b}|${a}`, s);
+    }
+
     const games = scheduleRows
       .filter(row => row[0] && row[1])
       .map(row => {
@@ -32,15 +45,9 @@ Deno.serve(async (req) => {
         const team1 = row[2] || "";
         const team2 = row[3] || "";
 
-        // Match by net+game AND team names — prevents cross-round collisions when
-        // the schedule reuses net/game numbers for different pairings
-        const norm = (v) => String(v || "").trim().toLowerCase();
         const t1 = norm(team1);
         const t2 = norm(team2);
-        const scoreRow = scoresRows.find(s =>
-          String(s[0]).trim() === net && String(s[1]).trim() === game &&
-          ((norm(s[2]) === t1 && norm(s[3]) === t2) || (norm(s[2]) === t2 && norm(s[3]) === t1))
-        );
+        const scoreRow = scoreMap.get(`${net}|${game}|${t1}|${t2}`);
 
         if (scoreRow) {
           // App-submitted: A=net,B=game,C=t1,D=t2,E=r1s1,F=r1s2,G=r2s1,H=r2s2,I=tot1,J=tot2,K=ts
