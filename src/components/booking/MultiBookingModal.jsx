@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2, X, CalendarDays, Clock, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 
-export default function MultiBookingModal({ sessions, user, onBooked, onClose }) {
+export default function MultiBookingModal({ sessions, player, onBooked, onClose }) {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null); // null = not yet submitted
 
@@ -14,7 +14,7 @@ export default function MultiBookingModal({ sessions, user, onBooked, onClose })
     const resultList = [];
 
     for (const session of sessions) {
-      const res = await base44.functions.invoke("bookSession", { sessionId: session.id });
+      const res = await base44.functions.invoke("bookSession", { sessionId: session.id, playerName: player.name, playerEmail: player.email });
       if (res.data?.success) {
         newBookings.push(res.data.booking);
         resultList.push({ session, status: res.data.status, error: null });
@@ -74,7 +74,7 @@ export default function MultiBookingModal({ sessions, user, onBooked, onClose })
           })}
         </div>
 
-        <p className="text-sm text-muted-foreground">Booking as: <span className="font-semibold text-slate-800">{user?.full_name} ({user?.email})</span></p>
+        <p className="text-sm text-muted-foreground">Booking as: <span className="font-semibold text-slate-800">{player?.name} ({player?.email})</span></p>
 
         {!results ? (
           <Button className="w-full" onClick={handleConfirm} disabled={loading}>

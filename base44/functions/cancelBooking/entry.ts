@@ -2,17 +2,21 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  const user = await base44.auth.me();
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const { bookingId } = await req.json();
+  const { bookingId, playerEmail } = await req.json();
 
   const bookings = await base44.asServiceRole.entities.Booking.filter({ id: bookingId });
   const booking = bookings[0];
   if (!booking) return Response.json({ error: 'Booking not found' }, { status: 404 });
 
-  // Only the owner or admin can cancel
-  if (booking.user_email !== user.email && user.role !== 'admin') {
+  // Admin check is optional — login may not be present for public booking
+  let isAdmin = false;
+  try {
+    const user = await base44.auth.me();
+    if (user && user.role === 'admin') isAdmin = true;
+  } catch {}
+
+  // Only the owner (by roster email) or admin can cancel
+  if (booking.user_email !== playerEmail && !isAdmin) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 

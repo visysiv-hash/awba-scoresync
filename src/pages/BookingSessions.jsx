@@ -6,25 +6,26 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CalendarDays, MapPin, Users, Clock, Loader2, CheckSquare, Square } from "lucide-react";
 import MultiBookingModal from "../components/booking/MultiBookingModal";
+import PlayerSelector from "../components/booking/PlayerSelector";
 import PageBanner from "../components/PageBanner";
 
 export default function BookingSessions() {
   const [sessions, setSessions] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [user, setUser] = useState(null);
+  const [player, setPlayer] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("awba_player") || "null"); } catch { return null; }
+  });
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showModal, setShowModal] = useState(false);
+  const [showPlayerPicker, setShowPlayerPicker] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      let u = null;
-      try { u = await base44.auth.me(); } catch {}
       const [allSessions, allBookings] = await Promise.all([
         base44.entities.Session.list("date", 100),
         base44.entities.Booking.list("-created_date", 500),
       ]);
-      setUser(u);
       const today = new Date().toISOString().split("T")[0];
       setSessions(allSessions.filter(s => s.date >= today).sort((a, b) => a.date.localeCompare(b.date)));
       setBookings(allBookings);
@@ -33,8 +34,14 @@ export default function BookingSessions() {
     load();
   }, []);
 
+  const rememberPlayer = (p) => {
+    setPlayer(p);
+    localStorage.setItem("awba_player", JSON.stringify(p));
+    setShowPlayerPicker(false);
+  };
+
   const confirmedCount = (sessionId) => bookings.filter(b => b.session_id === sessionId && b.status === "confirmed").length;
-  const myBooking = (sessionId) => bookings.find(b => b.session_id === sessionId && b.user_email === user?.email && b.status !== "cancelled");
+  const myBooking = (sessionId) => bookings.find(b => b.session_id === sessionId && b.user_email === player?.email && b.status !== "cancelled");
 
   const toggleSelect = (session) => {
     // Can't select if already booked
@@ -54,7 +61,7 @@ export default function BookingSessions() {
 
   const handleCancel = async (booking) => {
     if (!window.confirm("Cancel your booking?")) return;
-    const res = await base44.functions.invoke("cancelBooking", { bookingId: booking.id });
+    const res = await base44.functions.invoke("cancelBooking", { bookingId: booking.id, playerEmail: player?.email });
     if (res.data?.success) {
       setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: "cancelled" } : b));
       toast.success("Booking cancelled.");
@@ -78,6 +85,17 @@ export default function BookingSessions() {
           <PageBanner className="h-14 mb-2" />
           <h1 className="text-2xl font-bold text-white">Book a Session</h1>
           <p className="text-slate-400 text-sm mt-1">Tap sessions to select, then book all at once</p>
+        </div>
+
+        <div className="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2 mb-3">
+          {player ? (
+            <span className="text-sm text-white">Booking as: <span className="font-semibold text-teal-300">{player.name}</span></span>
+          ) : (
+            <span className="text-sm text-slate-300">Select your name to book</span>
+          )}
+          <Button size="sm" variant="ghost" className="text-teal-300 hover:text-teal-200 hover:bg-white/10 h-7 text-xs" onClick={() => setShowPlayerPicker(true)}>
+            {player ? "Change" : "Select name"}
+          </Button>
         </div>
 
         {sessions.length === 0 && (
@@ -158,7 +176,7 @@ export default function BookingSessions() {
             <Button size="sm" variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 h-7 text-xs" onClick={() => setSelectedIds(new Set())}>
               Clear
             </Button>
-            <Button size="sm" className="bg-white text-teal-700 hover:bg-white/90 font-bold h-8" onClick={() => setShowModal(true)}>
+            <Button size="sm" className="bg-white text-teal-700 hover:bg-white/90 font-bold h-8" onClick={() => player ? setShowModal(true) : setShowPlayerPicker(true)}>
               Book All
             </Button>
           </div>
@@ -168,10 +186,14 @@ export default function BookingSessions() {
       {showModal && (
         <MultiBookingModal
           sessions={selectedSessions}
-          user={user}
+          player={player}
           onBooked={handleBooked}
           onClose={() => setShowModal(false)}
         />
+      )}
+
+      {showPlayerPicker && (
+        <PlayerSelector onSelect={rememberPlayer} onClose={() => setShowPlayerPicker(false)} />
       )}
     </div>
   );
