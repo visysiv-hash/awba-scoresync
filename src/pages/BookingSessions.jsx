@@ -167,28 +167,12 @@ export default function BookingSessions() {
                       <div className="bg-slate-50 rounded-lg px-3 py-2 space-y-1" onClick={e => e.stopPropagation()}>
                         {mine.map(b => (
                           <div key={b.id} className="flex items-center justify-between text-sm">
-                            {b.user_email === player?.email ? (
-                              <>
-                                <span className="font-semibold">
-                                  {b.status === "confirmed" ? "✅ You're booked!" : "⏳ On waitlist"}
-                                </span>
-                                <Button size="sm" variant="outline" className="text-red-500 border-red-200 h-7 text-xs" onClick={() => handleCancel(b)}>
-                                  Cancel
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <span className="text-slate-600">Booked for: <span className="font-semibold text-slate-800">{b.user_name}</span></span>
-                                <div className="flex items-center gap-2">
-                                  <span className={b.status === "confirmed" ? "text-green-600 text-xs font-semibold" : "text-amber-600 text-xs font-semibold"}>
-                                    {b.status === "confirmed" ? "✅ Confirmed" : "⏳ Waitlist"}
-                                  </span>
-                                  <Button size="sm" variant="outline" className="text-red-500 border-red-200 h-7 text-xs" onClick={() => handleCancel(b)}>
-                                    Cancel
-                                  </Button>
-                                </div>
-                              </>
-                            )}
+                            <span className="font-semibold">
+                              {b.status === "confirmed" ? "✅" : "⏳"} {b.user_name}{b.user_email === player?.email ? " (you)" : ""}
+                            </span>
+                            <Button size="sm" variant="outline" className="text-red-500 border-red-200 h-7 text-xs" onClick={() => handleCancel(b)}>
+                              Cancel
+                            </Button>
                           </div>
                         ))}
                       </div>
