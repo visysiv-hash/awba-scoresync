@@ -57,33 +57,36 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose 
       return;
     }
     setBooking(true);
-    const newBookings = [];
-    const resultList = [];
+    const pairs = sessions.flatMap(session => people.map(person => ({ session, person })));
+    const responses = await Promise.all(pairs.map(pair =>
+      base44.functions.invoke("bookSession", {
+        sessionId: pair.session.id,
+        playerName: pair.person.display_name,
+        playerEmail: pair.person.email,
+        bookedByEmail: player?.email,
+      }).then(res => ({ pair, data: res.data })).catch(() => ({ pair, data: null }))
+    ));
 
-    for (const session of sessions) {
-      const personResults = [];
-      for (const person of people) {
-        const res = await base44.functions.invoke("bookSession", {
-          sessionId: session.id,
-          playerName: person.display_name,
-          playerEmail: person.email,
-          bookedByEmail: player?.email,
-        });
-        if (res.data?.success) {
-          newBookings.push(res.data.booking);
-          personResults.push({ name: person.display_name, status: res.data.status, error: null });
-        } else {
-          personResults.push({ name: person.display_name, status: null, error: res.data?.error || "Failed" });
-        }
-      }
-      resultList.push({ session, people: personResults });
-    }
+    const newBookings = [];
+    const resultList = sessions.map(session => ({
+      session,
+      people: responses
+        .filter(r => r.pair.session.id === session.id)
+        .map(r => {
+          const person = r.pair.person;
+          if (r.data?.success) {
+            newBookings.push(r.data.booking);
+            return { name: person.display_name, status: r.data.status, error: null };
+          }
+          return { name: person.display_name, status: null, error: r.data?.error || "Failed" };
+        }),
+    }));
 
     setBooking(false);
     setResults(resultList);
     if (newBookings.length > 0) onBooked(newBookings);
 
-    const total = sessions.length * people.length;
+    const total = pairs.length;
     const succeeded = resultList.flatMap(r => r.people).filter(p => !p.error).length;
     const failed = total - succeeded;
     if (failed === 0) toast.success(`${succeeded} booking${succeeded > 1 ? "s" : ""} confirmed!`);
