@@ -10,10 +10,21 @@ export default function PlayerSelector({ onSelect, onClose }) {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
+    // Show cached roster instantly for repeat opens
+    try {
+      const cached = JSON.parse(localStorage.getItem("awba_roster") || "null");
+      if (cached && cached.length) {
+        setRoster(cached);
+        setLoading(false);
+      }
+    } catch {}
+
     const load = async () => {
       try {
         const res = await base44.functions.invoke("getMemberRoster", {});
-        setRoster(res.data?.roster || []);
+        const r = res.data?.roster || [];
+        setRoster(r);
+        localStorage.setItem("awba_roster", JSON.stringify(r));
       } catch {}
       setLoading(false);
     };
@@ -32,7 +43,7 @@ export default function PlayerSelector({ onSelect, onClose }) {
           <h2 className="font-bold text-lg">Select your name</h2>
           <button onClick={onClose}><X className="w-5 h-5 text-slate-500" /></button>
         </div>
-        <p className="text-sm text-muted-foreground">Choose your name from the roster. We'll remember it on this device for next time.</p>
+        <p className="text-sm text-muted-foreground">Choose your name from the list. We'll remember it on this device for next time.</p>
 
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

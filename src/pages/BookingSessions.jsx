@@ -71,6 +71,7 @@ export default function BookingSessions() {
   };
 
   const selectedSessions = sessions.filter(s => selectedIds.has(s.id));
+  const selectableCount = sessions.filter(s => !myBooking(s.id)).length;
 
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center">
@@ -177,7 +178,7 @@ export default function BookingSessions() {
               Clear
             </Button>
             <Button size="sm" className="bg-white text-teal-700 hover:bg-white/90 font-bold h-8" onClick={() => player ? setShowModal(true) : setShowPlayerPicker(true)}>
-              Book All
+              {selectedIds.size === selectableCount ? "Book All" : `Book ${selectedIds.size}`}
             </Button>
           </div>
         </div>
