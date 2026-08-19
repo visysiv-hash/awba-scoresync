@@ -106,6 +106,7 @@ export default function MyBookingsThisWeek() {
               <div key={b.id} className="flex items-start justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">{b.session.title}</p>
+                  <p className="text-xs text-slate-500 truncate">For: {b.user_name}{b.user_name === player?.name ? " (you)" : ""}</p>
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
                     <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{fmt(b.session.date)}</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{b.session.start_time}</span>
