@@ -60,6 +60,10 @@ export default function BookingSessions() {
 
   const handleBooked = (newBookings) => {
     setBookings(prev => [...prev, ...newBookings]);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
     setSelectedIds(new Set());
   };
 
@@ -217,7 +221,7 @@ export default function BookingSessions() {
           sessions={selectedSessions}
           player={player}
           onBooked={handleBooked}
-          onClose={() => setShowModal(false)}
+          onClose={handleCloseModal}
         />
       )}
 

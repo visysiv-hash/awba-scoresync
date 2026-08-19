@@ -109,7 +109,11 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={!booking ? onClose : undefined}>
       <div className="bg-white w-full max-w-lg rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="font-bold text-lg">Confirm {sessions.length} Booking{sessions.length > 1 ? "s" : ""}</h2>
+          <h2 className="font-bold text-lg">
+            {results
+              ? (totalBookings > 1 ? "Bookings Confirmed" : "Booking Confirmed")
+              : `Confirm ${totalBookings} Booking${totalBookings !== 1 ? "s" : ""}`}
+          </h2>
           {!booking && <button onClick={onClose}><X className="w-5 h-5 text-slate-500" /></button>}
         </div>
 
