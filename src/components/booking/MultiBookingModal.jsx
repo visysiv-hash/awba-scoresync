@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, X, CalendarDays, Clock, MapPin, CheckCircle2, AlertCircle, Search } from "lucide-react";
 
-export default function MultiBookingModal({ sessions, player, onBooked, onClose, preselectSelf = true }) {
+export default function MultiBookingModal({ sessions, player, onBooked, onClose, preselectSelf = true, addMode = false, excludeEmails = [] }) {
   const [roster, setRoster] = useState([]);
   const [loadingRoster, setLoadingRoster] = useState(true);
   const [query, setQuery] = useState("");
@@ -56,7 +56,9 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
 
   const people = roster.filter((m, i, arr) => selectedPeople.has(m.email) && arr.findIndex(x => x.email === m.email) === i);
   const q = query.toLowerCase();
+  const excl = excludeEmails || [];
   const filtered = roster
+    .filter(m => !excl.includes(m.email))
     .filter(m => m.display_name.toLowerCase().includes(q) || m.full_name.toLowerCase().includes(q))
     .slice(0, 50);
 
@@ -111,8 +113,8 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-lg">
             {results
-              ? (totalBookings > 1 ? "Bookings Confirmed" : "Booking Confirmed")
-              : `Confirm ${totalBookings} Booking${totalBookings !== 1 ? "s" : ""}`}
+              ? (addMode ? "People Added" : (totalBookings > 1 ? "Bookings Confirmed" : "Booking Confirmed"))
+              : (addMode ? "Add people" : `Confirm ${totalBookings} Booking${totalBookings !== 1 ? "s" : ""}`)}
           </h2>
           {!booking && <button onClick={onClose}><X className="w-5 h-5 text-slate-500" /></button>}
         </div>
@@ -145,7 +147,7 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
 
         {!results && (
           <div className="space-y-2">
-            <p className="text-sm font-semibold">Who are you booking for?</p>
+            <p className="text-sm font-semibold">{addMode ? "Add people to this session" : "Who are you booking for?"}</p>
             {loadingRoster ? (
               <div className="flex justify-center py-2"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
             ) : (
@@ -155,6 +157,11 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
                   <Input className="pl-9" placeholder="Add a name (kid, family...)..." value={query} onChange={e => setQuery(e.target.value)} />
                 </div>
                 <div className="space-y-1 max-h-48 overflow-y-auto border rounded-lg p-1">
+                  {filtered.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      {excl.length > 0 ? "Everyone is already booked." : "No members found."}
+                    </p>
+                  )}
                   {filtered.map(m => (
                     <button
                       key={m.email}
@@ -175,7 +182,11 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
         {!results ? (
           <Button className="w-full" onClick={handleConfirm} disabled={booking || selectedPeople.size === 0 || loadingRoster}>
             {booking && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-            {booking ? "Booking..." : `Confirm ${totalBookings} Booking${totalBookings > 1 ? "s" : ""}`}
+            {booking
+              ? (addMode ? "Adding..." : "Booking...")
+              : (addMode
+                  ? `Add ${totalBookings} ${totalBookings > 1 ? "people" : "person"}`
+                  : `Confirm ${totalBookings} Booking${totalBookings > 1 ? "s" : ""}`)}
           </Button>
         ) : (
           <Button className="w-full" variant="outline" onClick={onClose}>Done</Button>
