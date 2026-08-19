@@ -19,7 +19,7 @@ export default function BookingSessions() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showModal, setShowModal] = useState(false);
   const [addMoreMode, setAddMoreMode] = useState(false);
-  const [excludeEmails, setExcludeEmails] = useState([]);
+  const [excludeNames, setExcludeNames] = useState([]);
   const [showPlayerPicker, setShowPlayerPicker] = useState(false);
 
   useEffect(() => {
@@ -68,13 +68,13 @@ export default function BookingSessions() {
     setShowModal(false);
     setSelectedIds(new Set());
     setAddMoreMode(false);
-    setExcludeEmails([]);
+    setExcludeNames([]);
   };
 
   const handleAddMore = (session) => {
     if (!player) { setShowPlayerPicker(true); return; }
-    const already = bookings.filter(b => b.session_id === session.id && b.status !== "cancelled").map(b => b.user_email);
-    setExcludeEmails(already);
+    const already = bookings.filter(b => b.session_id === session.id && b.status !== "cancelled").map(b => b.user_name);
+    setExcludeNames(already);
     setSelectedIds(new Set([session.id]));
     setAddMoreMode(true);
     setShowModal(true);
@@ -227,7 +227,7 @@ export default function BookingSessions() {
           onClose={handleCloseModal}
           preselectSelf={!addMoreMode}
           addMode={addMoreMode}
-          excludeEmails={excludeEmails}
+          excludeNames={excludeNames}
         />
       )}
 

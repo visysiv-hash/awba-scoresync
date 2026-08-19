@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, X, CalendarDays, Clock, MapPin, CheckCircle2, AlertCircle, Search } from "lucide-react";
 
-export default function MultiBookingModal({ sessions, player, onBooked, onClose, preselectSelf = true, addMode = false, excludeEmails = [] }) {
+export default function MultiBookingModal({ sessions, player, onBooked, onClose, preselectSelf = true, addMode = false, excludeNames = [] }) {
   const [roster, setRoster] = useState([]);
   const [loadingRoster, setLoadingRoster] = useState(true);
   const [query, setQuery] = useState("");
@@ -56,9 +56,9 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
 
   const people = roster.filter((m, i, arr) => selectedPeople.has(m.email) && arr.findIndex(x => x.email === m.email) === i);
   const q = query.toLowerCase();
-  const excl = excludeEmails || [];
+  const excl = excludeNames || [];
   const filtered = roster
-    .filter(m => !excl.includes(m.email))
+    .filter(m => !excl.includes(m.display_name))
     .filter(m => m.display_name.toLowerCase().includes(q) || m.full_name.toLowerCase().includes(q))
     .slice(0, 50);
 
@@ -159,7 +159,7 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
                 <div className="space-y-1 max-h-48 overflow-y-auto border rounded-lg p-1">
                   {filtered.length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-4">
-                      {excl.length > 0 ? "Everyone is already booked." : "No members found."}
+                      {q ? `No matches for "${query}".` : (excl.length > 0 ? "Everyone is already booked." : "No members found.")}
                     </p>
                   )}
                   {filtered.map(m => (

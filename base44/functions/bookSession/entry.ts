@@ -12,10 +12,11 @@ Deno.serve(async (req) => {
   const session = sessions[0];
   if (!session) return Response.json({ error: 'Session not found' }, { status: 404 });
 
-  // Check if this player already has an active booking for this session
-  const existingBookings = await base44.asServiceRole.entities.Booking.filter({ session_id: sessionId, user_email: playerEmail });
+  // Check if this person already has an active booking for this session
+  // Key on name (not email) so family members sharing one email are distinct people
+  const existingBookings = await base44.asServiceRole.entities.Booking.filter({ session_id: sessionId, user_name: playerName });
   const active = existingBookings.find(b => b.status === 'confirmed' || b.status === 'waitlisted');
-  if (active) return Response.json({ error: 'You already have a booking for this session.' }, { status: 400 });
+  if (active) return Response.json({ error: `${playerName} is already booked for this session.` }, { status: 400 });
 
   // Count confirmed and waitlisted bookings
   const allBookings = await base44.asServiceRole.entities.Booking.filter({ session_id: sessionId });
