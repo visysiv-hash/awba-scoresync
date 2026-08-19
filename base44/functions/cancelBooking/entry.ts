@@ -1,5 +1,54 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+const BOOKING_SPREADSHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
+const BOOKING_SHEET = "BookingData";
+
+async function deleteBookingFromSheet(base44, name, date) {
+  try {
+    const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
+    const headers = { Authorization: `Bearer ${accessToken}` };
+
+    // Find the numeric sheetId for the BookingData tab
+    const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${BOOKING_SPREADSHEET_ID}?fields=sheets.properties`, { headers });
+    const meta = await metaRes.json();
+    const sheetId = (meta.sheets || [])
+      .find(s => s.properties?.title === BOOKING_SHEET)?.properties?.sheetId;
+    if (sheetId === undefined) return;
+
+    // Read existing rows to find the matching row index (name + date)
+    const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${BOOKING_SPREADSHEET_ID}/values/${BOOKING_SHEET}!A:B`;
+    const readRes = await fetch(readUrl, { headers });
+    const readData = await readRes.json();
+    const rows = readData.values || [];
+    const matchIndex = rows.findIndex(r =>
+      String(r[0] || "").trim().toLowerCase() === String(name).trim().toLowerCase() &&
+      String(r[1] || "").trim() === String(date).trim()
+    );
+    if (matchIndex === -1) return; // nothing to delete
+
+    // Delete that row (0-based startIndex)
+    const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${BOOKING_SPREADSHEET_ID}:batchUpdate`;
+    await fetch(batchUrl, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: "ROWS",
+              startIndex: matchIndex,
+              endIndex: matchIndex + 1,
+            },
+          },
+        }],
+      }),
+    });
+  } catch (e) {
+    // Sheet update is a side-effect — don't fail the cancellation
+  }
+}
+
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   const { bookingId, playerEmail } = await req.json();
@@ -21,6 +70,9 @@ Deno.serve(async (req) => {
   }
 
   await base44.asServiceRole.entities.Booking.update(bookingId, { status: 'cancelled' });
+
+  // Remove the matching row from the BookingData sheet
+  await deleteBookingFromSheet(base44, booking.user_name, booking.session_date);
 
   // Email the person who cancelled
   await base44.asServiceRole.integrations.Core.SendEmail({
