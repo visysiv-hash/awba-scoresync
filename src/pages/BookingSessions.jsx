@@ -18,6 +18,7 @@ export default function BookingSessions() {
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showModal, setShowModal] = useState(false);
+  const [addMoreMode, setAddMoreMode] = useState(false);
   const [showPlayerPicker, setShowPlayerPicker] = useState(false);
 
   useEffect(() => {
@@ -65,6 +66,14 @@ export default function BookingSessions() {
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedIds(new Set());
+    setAddMoreMode(false);
+  };
+
+  const handleAddMore = (session) => {
+    if (!player) { setShowPlayerPicker(true); return; }
+    setSelectedIds(new Set([session.id]));
+    setAddMoreMode(true);
+    setShowModal(true);
   };
 
   const handleCancel = async (booking) => {
@@ -175,6 +184,12 @@ export default function BookingSessions() {
                             </Button>
                           </div>
                         ))}
+                        <button
+                          onClick={() => handleAddMore(session)}
+                          className="text-xs text-teal-600 font-semibold hover:text-teal-700 pt-1"
+                        >
+                          + Add people
+                        </button>
                       </div>
                     );
                   })()}
@@ -206,6 +221,7 @@ export default function BookingSessions() {
           player={player}
           onBooked={handleBooked}
           onClose={handleCloseModal}
+          preselectSelf={!addMoreMode}
         />
       )}
 

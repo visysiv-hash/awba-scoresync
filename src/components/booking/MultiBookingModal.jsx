@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, X, CalendarDays, Clock, MapPin, CheckCircle2, AlertCircle, Search } from "lucide-react";
 
-export default function MultiBookingModal({ sessions, player, onBooked, onClose }) {
+export default function MultiBookingModal({ sessions, player, onBooked, onClose, preselectSelf = true }) {
   const [roster, setRoster] = useState([]);
   const [loadingRoster, setLoadingRoster] = useState(true);
   const [query, setQuery] = useState("");
   const [selectedPeople, setSelectedPeople] = useState(() => {
     const set = new Set();
-    if (player?.email) set.add(player.email);
+    if (preselectSelf && player?.email) set.add(player.email);
     return set;
   });
   const [booking, setBooking] = useState(false);
@@ -39,7 +39,7 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose 
 
   // Ensure the remembered player is pre-selected (resolves email from roster if missing)
   useEffect(() => {
-    if (!roster.length || !player) return;
+    if (!roster.length || !player || !preselectSelf) return;
     const me = roster.find(m => m.email === player.email || m.display_name === player.name);
     if (me && !selectedPeople.has(me.email)) {
       setSelectedPeople(prev => new Set(prev).add(me.email));
