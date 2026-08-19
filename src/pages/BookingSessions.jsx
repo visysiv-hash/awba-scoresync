@@ -175,9 +175,14 @@ export default function BookingSessions() {
                             ) : (
                               <>
                                 <span className="text-slate-600">Booked for: <span className="font-semibold text-slate-800">{b.user_name}</span></span>
-                                <span className={b.status === "confirmed" ? "text-green-600 text-xs font-semibold" : "text-amber-600 text-xs font-semibold"}>
-                                  {b.status === "confirmed" ? "✅ Confirmed" : "⏳ Waitlist"}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className={b.status === "confirmed" ? "text-green-600 text-xs font-semibold" : "text-amber-600 text-xs font-semibold"}>
+                                    {b.status === "confirmed" ? "✅ Confirmed" : "⏳ Waitlist"}
+                                  </span>
+                                  <Button size="sm" variant="outline" className="text-red-500 border-red-200 h-7 text-xs" onClick={() => handleCancel(b)}>
+                                    Cancel
+                                  </Button>
+                                </div>
                               </>
                             )}
                           </div>

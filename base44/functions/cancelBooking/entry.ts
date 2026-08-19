@@ -15,8 +15,8 @@ Deno.serve(async (req) => {
     if (user && user.role === 'admin') isAdmin = true;
   } catch {}
 
-  // Only the owner (by roster email) or admin can cancel
-  if (booking.user_email !== playerEmail && !isAdmin) {
+  // Only the attendee, the person who made the booking, or an admin can cancel
+  if (booking.user_email !== playerEmail && booking.booked_by_email !== playerEmail && !isAdmin) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
