@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  const { sessionId, playerName, playerEmail } = await req.json();
+  const { sessionId, playerName, playerEmail, bookedByEmail } = await req.json();
 
   if (!playerName || !playerEmail) {
     return Response.json({ error: 'Player name and email are required.' }, { status: 400 });
@@ -40,6 +40,7 @@ Deno.serve(async (req) => {
     session_date: session.date,
     user_email: playerEmail,
     user_name: playerName,
+    booked_by_email: bookedByEmail || playerEmail,
     status,
   });
 

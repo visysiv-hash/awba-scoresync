@@ -67,6 +67,7 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose 
           sessionId: session.id,
           playerName: person.display_name,
           playerEmail: person.email,
+          bookedByEmail: player?.email,
         });
         if (res.data?.success) {
           newBookings.push(res.data.booking);

@@ -22,6 +22,10 @@
       "type": "string",
       "title": "User Name"
     },
+    "booked_by_email": {
+      "type": "string",
+      "title": "Booked By Email"
+    },
     "status": {
       "type": "string",
       "title": "Status",

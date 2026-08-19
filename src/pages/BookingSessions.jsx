@@ -42,6 +42,9 @@ export default function BookingSessions() {
 
   const confirmedCount = (sessionId) => bookings.filter(b => b.session_id === sessionId && b.status === "confirmed").length;
   const myBooking = (sessionId) => bookings.find(b => b.session_id === sessionId && b.user_email === player?.email && b.status !== "cancelled");
+  const bookedForOthers = (sessionId) => bookings.filter(
+    b => b.session_id === sessionId && b.booked_by_email === player?.email && b.user_email !== player?.email && b.status !== "cancelled"
+  );
 
   const toggleSelect = (session) => {
     // Can't select if already booked
@@ -159,6 +162,19 @@ export default function BookingSessions() {
                       <Button size="sm" variant="outline" className="text-red-500 border-red-200 h-7 text-xs" onClick={() => handleCancel(myBk)}>
                         Cancel
                       </Button>
+                    </div>
+                  )}
+
+                  {bookedForOthers(session.id).length > 0 && (
+                    <div className="bg-teal-50 rounded-lg px-3 py-2 space-y-1" onClick={e => e.stopPropagation()}>
+                      {bookedForOthers(session.id).map(b => (
+                        <div key={b.id} className="flex items-center justify-between text-xs">
+                          <span className="text-slate-600">Booked for: <span className="font-semibold text-slate-800">{b.user_name}</span></span>
+                          <span className={b.status === "confirmed" ? "text-green-600 font-semibold" : "text-amber-600 font-semibold"}>
+                            {b.status === "confirmed" ? "✅ Confirmed" : "⏳ Waitlist"}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </CardContent>
