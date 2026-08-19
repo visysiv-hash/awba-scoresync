@@ -37,6 +37,15 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose 
     load();
   }, []);
 
+  // Ensure the remembered player is pre-selected (resolves email from roster if missing)
+  useEffect(() => {
+    if (!roster.length || !player) return;
+    const me = roster.find(m => m.email === player.email || m.display_name === player.name);
+    if (me && !selectedPeople.has(me.email)) {
+      setSelectedPeople(prev => new Set(prev).add(me.email));
+    }
+  }, [roster]);
+
   const togglePerson = (email) => {
     setSelectedPeople(prev => {
       const next = new Set(prev);
