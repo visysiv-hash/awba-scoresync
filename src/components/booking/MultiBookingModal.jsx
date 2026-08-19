@@ -54,7 +54,7 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose 
     });
   };
 
-  const people = roster.filter(m => selectedPeople.has(m.email));
+  const people = roster.filter((m, i, arr) => selectedPeople.has(m.email) && arr.findIndex(x => x.email === m.email) === i);
   const q = query.toLowerCase();
   const filtered = roster
     .filter(m => m.display_name.toLowerCase().includes(q) || m.full_name.toLowerCase().includes(q))
