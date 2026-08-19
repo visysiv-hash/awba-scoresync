@@ -32,6 +32,7 @@ export default function AdminSessions() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [filterTitle, setFilterTitle] = useState("All");
 
   const loadData = async () => {
     setLoading(true);
@@ -47,6 +48,10 @@ export default function AdminSessions() {
   useEffect(() => { if (pinUnlocked) loadData(); }, [pinUnlocked]);
 
   const sessionBookings = (sessionId) => bookings.filter(b => b.session_id === sessionId && b.status !== "cancelled");
+
+  // Unique session titles act as "main headings" (e.g. Tuesday Games, Thursday Games)
+  const uniqueTitles = ["All", ...Array.from(new Set(sessions.map(s => s.title)))];
+  const filteredSessions = filterTitle === "All" ? sessions : sessions.filter(s => s.title === filterTitle);
 
   const handleCreate = async () => {
     if (!form.title || !form.date || !form.start_time || !form.max_spots) {
@@ -234,8 +239,29 @@ export default function AdminSessions() {
           </Card>
         )}
 
+        {uniqueTitles.length > 2 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
+            {uniqueTitles.map(title => (
+              <button
+                key={title}
+                onClick={() => setFilterTitle(title)}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${
+                  filterTitle === title
+                    ? "bg-teal-600 text-white border-teal-600"
+                    : "bg-white/10 text-slate-200 border-white/20 hover:bg-white/20"
+                }`}
+              >
+                {title}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="space-y-3">
-          {sessions.map(session => {
+          {filteredSessions.length === 0 && (
+            <Card><CardContent className="pt-6 text-center text-muted-foreground text-sm">No sessions{filterTitle !== "All" ? ` for "${filterTitle}"` : ""}.</CardContent></Card>
+          )}
+          {filteredSessions.map(session => {
             const bks = sessionBookings(session.id);
             const confirmed = bks.filter(b => b.status === "confirmed");
             const waitlisted = bks.filter(b => b.status === "waitlisted");
