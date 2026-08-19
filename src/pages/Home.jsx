@@ -8,6 +8,7 @@ User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown,
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
 import PageBanner from "../components/PageBanner";
+import MyBookingsThisWeek from "../components/MyBookingsThisWeek";
 
 const tiles = [
 {
@@ -156,6 +157,11 @@ export default function Home() {
         {/* News Ticker */}
         <div className="mt-2 rounded-xl overflow-hidden">
           <NewsTicker />
+        </div>
+
+        {/* My bookings this week */}
+        <div className="mt-4">
+          <MyBookingsThisWeek />
         </div>
 
         {/* Main tiles */}
