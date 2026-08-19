@@ -21,6 +21,7 @@ export default function BookingSessions() {
   const [addMoreMode, setAddMoreMode] = useState(false);
   const [excludeNames, setExcludeNames] = useState([]);
   const [showPlayerPicker, setShowPlayerPicker] = useState(false);
+  const [filterTitle, setFilterTitle] = useState("All");
 
   useEffect(() => {
     const load = async () => {
@@ -94,6 +95,9 @@ export default function BookingSessions() {
   const selectedSessions = sessions.filter(s => selectedIds.has(s.id));
   const selectableCount = sessions.filter(s => !myBooking(s.id)).length;
 
+  const uniqueTitles = ["All", ...Array.from(new Set(sessions.map(s => s.title)))];
+  const visibleSessions = filterTitle === "All" ? sessions : sessions.filter(s => s.title === filterTitle);
+
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center">
       <Loader2 className="w-8 h-8 animate-spin text-white" />
@@ -124,8 +128,26 @@ export default function BookingSessions() {
           <Card><CardContent className="pt-6 text-center text-muted-foreground">No upcoming sessions available.</CardContent></Card>
         )}
 
+        {sessions.length > 0 && uniqueTitles.length > 2 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-1">
+            {uniqueTitles.map(title => (
+              <button
+                key={title}
+                onClick={() => setFilterTitle(title)}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${
+                  filterTitle === title
+                    ? "bg-teal-500 text-white border-teal-500"
+                    : "bg-white/10 text-slate-200 border-white/20 hover:bg-white/20"
+                }`}
+              >
+                {title}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="space-y-4">
-          {sessions.map(session => {
+          {visibleSessions.map(session => {
             const confirmed = confirmedCount(session.id);
             const spotsLeft = session.max_spots - confirmed;
             const full = spotsLeft <= 0;
