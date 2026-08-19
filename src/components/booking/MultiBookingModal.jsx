@@ -11,7 +11,7 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
   const [query, setQuery] = useState("");
   const [selectedPeople, setSelectedPeople] = useState(() => {
     const set = new Set();
-    if (preselectSelf && player?.email) set.add(player.email);
+    if (preselectSelf && player?.name) set.add(player.name);
     return set;
   });
   const [booking, setBooking] = useState(false);
@@ -41,20 +41,20 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
   useEffect(() => {
     if (!roster.length || !player || !preselectSelf) return;
     const me = roster.find(m => m.email === player.email || m.display_name === player.name);
-    if (me && !selectedPeople.has(me.email)) {
-      setSelectedPeople(prev => new Set(prev).add(me.email));
+    if (me && !selectedPeople.has(me.display_name)) {
+      setSelectedPeople(prev => new Set(prev).add(me.display_name));
     }
   }, [roster]);
 
-  const togglePerson = (email) => {
+  const togglePerson = (name) => {
     setSelectedPeople(prev => {
       const next = new Set(prev);
-      next.has(email) ? next.delete(email) : next.add(email);
+      next.has(name) ? next.delete(name) : next.add(name);
       return next;
     });
   };
 
-  const people = roster.filter((m, i, arr) => selectedPeople.has(m.email) && arr.findIndex(x => x.email === m.email) === i);
+  const people = roster.filter((m, i, arr) => selectedPeople.has(m.display_name) && arr.findIndex(x => x.display_name === m.display_name) === i);
   const q = query.toLowerCase();
   const excl = excludeNames || [];
   const filtered = roster
@@ -164,12 +164,12 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
                   )}
                   {filtered.map(m => (
                     <button
-                      key={m.email}
-                      onClick={() => togglePerson(m.email)}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between ${selectedPeople.has(m.email) ? "bg-teal-50 text-teal-800" : "hover:bg-slate-100"}`}
+                      key={m.display_name}
+                      onClick={() => togglePerson(m.display_name)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between ${selectedPeople.has(m.display_name) ? "bg-teal-50 text-teal-800" : "hover:bg-slate-100"}`}
                     >
                       <span className="font-semibold">{m.display_name}</span>
-                      {selectedPeople.has(m.email) && <CheckCircle2 className="w-4 h-4 text-teal-600" />}
+                      {selectedPeople.has(m.display_name) && <CheckCircle2 className="w-4 h-4 text-teal-600" />}
                     </button>
                   ))}
                 </div>
