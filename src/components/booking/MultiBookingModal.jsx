@@ -1,53 +1,103 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, X, CalendarDays, Clock, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, X, CalendarDays, Clock, MapPin, CheckCircle2, AlertCircle, Search } from "lucide-react";
 
 export default function MultiBookingModal({ sessions, player, onBooked, onClose }) {
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState(null); // null = not yet submitted
+  const [roster, setRoster] = useState([]);
+  const [loadingRoster, setLoadingRoster] = useState(true);
+  const [query, setQuery] = useState("");
+  const [selectedPeople, setSelectedPeople] = useState(() => {
+    const set = new Set();
+    if (player?.email) set.add(player.email);
+    return set;
+  });
+  const [booking, setBooking] = useState(false);
+  const [results, setResults] = useState(null);
+
+  useEffect(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem("awba_roster") || "null");
+      if (cached && cached.length) {
+        setRoster(cached);
+        setLoadingRoster(false);
+      }
+    } catch {}
+    const load = async () => {
+      try {
+        const res = await base44.functions.invoke("getMemberRoster", {});
+        const r = res.data?.roster || [];
+        setRoster(r);
+        localStorage.setItem("awba_roster", JSON.stringify(r));
+      } catch {}
+      setLoadingRoster(false);
+    };
+    load();
+  }, []);
+
+  const togglePerson = (email) => {
+    setSelectedPeople(prev => {
+      const next = new Set(prev);
+      next.has(email) ? next.delete(email) : next.add(email);
+      return next;
+    });
+  };
+
+  const people = roster.filter(m => selectedPeople.has(m.email));
+  const q = query.toLowerCase();
+  const filtered = roster
+    .filter(m => m.display_name.toLowerCase().includes(q) || m.full_name.toLowerCase().includes(q))
+    .slice(0, 50);
 
   const handleConfirm = async () => {
-    setLoading(true);
+    if (selectedPeople.size === 0) {
+      toast.error("Select at least one person.");
+      return;
+    }
+    setBooking(true);
     const newBookings = [];
     const resultList = [];
 
     for (const session of sessions) {
-      const res = await base44.functions.invoke("bookSession", { sessionId: session.id, playerName: player.name, playerEmail: player.email });
-      if (res.data?.success) {
-        newBookings.push(res.data.booking);
-        resultList.push({ session, status: res.data.status, error: null });
-      } else {
-        resultList.push({ session, status: null, error: res.data?.error || "Failed" });
+      const personResults = [];
+      for (const person of people) {
+        const res = await base44.functions.invoke("bookSession", {
+          sessionId: session.id,
+          playerName: person.display_name,
+          playerEmail: person.email,
+        });
+        if (res.data?.success) {
+          newBookings.push(res.data.booking);
+          personResults.push({ name: person.display_name, status: res.data.status, error: null });
+        } else {
+          personResults.push({ name: person.display_name, status: null, error: res.data?.error || "Failed" });
+        }
       }
+      resultList.push({ session, people: personResults });
     }
 
-    setLoading(false);
+    setBooking(false);
     setResults(resultList);
+    if (newBookings.length > 0) onBooked(newBookings);
 
-    if (newBookings.length > 0) {
-      onBooked(newBookings);
-    }
-
-    const succeeded = resultList.filter(r => !r.error).length;
-    const failed = resultList.filter(r => r.error).length;
-
-    if (failed === 0) {
-      toast.success(`${succeeded} session${succeeded > 1 ? "s" : ""} booked!`);
-    } else if (succeeded > 0) {
-      toast.warning(`${succeeded} booked, ${failed} failed.`);
-    } else {
-      toast.error("All bookings failed.");
-    }
+    const total = sessions.length * people.length;
+    const succeeded = resultList.flatMap(r => r.people).filter(p => !p.error).length;
+    const failed = total - succeeded;
+    if (failed === 0) toast.success(`${succeeded} booking${succeeded > 1 ? "s" : ""} confirmed!`);
+    else if (succeeded > 0) toast.warning(`${succeeded} booked, ${failed} failed.`);
+    else toast.error("All bookings failed.");
   };
 
+  const totalBookings = sessions.length * selectedPeople.size;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={!loading ? onClose : undefined}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={!booking ? onClose : undefined}>
       <div className="bg-white w-full max-w-lg rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-lg">Confirm {sessions.length} Booking{sessions.length > 1 ? "s" : ""}</h2>
-          {!loading && <button onClick={onClose}><X className="w-5 h-5 text-slate-500" /></button>}
+          {!booking && <button onClick={onClose}><X className="w-5 h-5 text-slate-500" /></button>}
         </div>
 
         <div className="space-y-2">
@@ -55,36 +105,63 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose 
             const result = results?.[i];
             return (
               <div key={session.id} className="bg-slate-50 rounded-xl p-3 space-y-1 text-sm">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold">{session.title}</p>
-                  {result && (
-                    result.error
-                      ? <span className="flex items-center gap-1 text-xs text-red-500 shrink-0"><AlertCircle className="w-3.5 h-3.5" />{result.error}</span>
-                      : <span className="flex items-center gap-1 text-xs text-green-600 shrink-0 font-semibold">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          {result.status === "confirmed" ? "Confirmed" : "Waitlisted"}
-                        </span>
-                  )}
-                </div>
+                <p className="font-semibold">{session.title}</p>
                 <p className="text-muted-foreground flex items-center gap-1 text-xs"><CalendarDays className="w-3 h-3" />{session.date}</p>
                 <p className="text-muted-foreground flex items-center gap-1 text-xs"><Clock className="w-3 h-3" />{session.start_time}{session.end_time ? ` – ${session.end_time}` : ""}</p>
                 {session.location && <p className="text-muted-foreground flex items-center gap-1 text-xs"><MapPin className="w-3 h-3" />{session.location}</p>}
+                {result && (
+                  <div className="mt-1 space-y-0.5 border-t pt-1">
+                    {result.people.map((p, j) => (
+                      <div key={j} className="flex items-center justify-between text-xs">
+                        <span className="text-slate-600">{p.name}</span>
+                        {p.error
+                          ? <span className="flex items-center gap-1 text-red-500"><AlertCircle className="w-3 h-3" />{p.error}</span>
+                          : <span className="flex items-center gap-1 text-green-600 font-semibold"><CheckCircle2 className="w-3 h-3" />{p.status === "confirmed" ? "Confirmed" : "Waitlisted"}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
-        <p className="text-sm text-muted-foreground">Booking as: <span className="font-semibold text-slate-800">{player?.name} ({player?.email})</span></p>
+        {!results && (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">Who are you booking for?</p>
+            {loadingRoster ? (
+              <div className="flex justify-center py-2"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
+            ) : (
+              <>
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Input className="pl-9" placeholder="Add a name (kid, family...)..." value={query} onChange={e => setQuery(e.target.value)} />
+                </div>
+                <div className="space-y-1 max-h-48 overflow-y-auto border rounded-lg p-1">
+                  {filtered.map(m => (
+                    <button
+                      key={m.email}
+                      onClick={() => togglePerson(m.email)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between ${selectedPeople.has(m.email) ? "bg-teal-50 text-teal-800" : "hover:bg-slate-100"}`}
+                    >
+                      <span className="font-semibold">{m.display_name}</span>
+                      {selectedPeople.has(m.email) && <CheckCircle2 className="w-4 h-4 text-teal-600" />}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{selectedPeople.size} selected</p>
+              </>
+            )}
+          </div>
+        )}
 
         {!results ? (
-          <Button className="w-full" onClick={handleConfirm} disabled={loading}>
-            {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-            {loading ? "Booking..." : `Confirm ${sessions.length} Session${sessions.length > 1 ? "s" : ""}`}
+          <Button className="w-full" onClick={handleConfirm} disabled={booking || selectedPeople.size === 0 || loadingRoster}>
+            {booking && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            {booking ? "Booking..." : `Confirm ${totalBookings} Booking${totalBookings > 1 ? "s" : ""}`}
           </Button>
         ) : (
-          <Button className="w-full" variant="outline" onClick={onClose}>
-            Done
-          </Button>
+          <Button className="w-full" variant="outline" onClick={onClose}>Done</Button>
         )}
       </div>
     </div>

@@ -56,7 +56,6 @@ export default function BookingSessions() {
   const handleBooked = (newBookings) => {
     setBookings(prev => [...prev, ...newBookings]);
     setSelectedIds(new Set());
-    setShowModal(false);
   };
 
   const handleCancel = async (booking) => {
