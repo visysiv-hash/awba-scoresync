@@ -54,7 +54,11 @@ Deno.serve(async (req) => {
     ? `Hi ${playerName},\n\nYour booking is confirmed!\n\nSession: ${session.title}\nDate: ${session.date}\nTime: ${session.start_time}${session.end_time ? ' – ' + session.end_time : ''}\nLocation: ${session.location || 'TBA'}\n${session.payment_required ? `\nPayment of $${session.price || '?'} is required. Please pay at the venue.` : '\nNo payment required.'}\n\nSee you there!`
     : `Hi ${playerName},\n\nThis session is currently full. You've been added to the waitlist for:\n\nSession: ${session.title}\nDate: ${session.date}\nTime: ${session.start_time}${session.end_time ? ' – ' + session.end_time : ''}\n\nWe'll email you if a spot opens up.`;
 
-  await base44.asServiceRole.integrations.Core.SendEmail({ to: playerEmail, subject, body });
+  try {
+    await base44.asServiceRole.integrations.Core.SendEmail({ to: playerEmail, subject, body });
+  } catch (e) {
+    // Email is a side-effect — don't fail the booking if the email can't be sent
+  }
 
   return Response.json({ success: true, status, booking });
 });
