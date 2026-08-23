@@ -81,14 +81,32 @@ Deno.serve(async (req) => {
   // Record name + session date to the BookingData sheet (dedup by name + date)
   await appendBookingToSheet(base44, playerName, session.date);
 
+  // Build payment lines for the email
+  const paymentLines = [];
+  if (session.payment_notes && session.payment_notes.length > 0) {
+    for (const pn of session.payment_notes) {
+      const label = pn.type === "Other" ? (pn.label || "Other") : pn.type;
+      paymentLines.push(pn.amount != null ? `${label} — $${pn.amount}` : label);
+    }
+  } else if (session.payment_required) {
+    paymentLines.push(`$${session.price || '?'} — please pay at the venue`);
+  } else if (session.notes) {
+    paymentLines.push(session.notes);
+  } else {
+    paymentLines.push("No payment required");
+  }
+  const paymentBlock = "Payment:\n" + paymentLines.map(l => `  • ${l}`).join("\n");
+
+  const detailsBlock = `Session:   ${session.title}\nDate:      ${session.date}\nTime:      ${session.start_time}${session.end_time ? ' – ' + session.end_time : ''}\nLocation:  ${session.location || 'TBA'}`;
+
   // Send confirmation email to the roster email
   const subject = status === 'confirmed'
     ? `✅ Booking Confirmed — ${session.title}`
-    : `⏳ Added to Waitlist — ${session.title}`;
+    : `⏳ Waitlist — ${session.title}`;
 
   const body = status === 'confirmed'
-    ? `Hi ${playerName},\n\nYour booking is confirmed!\n\nSession: ${session.title}\nDate: ${session.date}\nTime: ${session.start_time}${session.end_time ? ' – ' + session.end_time : ''}\nLocation: ${session.location || 'TBA'}\n${session.payment_required ? `\nPayment of $${session.price || '?'} is required. Please pay at the venue.` : '\nNo payment required.'}\n\nSee you there!`
-    : `Hi ${playerName},\n\nThis session is currently full. You've been added to the waitlist for:\n\nSession: ${session.title}\nDate: ${session.date}\nTime: ${session.start_time}${session.end_time ? ' – ' + session.end_time : ''}\n\nWe'll email you if a spot opens up.`;
+    ? `Hi ${playerName},\n\nYour booking is confirmed. Here are the details:\n\n${detailsBlock}\n\n${paymentBlock}\n\nSee you there!\n\n— Albury Wodonga Badminton Association`
+    : `Hi ${playerName},\n\nThis session is currently full, so you've been added to the waitlist.\n\n${detailsBlock}\n\n${paymentBlock}\n\nWe'll email you if a spot opens up.\n\n— Albury Wodonga Badminton Association`;
 
   try {
     await base44.asServiceRole.integrations.Core.SendEmail({ to: playerEmail, subject, body });

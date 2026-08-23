@@ -17,7 +17,7 @@ import {
 
 const emptyForm = () => ({
   title: "", date: "", start_time: "", end_time: "",
-  location: "", max_spots: 10, max_waitlist: "", payment_required: false, price: "", notes: "",
+  location: "", max_spots: 10, max_waitlist: "", payment_notes: [],
   // recurring
   recurring: false, recur_weeks: 4,
 });
@@ -67,9 +67,15 @@ export default function AdminSessions() {
       location: form.location || undefined,
       max_spots: Number(form.max_spots),
       max_waitlist: form.max_waitlist !== "" ? Number(form.max_waitlist) : undefined,
-      payment_required: form.payment_required,
-      price: form.price ? Number(form.price) : undefined,
-      notes: form.notes || undefined,
+      payment_notes: form.payment_notes && form.payment_notes.length > 0
+        ? form.payment_notes
+            .map(p => ({
+              type: p.type,
+              amount: p.amount !== "" && p.amount != null ? Number(p.amount) : null,
+              ...(p.type === "Other" && p.label ? { label: p.label } : {}),
+            }))
+            .filter(p => p.type)
+        : undefined,
     };
 
     const weeks = form.recurring ? Number(form.recur_weeks) : 1;
@@ -195,16 +201,65 @@ export default function AdminSessions() {
                   <Label>Location</Label>
                   <Input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="e.g. Albury Stadium" />
                 </div>
-                <div className="col-span-2 space-y-1">
-                  <Label>Notes</Label>
-                  <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional notes" />
-                </div>
-                <div className="col-span-2 flex items-center gap-3">
-                  <input type="checkbox" id="payment_required" checked={form.payment_required} onChange={e => setForm(p => ({ ...p, payment_required: e.target.checked }))} />
-                  <Label htmlFor="payment_required">Payment Required</Label>
-                  {form.payment_required && (
-                    <Input type="number" className="w-24 ml-auto" placeholder="$AUD" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} />
-                  )}
+                <div className="col-span-2 space-y-2">
+                  <Label>Payment Notes</Label>
+                  {form.payment_notes.map((pn, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <select
+                        className="flex-1 h-9 rounded-md border border-input bg-background px-2 text-sm"
+                        value={pn.type}
+                        onChange={e => setForm(p => ({
+                          ...p,
+                          payment_notes: p.payment_notes.map((x, i) => i === idx ? { ...x, type: e.target.value } : x),
+                        }))}
+                      >
+                        <option value="">Select…</option>
+                        <option value="Pay on arrival">Pay on arrival</option>
+                        <option value="Pay before arrival">Pay before arrival</option>
+                        <option value="No payment required">No payment required</option>
+                        <option value="Other">Other…</option>
+                      </select>
+                      {pn.type === "Other" && (
+                        <Input
+                          className="flex-1"
+                          placeholder="Custom note"
+                          value={pn.label || ""}
+                          onChange={e => setForm(p => ({
+                            ...p,
+                            payment_notes: p.payment_notes.map((x, i) => i === idx ? { ...x, label: e.target.value } : x),
+                          }))}
+                        />
+                      )}
+                      {pn.type !== "No payment required" && pn.type !== "" && (
+                        <Input
+                          type="number"
+                          className="w-24"
+                          placeholder="$AUD"
+                          value={pn.amount ?? ""}
+                          onChange={e => setForm(p => ({
+                            ...p,
+                            payment_notes: p.payment_notes.map((x, i) => i === idx ? { ...x, amount: e.target.value } : x),
+                          }))}
+                        />
+                      )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9 text-red-500 shrink-0"
+                        onClick={() => setForm(p => ({ ...p, payment_notes: p.payment_notes.filter((_, i) => i !== idx) }))}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setForm(p => ({ ...p, payment_notes: [...p.payment_notes, { type: "", amount: "", label: "" }] }))}
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> Add payment note
+                  </Button>
                 </div>
 
                 {/* Recurring option */}
@@ -284,7 +339,13 @@ export default function AdminSessions() {
                         {session.max_waitlist == null && waitlisted.length > 0 && (
                           <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">{waitlisted.length} waitlisted</Badge>
                         )}
-                        {session.payment_required && <Badge variant="outline" className="text-xs text-blue-600 border-blue-300">💳 ${session.price}</Badge>}
+                        {session.payment_notes && session.payment_notes.length > 0
+                          ? session.payment_notes.map((pn, i) => (
+                              <Badge key={i} variant="outline" className={`text-xs ${pn.type === "No payment required" ? "text-green-600 border-green-300" : "text-amber-600 border-amber-300"}`}>
+                                {pn.type === "Other" ? (pn.label || "Other") : pn.type}{pn.amount ? ` $${pn.amount}` : ""}
+                              </Badge>
+                            ))
+                          : session.payment_required && <Badge variant="outline" className="text-xs text-blue-600 border-blue-300">💳 ${session.price}</Badge>}
                       </div>
                     </div>
                     <div className="flex gap-1 shrink-0">

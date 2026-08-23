@@ -30,6 +30,33 @@
       "type": "number",
       "title": "Max Waitlist Spots"
     },
+    "payment_notes": {
+      "type": "array",
+      "title": "Payment Notes",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Payment Type",
+            "enum": [
+              "Pay on arrival",
+              "Pay before arrival",
+              "No payment required",
+              "Other"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount (AUD)"
+          },
+          "label": {
+            "type": "string",
+            "title": "Custom Label"
+          }
+        }
+      }
+    },
     "payment_required": {
       "type": "boolean",
       "title": "Payment Required"

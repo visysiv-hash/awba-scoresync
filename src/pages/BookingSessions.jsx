@@ -171,21 +171,37 @@ export default function BookingSessions() {
                           {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5 text-slate-400" />}
                         </div>
                       )}
-                      <div>
+                      <div className="flex-1">
                         <h2 className="font-bold text-base">{session.title}</h2>
+                        {session.payment_notes && session.payment_notes.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {session.payment_notes.map((pn, i) => {
+                              const isNoPayment = pn.type === "No payment required";
+                              const label = pn.type === "Other" ? (pn.label || "Other") : pn.type;
+                              const text = pn.amount ? `${label} $${pn.amount}` : label;
+                              return (
+                                <span key={i} className={`text-xs rounded-md px-2 py-0.5 border leading-tight ${
+                                  isNoPayment ? "text-green-700 border-green-300 bg-green-50" : "text-amber-700 border-amber-300 bg-amber-50"
+                                }`}>{text}</span>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      {session.payment_required
-                        ? <Badge variant="outline" className="text-orange-600 border-orange-300 shrink-0">💳 ${session.price || "?"}</Badge>
-                        : session.notes
-                          ? <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 shrink-0 max-w-[180px] leading-tight whitespace-normal text-left">{session.notes}</Badge>
-                          : <Badge variant="outline" className="text-green-600 border-green-300 shrink-0">Free</Badge>
-                      }
-                      {session.payment_required && session.notes && (
-                        <span className="text-xs text-amber-700 bg-amber-50 border border-amber-300 rounded-md px-2 py-0.5 max-w-[180px] text-right leading-tight">{session.notes}</span>
-                      )}
-                    </div>
+                    {(!session.payment_notes || session.payment_notes.length === 0) && (
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {session.payment_required
+                          ? <Badge variant="outline" className="text-orange-600 border-orange-300 shrink-0">💳 ${session.price || "?"}</Badge>
+                          : session.notes
+                            ? <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 shrink-0 max-w-[180px] leading-tight whitespace-normal text-left">{session.notes}</Badge>
+                            : <Badge variant="outline" className="text-green-600 border-green-300 shrink-0">Free</Badge>
+                        }
+                        {session.payment_required && session.notes && (
+                          <span className="text-xs text-amber-700 bg-amber-50 border border-amber-300 rounded-md px-2 py-0.5 max-w-[180px] text-right leading-tight">{session.notes}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
