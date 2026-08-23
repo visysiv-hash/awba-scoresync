@@ -10,10 +10,13 @@ export default function PlayerSelector({ onSelect, onClose }) {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    // Show cached roster instantly for repeat opens
+    const CACHE_KEY = "awba_roster";
+    const CACHE_MS = 10 * 60 * 1000; // 10 minutes
     try {
-      const cached = JSON.parse(localStorage.getItem("awba_roster") || "null");
-      if (cached && cached.length) {
+      const raw = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+      const cached = raw?.data || (Array.isArray(raw) ? raw : null);
+      const cachedAt = raw?.cachedAt || 0;
+      if (cached && cached.length && (Date.now() - cachedAt < CACHE_MS)) {
         setRoster(cached);
         setLoading(false);
       }
@@ -24,7 +27,7 @@ export default function PlayerSelector({ onSelect, onClose }) {
         const res = await base44.functions.invoke("getMemberRoster", {});
         const r = res.data?.roster || [];
         setRoster(r);
-        localStorage.setItem("awba_roster", JSON.stringify(r));
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: r, cachedAt: Date.now() }));
       } catch {}
       setLoading(false);
     };
