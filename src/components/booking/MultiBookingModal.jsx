@@ -161,12 +161,17 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
                   <Input className="pl-9" placeholder="Add a name (kid, family...)..." value={query} onChange={e => setQuery(e.target.value)} />
                 </div>
                 <div className="space-y-1 max-h-48 overflow-y-auto border rounded-lg p-1">
-                  {filtered.length === 0 && (
+                  {!q && (
                     <p className="text-xs text-muted-foreground text-center py-4">
-                      {q ? `No matches for "${query}".` : (excl.length > 0 ? "Everyone is already booked." : "No members found.")}
+                      Type a name to search…
                     </p>
                   )}
-                  {filtered.map(m => (
+                  {q && filtered.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      No matches for "{query}".
+                    </p>
+                  )}
+                  {q && filtered.map(m => (
                     <button
                       key={m.display_name}
                       onClick={() => togglePerson(m.display_name)}
