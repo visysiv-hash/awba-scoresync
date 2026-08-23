@@ -59,6 +59,13 @@ const tiles = [
   icon: CalendarDays,
   to: "/bookings",
   gradient: "from-teal-500 to-cyan-700"
+},
+{
+  label: "Register",
+  description: "Register for the season",
+  icon: ClipboardList,
+  to: "/register",
+  gradient: "from-indigo-500 to-blue-700"
 }];
 
 
