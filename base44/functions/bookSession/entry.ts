@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
   }
   const paymentBlock = "Payment:\n" + paymentLines.map(l => `  • ${l}`).join("\n");
 
-  const detailsBlock = `Session:   ${session.title}\nDate:      ${session.date}\nTime:      ${session.start_time}${session.end_time ? ' – ' + session.end_time : ''}\nLocation:  ${session.location || 'TBA'}`;
+  const detailsBlock = `Session: ${session.title}\n\nDate: ${session.date}\n\nTime: ${session.start_time}${session.end_time ? ' – ' + session.end_time : ''}\n\nLocation: ${session.location || 'TBA'}`;
 
   // Send confirmation email to the roster email
   const subject = status === 'confirmed'

@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: booking.user_email,
       subject: `❌ Booking Cancelled — ${booking.session_title}`,
-      body: `Hi ${booking.user_name},\n\nYour booking for the following session has been cancelled:\n\nSession: ${booking.session_title}\nDate: ${booking.session_date}\n\nIf this was a mistake, you can rebook via the app (subject to availability).`,
+      body: `Hi ${booking.user_name},\n\nYour booking for the following session has been cancelled:\n\nSession: ${booking.session_title}\n\nDate: ${booking.session_date}\n\nIf this was a mistake, you can rebook via the app (subject to availability).`,
     });
   } catch (e) {
     // Email is a side-effect — don't fail the cancellation
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.integrations.Core.SendEmail({
           to: promote.user_email,
           subject: `✅ Spot Available — ${promote.session_title}`,
-          body: `Hi ${promote.user_name},\n\nGreat news! A spot has opened up and your waitlist booking is now CONFIRMED for:\n\nSession: ${promote.session_title}\nDate: ${promote.session_date}\nTime: ${session?.start_time || ''}${session?.end_time ? ' – ' + session.end_time : ''}\nLocation: ${session?.location || 'TBA'}\n\nSee you there!`,
+          body: `Hi ${promote.user_name},\n\nGreat news! A spot has opened up and your waitlist booking is now CONFIRMED for:\n\nSession: ${promote.session_title}\n\nDate: ${promote.session_date}\n\nTime: ${session?.start_time || ''}${session?.end_time ? ' – ' + session.end_time : ''}\n\nLocation: ${session?.location || 'TBA'}\n\nSee you there!`,
         });
       } catch (e) {
         // Email is a side-effect — don't fail the promotion
