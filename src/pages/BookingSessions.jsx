@@ -173,12 +173,16 @@ export default function BookingSessions() {
                       )}
                       <div>
                         <h2 className="font-bold text-base">{session.title}</h2>
-                        {session.notes && <p className="text-xs text-muted-foreground mt-0.5">{session.notes}</p>}
+                        {session.payment_required && session.notes && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{session.notes}</p>
+                        )}
                       </div>
                     </div>
                     {session.payment_required
                       ? <Badge variant="outline" className="text-orange-600 border-orange-300 shrink-0">💳 ${session.price || "?"}</Badge>
-                      : <Badge variant="outline" className="text-green-600 border-green-300 shrink-0">Free</Badge>
+                      : session.notes
+                        ? <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 shrink-0 max-w-[180px] leading-tight whitespace-normal text-left">{session.notes}</Badge>
+                        : <Badge variant="outline" className="text-green-600 border-green-300 shrink-0">Free</Badge>
                     }
                   </div>
 
