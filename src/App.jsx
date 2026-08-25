@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -5,6 +6,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import MemberLogin from './pages/MemberLogin';
 // Add page imports here
 import News from './pages/News';
 import AdminNews from './pages/AdminNews';
@@ -26,6 +28,11 @@ import Dashboard from './pages/Dashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const [memberVerified, setMemberVerified] = useState(() => {
+    try {
+      return !!JSON.parse(localStorage.getItem("awba_member") || "null");
+    } catch { return false; }
+  });
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -45,6 +52,11 @@ const AuthenticatedApp = () => {
       navigateToLogin();
       return null;
     }
+  }
+
+  // Member login gate — must verify BV member ID before accessing the app
+  if (!memberVerified) {
+    return <MemberLogin onVerified={() => setMemberVerified(true)} />;
   }
 
   // Render the main app
