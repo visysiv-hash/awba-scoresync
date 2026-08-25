@@ -5,12 +5,13 @@ import { base44 } from "@/api/base44Client";
 import ScoreEntry from "../components/ScoreEntry";
 import GameSearch from "../components/GameSearch";
 import PageBanner from "../components/PageBanner";
+import { getCurrentPlayerName } from "../lib/currentMember";
 
 export default function MatchDetails() {
   const [activeTab, setActiveTab] = useState("search");
   const [prefilledGame, setPrefilledGame] = useState(null);
   const [submittedScores, setSubmittedScores] = useState({});
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => getCurrentPlayerName());
   const [searchResults, setSearchResults] = useState(null);
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function MatchDetails() {
               onQueryChange={setSearchQuery}
               results={searchResults}
               onResultsChange={setSearchResults}
+              autoSearch
             />
           </TabsContent>
           <TabsContent value="entry">

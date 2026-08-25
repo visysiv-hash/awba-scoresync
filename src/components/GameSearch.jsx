@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Search, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
-export default function GameSearch({ onSelectGame, submittedScores = {}, query, onQueryChange, results, onResultsChange }) {
+export default function GameSearch({ onSelectGame, submittedScores = {}, query, onQueryChange, results, onResultsChange, autoSearch = false }) {
   const [loading, setLoading] = useState(false);
 
   const handleSearch = async () => {
@@ -23,6 +23,14 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
       onResultsChange(res.data?.results || []);
     }
   };
+
+  // Auto-run the search once on mount when a name is pre-filled (e.g. from member login)
+  useEffect(() => {
+    if (autoSearch && query.trim() && results === null) {
+      handleSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Card className="shadow-2xl">

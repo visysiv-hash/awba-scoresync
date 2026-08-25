@@ -8,6 +8,7 @@ import GroupStandingsSection from "../components/GroupStandingsSection";
 import PointsTable from "../components/PointsTable";
 import LeaderboardSkeleton from "../components/LeaderboardSkeleton";
 import PageBanner from "../components/PageBanner";
+import { getCurrentPlayerName } from "../lib/currentMember";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +29,7 @@ export default function Leaderboard() {
   const urlParams = new URLSearchParams(window.location.search);
   const [groups, setGroups] = useState({});
   const [loading, setLoading] = useState(true);
-  const [selectedPlayer, setSelectedPlayer] = useState(urlParams.get("name") || "");
+  const [selectedPlayer, setSelectedPlayer] = useState(urlParams.get("name") || getCurrentPlayerName());
   const [activeTab, setActiveTab] = useState(urlParams.get("tab") || "rankings");
   const [visitCount, setVisitCount] = useState(null);
 
