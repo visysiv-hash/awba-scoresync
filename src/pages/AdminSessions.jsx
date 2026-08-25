@@ -57,7 +57,25 @@ export default function AdminSessions() {
     setLoading(false);
   };
 
-  useEffect(() => { if (pinUnlocked) loadData(); }, [pinUnlocked]);
+  // Always load default bank details from the Google Sheet "Bank Account Details" tab
+  const loadBankFromSheet = async () => {
+    try {
+      const res = await base44.functions.invoke("getBankDetails", {});
+      const bd = res.data?.bank_details;
+      if (bd && (bd.account_name || bd.bsb || bd.account_number)) {
+        const cleaned = {
+          account_name: bd.account_name || "",
+          bsb: bd.bsb || "",
+          account_number: bd.account_number || "",
+        };
+        localStorage.setItem(DEFAULT_BANK_KEY, JSON.stringify(cleaned));
+        setDefaultBank(cleaned);
+        setBankDraft(cleaned);
+      }
+    } catch {}
+  };
+
+  useEffect(() => { if (pinUnlocked) { loadData(); loadBankFromSheet(); } }, [pinUnlocked]);
 
   const sessionBookings = (sessionId) => bookings.filter(b => b.session_id === sessionId && b.status !== "cancelled");
 
