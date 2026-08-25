@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil } from "lucide-react";
 import { addWeeks } from "date-fns";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -45,6 +45,9 @@ export default function AdminSessions() {
     return { account_name: d?.account_name || "", bsb: d?.bsb || "", account_number: d?.account_number || "" };
   });
   const [editingBank, setEditingBank] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  const todayStr = () => new Date().toISOString().split("T")[0];
 
   const loadData = async () => {
     setLoading(true);
@@ -88,6 +91,10 @@ export default function AdminSessions() {
       toast.error("Please fill in Title, Date, Start Time and Max Spots.");
       return;
     }
+    if (form.date < todayStr()) {
+      toast.error("Session date cannot be in the past.");
+      return;
+    }
     const validPaymentNotes = (form.payment_notes || []).filter(p => p.type);
     if (validPaymentNotes.length === 0) {
       toast.error("At least one payment note is required.");
@@ -121,6 +128,22 @@ export default function AdminSessions() {
         : undefined,
     };
 
+    if (editingId) {
+      try {
+        const updated = await base44.entities.Session.update(editingId, { ...baseData, date: form.date });
+        setSessions(prev => prev.map(s => s.id === editingId ? { ...s, ...updated } : s));
+        setForm(emptyForm());
+        setEditingId(null);
+        setShowForm(false);
+        toast.success("Session updated!");
+      } catch (e) {
+        toast.error("Failed to update session.");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     const weeks = form.recurring ? Number(form.recur_weeks) : 1;
     const created = [];
 
@@ -136,6 +159,32 @@ export default function AdminSessions() {
     setShowForm(false);
     setSaving(false);
     toast.success(weeks > 1 ? `${weeks} sessions created!` : "Session created!");
+  };
+
+  const handleEdit = (session) => {
+    setEditingId(session.id);
+    setForm({
+      title: session.title || "",
+      date: session.date || "",
+      start_time: session.start_time || "",
+      end_time: session.end_time || "",
+      location: session.location || "",
+      max_spots: session.max_spots ?? 10,
+      max_waitlist: session.max_waitlist ?? "",
+      payment_notes: (session.payment_notes && session.payment_notes.length > 0)
+        ? session.payment_notes.map(p => ({ type: p.type, amount: p.amount ?? "", label: p.label || "" }))
+        : [],
+      bank_details: session.bank_details || null,
+      recurring: false, recur_weeks: 4,
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setForm(emptyForm());
+    setShowForm(false);
   };
 
   const handleDelete = async (id) => {
@@ -182,7 +231,10 @@ export default function AdminSessions() {
         </div>
 
         <div className="flex gap-2 mb-4">
-          <Button className="flex-1" onClick={() => setShowForm(!showForm)}>
+          <Button className="flex-1" onClick={() => {
+            if (showForm) { setForm(emptyForm()); setEditingId(null); setShowForm(false); }
+            else setShowForm(true);
+          }}>
             <Plus className="w-4 h-4 mr-2" /> {showForm ? "Cancel" : "Create New Session"}
           </Button>
           <AlertDialog>
@@ -283,7 +335,7 @@ export default function AdminSessions() {
                 </div>
                 <div className="space-y-1">
                   <Label>Date *</Label>
-                  <Input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
+                  <Input type="date" min={todayStr()} value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
                 </div>
                 <div className="space-y-1">
                   <Label>Max Spots *</Label>
@@ -406,6 +458,7 @@ export default function AdminSessions() {
                 </div>
 
                 {/* Recurring option */}
+                {!editingId && (
                 <div className="col-span-2 border-t pt-3 space-y-2">
                   <div className="flex items-center gap-3">
                     <input type="checkbox" id="recurring" checked={form.recurring} onChange={e => setForm(p => ({ ...p, recurring: e.target.checked }))} />
@@ -428,11 +481,17 @@ export default function AdminSessions() {
                     </div>
                   )}
                 </div>
+                )}
               </div>
               <Button className="w-full" onClick={handleCreate} disabled={saving}>
                 {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {form.recurring ? `Create ${form.recur_weeks} Sessions` : "Save Session"}
+                {editingId ? "Update Session" : (form.recurring ? `Create ${form.recur_weeks} Sessions` : "Save Session")}
               </Button>
+              {editingId && (
+                <Button variant="outline" className="w-full" onClick={handleCancelEdit}>
+                  Cancel Edit
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
@@ -494,6 +553,9 @@ export default function AdminSessions() {
                     <div className="flex gap-1 shrink-0">
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setExpandedSession(isExpanded ? null : session.id)}>
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-500" onClick={() => handleEdit(session)}>
+                        <Pencil className="w-3.5 h-3.5" />
                       </Button>
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-red-500" onClick={() => handleDelete(session.id)}>
                         <Trash2 className="w-4 h-4" />
