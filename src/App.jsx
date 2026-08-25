@@ -20,6 +20,7 @@ import AdminScoreEdit from './pages/AdminScoreEdit';
 import PlayerProfile from './pages/PlayerProfile';
 import BottomNav from './components/BottomNav';
 import AdminSponsors from './pages/AdminSponsors';
+import AdminAddMember from './pages/AdminAddMember';
 import Home from './pages/Home';
 import MatchDetails from './pages/MatchDetails';
 import PlayerAvailability from './pages/PlayerAvailability';
@@ -93,6 +94,7 @@ const AuthenticatedApp = () => {
           <Route path="/news" element={<News />} />
           <Route path="/admin/news" element={<AdminNews />} />
           <Route path="/admin/sponsors" element={<AdminSponsors />} />
+          <Route path="/admin/add-member" element={<AdminAddMember />} />
 
           <Route path="*" element={<PageNotFound />} />
         </Routes>
