@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, Clock, MapPin, Loader2, CalendarCheck } from "lucide-react";
+import { getCurrentMember } from "@/lib/currentMember";
 
 function getWeekRange() {
   const now = new Date();
@@ -25,6 +26,8 @@ function fmt(dateStr) {
 
 export default function MyBookingsThisWeek() {
   const [player, setPlayer] = useState(() => {
+    const member = getCurrentMember();
+    if (member) return { name: member.display_name || member.full_name, email: member.email };
     try { return JSON.parse(localStorage.getItem("awba_player") || "null"); } catch { return null; }
   });
   const [mine, setMine] = useState([]);

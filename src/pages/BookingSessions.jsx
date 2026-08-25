@@ -8,11 +8,14 @@ import { CalendarDays, MapPin, Users, Clock, Loader2, CheckSquare, Square } from
 import MultiBookingModal from "../components/booking/MultiBookingModal";
 import PlayerSelector from "../components/booking/PlayerSelector";
 import PageBanner from "../components/PageBanner";
+import { getCurrentMember } from "../lib/currentMember";
 
 export default function BookingSessions() {
   const [sessions, setSessions] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [player, setPlayer] = useState(() => {
+    const member = getCurrentMember();
+    if (member) return { name: member.display_name || member.full_name, email: member.email };
     try { return JSON.parse(localStorage.getItem("awba_player") || "null"); } catch { return null; }
   });
   const [loading, setLoading] = useState(true);
