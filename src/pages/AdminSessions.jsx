@@ -70,6 +70,11 @@ export default function AdminSessions() {
       toast.error("Please fill in Title, Date, Start Time and Max Spots.");
       return;
     }
+    const validPaymentNotes = (form.payment_notes || []).filter(p => p.type);
+    if (validPaymentNotes.length === 0) {
+      toast.error("At least one payment note is required.");
+      return;
+    }
     setSaving(true);
 
     const baseData = {
