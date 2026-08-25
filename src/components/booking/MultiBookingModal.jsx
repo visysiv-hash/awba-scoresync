@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, X, CalendarDays, Clock, MapPin, CheckCircle2, AlertCircle, Search } from "lucide-react";
+import { Loader2, X, CalendarDays, Clock, MapPin, CheckCircle2, AlertCircle, Search, User, Users } from "lucide-react";
 
 export default function MultiBookingModal({ sessions, player, onBooked, onClose, preselectSelf = true, addMode = false, excludeNames = [] }) {
   const [roster, setRoster] = useState([]);
@@ -16,6 +16,8 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
   });
   const [booking, setBooking] = useState(false);
   const [results, setResults] = useState(null);
+  // "self" = booking only for the logged-in player; "others" = add more people via search
+  const [mode, setMode] = useState(addMode ? "others" : "self");
 
   useEffect(() => {
     const CACHE_KEY = "awba_roster";
@@ -56,6 +58,17 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
       next.has(name) ? next.delete(name) : next.add(name);
       return next;
     });
+  };
+
+  const selectSelf = () => {
+    setMode("self");
+    setSelectedPeople(new Set(player?.name ? [player.name] : []));
+  };
+
+  const selectOthers = () => {
+    setMode("others");
+    // ensure self stays selected when expanding
+    if (player?.name) setSelectedPeople(prev => new Set(prev).add(player.name));
   };
 
   const people = roster.filter((m, i, arr) => selectedPeople.has(m.display_name) && arr.findIndex(x => x.display_name === m.display_name) === i);
@@ -152,7 +165,32 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
         {!results && (
           <div className="space-y-2">
             <p className="text-sm font-semibold">{addMode ? "Add people to this session" : "Who are you booking for?"}</p>
-            {loadingRoster ? (
+
+            {!addMode && (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={selectSelf}
+                  className={`flex items-center gap-2 rounded-lg border p-2.5 text-sm transition ${mode === "self" ? "border-teal-500 bg-teal-50 text-teal-800" : "border-slate-200 hover:bg-slate-50"}`}
+                >
+                  <User className="w-4 h-4" />
+                  <span className="font-semibold">Book for myself</span>
+                </button>
+                <button
+                  onClick={selectOthers}
+                  className={`flex items-center gap-2 rounded-lg border p-2.5 text-sm transition ${mode === "others" ? "border-teal-500 bg-teal-50 text-teal-800" : "border-slate-200 hover:bg-slate-50"}`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="font-semibold">Add more people</span>
+                </button>
+              </div>
+            )}
+
+            {mode === "self" && !addMode ? (
+              <div className="flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 p-3">
+                <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                <span className="text-sm font-semibold">{player?.name || "You"}</span>
+              </div>
+            ) : loadingRoster ? (
               <div className="flex justify-center py-2"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
             ) : (
               <>
