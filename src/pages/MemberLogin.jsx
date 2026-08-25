@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, HelpCircle, UserPlus, LogIn, ArrowLeft } from "lucide-react";
+import { Loader2, HelpCircle, UserPlus, LogIn, ArrowLeft, AlertCircle } from "lucide-react";
 import PageBanner from "../components/PageBanner";
-import { toast } from "sonner";
 
 const REGISTRATION_URL = "https://www.revolutionise.com.au/awba/registration";
 
@@ -18,33 +17,39 @@ export default function MemberLogin({ onVerified }) {
   const [dob, setDob] = useState("");
   const [loading, setLoading] = useState(false);
   const [recovered, setRecovered] = useState(null);
+  const [error, setError] = useState("");
 
   const handleLogin = async () => {
     if (!memberId.trim()) {
-      toast.error("Please enter your BV member ID.");
+      setError("Please enter your BV member ID.");
       return;
     }
     setLoading(true);
+    setError("");
     try {
       const res = await base44.functions.invoke("verifyMember", { memberId: memberId.trim() });
       if (res.data?.valid) {
-        localStorage.setItem("awba_member", JSON.stringify(res.data.member));
+        localStorage.setItem("awba_member", JSON.stringify({
+          ...res.data.member,
+          login_time: Date.now(),
+        }));
         onVerified();
       } else {
-        toast.error(res.data?.error || "Member ID not found.");
+        setError(res.data?.error || "Could not find a member with that ID. Please check and try again.");
       }
     } catch {
-      toast.error("Something went wrong. Please try again.");
+      setError("Something went wrong. Please try again.");
     }
     setLoading(false);
   };
 
   const handleRecover = async () => {
     if (!email.trim() || !phone.trim() || !dob.trim()) {
-      toast.error("Please fill in all fields.");
+      setError("Please fill in all fields.");
       return;
     }
     setLoading(true);
+    setError("");
     setRecovered(null);
     try {
       const res = await base44.functions.invoke("verifyMember", {
@@ -55,10 +60,10 @@ export default function MemberLogin({ onVerified }) {
       if (res.data?.found) {
         setRecovered(res.data);
       } else {
-        toast.error(res.data?.error || "No matching member found.");
+        setError(res.data?.error || "Could not find a matching member. Check your details or register if you're new.");
       }
     } catch {
-      toast.error("Something went wrong. Please try again.");
+      setError("Something went wrong. Please try again.");
     }
     setLoading(false);
   };
@@ -84,6 +89,12 @@ export default function MemberLogin({ onVerified }) {
                   onKeyDown={e => e.key === "Enter" && handleLogin()}
                 />
               </div>
+              {error && (
+                <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
               <Button className="w-full" onClick={handleLogin} disabled={loading}>
                 {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <LogIn className="w-4 h-4 mr-2" />}
                 {loading ? "Checking..." : "Login"}
@@ -91,7 +102,7 @@ export default function MemberLogin({ onVerified }) {
 
               <div className="pt-2 space-y-2 text-center">
                 <button
-                  onClick={() => setMode("recover")}
+                  onClick={() => { setMode("recover"); setError(""); }}
                   className="text-sm text-slate-600 hover:text-slate-800 flex items-center justify-center gap-1 w-full"
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
@@ -123,6 +134,7 @@ export default function MemberLogin({ onVerified }) {
                       setMemberId(recovered.bv_member);
                       setMode("login");
                       setRecovered(null);
+                      setError("");
                     }}
                   >
                     Continue to Login
@@ -145,6 +157,12 @@ export default function MemberLogin({ onVerified }) {
                     <Label>Date of Birth</Label>
                     <Input placeholder="DD/MM/YYYY" value={dob} onChange={e => setDob(e.target.value)} />
                   </div>
+                  {error && (
+                    <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                      <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                      <span>{error}</span>
+                    </div>
+                  )}
                   <Button className="w-full" onClick={handleRecover} disabled={loading}>
                     {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                     {loading ? "Searching..." : "Find My Member ID"}
@@ -153,7 +171,7 @@ export default function MemberLogin({ onVerified }) {
               )}
 
               <button
-                onClick={() => { setMode("login"); setRecovered(null); }}
+                onClick={() => { setMode("login"); setRecovered(null); setError(""); }}
                 className="text-sm text-slate-600 hover:text-slate-800 w-full text-center flex items-center justify-center gap-1"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />

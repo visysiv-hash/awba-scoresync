@@ -30,7 +30,15 @@ const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const [memberVerified, setMemberVerified] = useState(() => {
     try {
-      return !!JSON.parse(localStorage.getItem("awba_member") || "null");
+      const member = JSON.parse(localStorage.getItem("awba_member") || "null");
+      if (!member) return false;
+      // Timeout after 4 hours
+      const FOUR_HOURS = 4 * 60 * 60 * 1000;
+      if (member.login_time && Date.now() - member.login_time > FOUR_HOURS) {
+        localStorage.removeItem("awba_member");
+        return false;
+      }
+      return true;
     } catch { return false; }
   });
 
