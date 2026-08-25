@@ -9,6 +9,7 @@ import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
 import PageBanner from "../components/PageBanner";
 import MyBookingsThisWeek from "../components/MyBookingsThisWeek";
+import AdminPinGate from "../components/AdminPinGate";
 
 const tiles = [
 {
@@ -141,12 +142,13 @@ export default function Home() {
   const [loginGateEnabled, setLoginGateEnabled] = useState(
     () => localStorage.getItem("awba_member_login_enabled") === "true"
   );
+  const [showPinGate, setShowPinGate] = useState(false);
 
   useEffect(() => {
     base44.entities.PageVisit.create({ page: 'landing' });
   }, []);
 
-  const toggleLoginGate = () => {
+  const doToggle = () => {
     const next = !loginGateEnabled;
     setLoginGateEnabled(next);
     if (next) {
@@ -154,6 +156,14 @@ export default function Home() {
     } else {
       localStorage.removeItem("awba_member_login_enabled");
       localStorage.removeItem("awba_member");
+    }
+  };
+
+  const toggleLoginGate = () => {
+    if (sessionStorage.getItem("adminPinUnlocked") === "true") {
+      doToggle();
+    } else {
+      setShowPinGate(true);
     }
   };
 
@@ -243,6 +253,13 @@ export default function Home() {
             )}
           </div>
       </div>
+
+      {showPinGate && (
+        <AdminPinGate
+          onSuccess={() => { setShowPinGate(false); doToggle(); }}
+          onCancel={() => setShowPinGate(false)}
+        />
+      )}
 
     </div>);
 
