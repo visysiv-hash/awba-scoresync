@@ -4,9 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CalendarDays, MapPin, Users, Clock, Loader2, CheckSquare, Square } from "lucide-react";
+import { CalendarDays, MapPin, Users, Clock, Loader2, CheckSquare, Square, LayoutList, Zap } from "lucide-react";
 import MultiBookingModal from "../components/booking/MultiBookingModal";
 import PlayerSelector from "../components/booking/PlayerSelector";
+import SessionCalendar from "../components/booking/SessionCalendar";
 import PageBanner from "../components/PageBanner";
 import { getCurrentMember } from "../lib/currentMember";
 
@@ -25,6 +26,28 @@ export default function BookingSessions() {
   const [excludeNames, setExcludeNames] = useState([]);
   const [showPlayerPicker, setShowPlayerPicker] = useState(false);
   const [filterTitle, setFilterTitle] = useState("All");
+  const [viewMode, setViewMode] = useState("list"); // "list" | "calendar"
+
+  const selectNextN = (n) => {
+    const available = visibleSessions.filter(s => !myBooking(s.id) && confirmedCount(s.id) < s.max_spots);
+    const next = new Set(selectedIds);
+    available.slice(0, n).forEach(s => next.add(s.id));
+    setSelectedIds(next);
+    if (available.length === 0) toast.info("No available sessions to select.");
+    else toast.success(`Selected ${Math.min(n, available.length)} session${Math.min(n, available.length) > 1 ? "s" : ""}.`);
+  };
+
+  const toggleDay = (daySessions) => {
+    const selectable = daySessions.filter(s => !myBooking(s.id));
+    if (selectable.length === 0) return;
+    const allSelected = selectable.every(s => selectedIds.has(s.id));
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allSelected) selectable.forEach(s => next.delete(s.id));
+      else selectable.forEach(s => next.add(s.id));
+      return next;
+    });
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -131,6 +154,82 @@ export default function BookingSessions() {
           <Card><CardContent className="pt-6 text-center text-muted-foreground">No upcoming sessions available.</CardContent></Card>
         )}
 
+        {sessions.length > 0 && (
+          <>
+            {/* View toggle */}
+            <div className="flex gap-2 mb-3">
+              <Button
+                size="sm"
+                variant={viewMode === "list" ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => setViewMode("list")}
+              >
+                <LayoutList className="w-4 h-4 mr-1.5" /> List
+              </Button>
+              <Button
+                size="sm"
+                variant={viewMode === "calendar" ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => setViewMode("calendar")}
+              >
+                <CalendarDays className="w-4 h-4 mr-1.5" /> Calendar
+              </Button>
+            </div>
+
+            {/* Quick select */}
+            <div className="flex gap-2 mb-3 flex-wrap">
+              <span className="text-xs text-slate-300 self-center flex items-center gap-1"><Zap className="w-3 h-3" /> Quick select:</span>
+              {[5, 10, 20].map(n => (
+                <button
+                  key={n}
+                  onClick={() => selectNextN(n)}
+                  className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 text-teal-300 border border-white/20 hover:bg-white/20 transition-colors"
+                >
+                  Next {n}
+                </button>
+              ))}
+              <button
+                onClick={() => selectNextN(visibleSessions.length)}
+                className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 text-teal-300 border border-white/20 hover:bg-white/20 transition-colors"
+              >
+                All
+              </button>
+            </div>
+          </>
+        )}
+
+        {viewMode === "calendar" && sessions.length > 0 && (
+          <div className="mb-4">
+            <SessionCalendar
+              sessions={visibleSessions}
+              selectedIds={selectedIds}
+              toggleDay={toggleDay}
+              myBooking={myBooking}
+              confirmedCount={confirmedCount}
+            />
+            {(() => {
+              const selectedOnCalendar = visibleSessions.filter(s => selectedIds.has(s.id));
+              if (selectedOnCalendar.length === 0) return null;
+              return (
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs font-semibold text-slate-300">Selected ({selectedOnCalendar.length}):</p>
+                  {selectedOnCalendar.map(s => (
+                    <div key={s.id} className="bg-white/10 rounded-lg px-3 py-2 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{s.title}</p>
+                        <p className="text-xs text-slate-300">{s.date} · {s.start_time}{s.location ? ` · ${s.location}` : ""}</p>
+                      </div>
+                      <Button size="sm" variant="ghost" className="text-red-300 hover:text-red-200 h-7 text-xs" onClick={() => toggleSelect(s)}>
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {sessions.length > 0 && uniqueTitles.length > 2 && (
           <div className="flex gap-2 overflow-x-auto pb-2 mb-1">
             {uniqueTitles.map(title => (
@@ -149,7 +248,7 @@ export default function BookingSessions() {
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className={`space-y-4 ${viewMode !== "list" ? "hidden" : ""}`}>
           {visibleSessions.map(session => {
             const confirmed = confirmedCount(session.id);
             const spotsLeft = session.max_spots - confirmed;
