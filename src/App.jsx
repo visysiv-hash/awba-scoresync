@@ -31,10 +31,13 @@ const AuthenticatedApp = () => {
   const [memberVerified, setMemberVerified] = useState(() => {
     try {
       const member = JSON.parse(localStorage.getItem("awba_member") || "null");
-      if (!member) return false;
+      if (!member || !member.login_time) {
+        localStorage.removeItem("awba_member");
+        return false;
+      }
       // Timeout after 4 hours
       const FOUR_HOURS = 4 * 60 * 60 * 1000;
-      if (member.login_time && Date.now() - member.login_time > FOUR_HOURS) {
+      if (Date.now() - member.login_time > FOUR_HOURS) {
         localStorage.removeItem("awba_member");
         return false;
       }
