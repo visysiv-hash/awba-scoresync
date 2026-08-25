@@ -57,6 +57,24 @@
         }
       }
     },
+    "bank_details": {
+      "type": "object",
+      "title": "Bank Details",
+      "properties": {
+        "account_name": {
+          "type": "string",
+          "title": "Account Name"
+        },
+        "bsb": {
+          "type": "string",
+          "title": "BSB"
+        },
+        "account_number": {
+          "type": "string",
+          "title": "Account Number"
+        }
+      }
+    },
     "payment_required": {
       "type": "boolean",
       "title": "Payment Required"

@@ -83,6 +83,7 @@ Deno.serve(async (req) => {
 
   // Build payment lines for the email
   const paymentLines = [];
+  const hasPayBeforeArrival = (session.payment_notes || []).some(pn => pn.type === "Pay before arrival");
   if (session.payment_notes && session.payment_notes.length > 0) {
     for (const pn of session.payment_notes) {
       const label = pn.type === "Other" ? (pn.label || "Other") : pn.type;
@@ -95,7 +96,19 @@ Deno.serve(async (req) => {
   } else {
     paymentLines.push("No payment required");
   }
-  const paymentBlock = "Payment:\n" + paymentLines.map(l => `  • ${l}`).join("\n");
+  let paymentBlock = "Payment:\n" + paymentLines.map(l => `  • ${l}`).join("\n");
+
+  // Append bank details when "Pay before arrival" is set
+  if (hasPayBeforeArrival && session.bank_details) {
+    const bd = session.bank_details;
+    const bdLines = [];
+    if (bd.account_name) bdLines.push(`Account Name: ${bd.account_name}`);
+    if (bd.bsb) bdLines.push(`BSB: ${bd.bsb}`);
+    if (bd.account_number) bdLines.push(`Account Number: ${bd.account_number}`);
+    if (bdLines.length) {
+      paymentBlock += "\n\nBank details (please pay before arrival):\n" + bdLines.map(l => `  • ${l}`).join("\n");
+    }
+  }
 
   const detailsBlock = `Session: ${session.title}\n\nDate: ${session.date}\n\nTime: ${session.start_time}${session.end_time ? ' – ' + session.end_time : ''}\n\nLocation: ${session.location || 'TBA'}`;
 

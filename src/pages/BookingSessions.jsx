@@ -190,6 +190,13 @@ export default function BookingSessions() {
                             })}
                           </div>
                         )}
+                        {session.payment_notes?.some(pn => pn.type === "Pay before arrival") && session.bank_details && (
+                          <div className="mt-1 text-[11px] text-slate-600 bg-amber-50 border border-amber-200 rounded-md px-2 py-1 leading-tight">
+                            <span className="font-semibold">Bank:</span> {session.bank_details.account_name || "—"}
+                            {session.bank_details.bsb && ` · BSB ${session.bank_details.bsb}`}
+                            {session.bank_details.account_number && ` · Acct ${session.bank_details.account_number}`}
+                          </div>
+                        )}
                       </div>
                     </div>
                     {(!session.payment_notes || session.payment_notes.length === 0) && (

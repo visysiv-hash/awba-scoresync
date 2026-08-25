@@ -18,9 +18,15 @@ import {
 const emptyForm = () => ({
   title: "", date: "", start_time: "", end_time: "",
   location: "", max_spots: 10, max_waitlist: "", payment_notes: [],
+  bank_details: null,
   // recurring
   recurring: false, recur_weeks: 4,
 });
+
+const DEFAULT_BANK_KEY = "awba_default_bank";
+const loadDefaultBank = () => {
+  try { return JSON.parse(localStorage.getItem(DEFAULT_BANK_KEY) || "null"); } catch { return null; }
+};
 
 export default function AdminSessions() {
   const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
@@ -33,6 +39,12 @@ export default function AdminSessions() {
   const [saving, setSaving] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
   const [filterTitle, setFilterTitle] = useState("All");
+  const [defaultBank, setDefaultBank] = useState(loadDefaultBank);
+  const [bankDraft, setBankDraft] = useState(() => {
+    const d = loadDefaultBank();
+    return { account_name: d?.account_name || "", bsb: d?.bsb || "", account_number: d?.account_number || "" };
+  });
+  const [editingBank, setEditingBank] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -75,6 +87,14 @@ export default function AdminSessions() {
               ...(p.type === "Other" && p.label ? { label: p.label } : {}),
             }))
             .filter(p => p.type)
+        : undefined,
+      bank_details: form.payment_notes.some(p => p.type === "Pay before arrival") && form.bank_details &&
+        (form.bank_details.account_name || form.bank_details.bsb || form.bank_details.account_number)
+        ? {
+            account_name: form.bank_details.account_name || undefined,
+            bsb: form.bank_details.bsb || undefined,
+            account_number: form.bank_details.account_number || undefined,
+          }
         : undefined,
     };
 
@@ -169,6 +189,67 @@ export default function AdminSessions() {
           </AlertDialog>
         </div>
 
+        {/* Default bank details — reused for every "Pay before arrival" session */}
+        <Card className="mb-4 shadow-md">
+          <CardContent className="pt-3 pb-3">
+            <button
+              className="w-full flex items-center justify-between"
+              onClick={() => setEditingBank(v => !v)}
+            >
+              <span className="text-sm font-semibold flex items-center gap-1.5">
+                🏦 Default Bank Details
+                {defaultBank && <Badge variant="outline" className="text-xs text-green-600 border-green-300">Saved</Badge>}
+              </span>
+              {editingBank ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {!editingBank && defaultBank && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {defaultBank.account_name || "—"} · BSB {defaultBank.bsb || "—"} · {defaultBank.account_number || "—"}
+              </p>
+            )}
+            {editingBank && (
+              <div className="mt-3 space-y-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Account Name</Label>
+                  <Input value={bankDraft.account_name} onChange={e => setBankDraft(d => ({ ...d, account_name: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">BSB</Label>
+                    <Input value={bankDraft.bsb} onChange={e => setBankDraft(d => ({ ...d, bsb: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Account Number</Label>
+                    <Input value={bankDraft.account_number} onChange={e => setBankDraft(d => ({ ...d, account_number: e.target.value }))} />
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    const cleaned = {
+                      account_name: bankDraft.account_name.trim(),
+                      bsb: bankDraft.bsb.trim(),
+                      account_number: bankDraft.account_number.trim(),
+                    };
+                    if (!cleaned.account_name && !cleaned.bsb && !cleaned.account_number) {
+                      localStorage.removeItem(DEFAULT_BANK_KEY);
+                      setDefaultBank(null);
+                    } else {
+                      localStorage.setItem(DEFAULT_BANK_KEY, JSON.stringify(cleaned));
+                      setDefaultBank(cleaned);
+                    }
+                    setEditingBank(false);
+                    toast.success("Default bank details saved.");
+                  }}
+                >
+                  Save as default
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {showForm && (
           <Card className="mb-4 shadow-lg">
             <CardContent className="pt-4 space-y-3">
@@ -208,10 +289,23 @@ export default function AdminSessions() {
                       <select
                         className="flex-1 h-9 rounded-md border border-input bg-background px-2 text-sm"
                         value={pn.type}
-                        onChange={e => setForm(p => ({
-                          ...p,
-                          payment_notes: p.payment_notes.map((x, i) => i === idx ? { ...x, type: e.target.value } : x),
-                        }))}
+                        onChange={e => {
+                          const newType = e.target.value;
+                          setForm(p => {
+                            let bank = p.bank_details;
+                            if (newType === "Pay before arrival" && !bank) {
+                              const d = defaultBank;
+                              bank = (d && (d.account_name || d.bsb || d.account_number))
+                                ? { ...d }
+                                : { account_name: "", bsb: "", account_number: "" };
+                            }
+                            return {
+                              ...p,
+                              bank_details: bank,
+                              payment_notes: p.payment_notes.map((x, i) => i === idx ? { ...x, type: newType } : x),
+                            };
+                          });
+                        }}
                       >
                         <option value="">Select…</option>
                         <option value="Pay on arrival">Pay on arrival</option>
@@ -260,6 +354,32 @@ export default function AdminSessions() {
                   >
                     <Plus className="w-4 h-4 mr-1" /> Add payment note
                   </Button>
+
+                  {form.payment_notes.some(p => p.type === "Pay before arrival") && (
+                    <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                      <p className="text-xs font-semibold text-amber-800">🏦 Bank details for "Pay before arrival"</p>
+                      {(() => {
+                        const bd = form.bank_details || { account_name: "", bsb: "", account_number: "" };
+                        const set = (k, v) => setForm(p => ({ ...p, bank_details: { ...bd, [k]: v } }));
+                        return (
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="col-span-2 space-y-1">
+                              <Label className="text-xs">Account Name</Label>
+                              <Input value={bd.account_name || ""} onChange={e => set("account_name", e.target.value)} placeholder="e.g. Albury Wodonga Badminton Assoc" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">BSB</Label>
+                              <Input value={bd.bsb || ""} onChange={e => set("bsb", e.target.value)} placeholder="e.g. 063000" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Account Number</Label>
+                              <Input value={bd.account_number || ""} onChange={e => set("account_number", e.target.value)} placeholder="e.g. 12345678" />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 {/* Recurring option */}
