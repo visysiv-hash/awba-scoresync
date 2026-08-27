@@ -86,6 +86,10 @@
     "notes": {
       "type": "string",
       "title": "Notes"
+    },
+    "created_by_name": {
+      "type": "string",
+      "title": "Created By"
     }
   },
   "required": [

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil } from "lucide-react";
 import { addWeeks } from "date-fns";
+import { getCurrentMember } from "../lib/currentMember";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -146,11 +147,13 @@ export default function AdminSessions() {
 
     const weeks = form.recurring ? Number(form.recur_weeks) : 1;
     const created = [];
+    const member = getCurrentMember();
+    const creatorName = member ? (member.display_name || member.full_name || "") : "";
 
     for (let i = 0; i < weeks; i++) {
       const dateObj = addWeeks(new Date(form.date + "T00:00:00"), i);
       const dateStr = dateObj.toISOString().split("T")[0];
-      const session = await base44.entities.Session.create({ ...baseData, date: dateStr });
+      const session = await base44.entities.Session.create({ ...baseData, date: dateStr, created_by_name: creatorName || undefined });
       created.push(session);
     }
 

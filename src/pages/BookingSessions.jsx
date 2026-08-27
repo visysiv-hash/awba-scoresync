@@ -323,6 +323,7 @@ export default function BookingSessions() {
                     <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{session.date}</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{session.start_time}{session.end_time ? ` – ${session.end_time}` : ""}</span>
                     {session.location && <span className="flex items-center gap-1 col-span-2"><MapPin className="w-3 h-3" />{session.location}</span>}
+                    {session.created_by_name && <span className="flex items-center gap-1 col-span-2"><Users className="w-3 h-3" />Created by {session.created_by_name}</span>}
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" />
                       {full
