@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil } from "lucide-react";
 import { addWeeks } from "date-fns";
 import { getCurrentMember } from "../lib/currentMember";
+import { formatAusDate } from "../lib/dateFormat";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -533,7 +534,7 @@ export default function AdminSessions() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       <p className="font-semibold text-sm">{session.title}</p>
-                      <p className="text-xs text-muted-foreground">{session.date} · {session.start_time}{session.end_time ? ` – ${session.end_time}` : ""}</p>
+                      <p className="text-xs text-muted-foreground">{formatAusDate(session.date)} · {session.start_time}{session.end_time ? ` – ${session.end_time}` : ""}</p>
                       <div className="flex gap-2 mt-1 flex-wrap">
                         <Badge variant="outline" className="text-xs">{confirmed.length}/{session.max_spots} confirmed</Badge>
                         {session.max_waitlist != null && (

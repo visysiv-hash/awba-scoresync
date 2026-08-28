@@ -10,6 +10,7 @@ import PlayerSelector from "../components/booking/PlayerSelector";
 import SessionCalendar from "../components/booking/SessionCalendar";
 import PageBanner from "../components/PageBanner";
 import { getCurrentMember } from "../lib/currentMember";
+import { formatAusDate } from "../lib/dateFormat";
 
 export default function BookingSessions() {
   const [sessions, setSessions] = useState([]);
@@ -217,7 +218,7 @@ export default function BookingSessions() {
                     <div key={s.id} className="bg-white/10 rounded-lg px-3 py-2 flex items-center justify-between">
                       <div>
                         <p className="text-sm font-semibold text-white">{s.title}</p>
-                        <p className="text-xs text-slate-300">{s.date} · {s.start_time}{s.location ? ` · ${s.location}` : ""}</p>
+                        <p className="text-xs text-slate-300">{formatAusDate(s.date)} · {s.start_time}{s.location ? ` · ${s.location}` : ""}</p>
                       </div>
                       <Button size="sm" variant="ghost" className="text-red-300 hover:text-red-200 h-7 text-xs" onClick={() => toggleSelect(s)}>
                         Remove
@@ -320,7 +321,7 @@ export default function BookingSessions() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{session.date}</span>
+                    <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{formatAusDate(session.date)}</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{session.start_time}{session.end_time ? ` – ${session.end_time}` : ""}</span>
                     {session.location && <span className="flex items-center gap-1 col-span-2"><MapPin className="w-3 h-3" />{session.location}</span>}
                     {session.created_by_name && <span className="flex items-center gap-1 col-span-2"><Users className="w-3 h-3" />Created by {session.created_by_name}</span>}
