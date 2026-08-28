@@ -34,10 +34,12 @@ export default function PlayerSelector({ onSelect, onClose }) {
     load();
   }, []);
 
-  const q = query.toLowerCase();
-  const filtered = roster
-    .filter(m => m.display_name.toLowerCase().includes(q) || m.full_name.toLowerCase().includes(q))
-    .slice(0, 50);
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? roster
+        .filter(m => m.display_name.toLowerCase().includes(q) || m.full_name.toLowerCase().includes(q))
+        .slice(0, 50)
+    : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -61,6 +63,8 @@ export default function PlayerSelector({ onSelect, onClose }) {
 
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+        ) : !q ? (
+          <p className="text-center text-sm text-muted-foreground py-8">Start typing your name to find it.</p>
         ) : filtered.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-8">No matches found.</p>
         ) : (
