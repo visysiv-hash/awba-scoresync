@@ -573,7 +573,25 @@ export default function AdminSessions() {
                         <div>
                           <p className="text-xs font-semibold text-green-700 mb-1">✅ Confirmed ({confirmed.length})</p>
                           {confirmed.map((b, i) => (
-                            <p key={i} className="text-xs text-slate-700 pl-2">{i + 1}. {b.user_name} <span className="text-slate-400">({b.user_email})</span></p>
+                            <div key={i} className="flex items-center justify-between gap-2 pl-2">
+                              <p className="text-xs text-slate-700">{i + 1}. {b.user_name} <span className="text-slate-400">({b.user_email})</span></p>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const updated = await base44.entities.Booking.update(b.id, { paid: !b.paid });
+                                    setBookings(prev => prev.map(x => x.id === b.id ? { ...x, paid: updated.paid } : x));
+                                    toast.success(updated.paid ? `${b.user_name} marked as paid` : `${b.user_name} marked unpaid`);
+                                  } catch (e) { toast.error("Failed to update payment status."); }
+                                }}
+                                className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors ${
+                                  b.paid
+                                    ? "bg-green-100 text-green-700 border-green-300"
+                                    : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
+                                }`}
+                              >
+                                {b.paid ? "✓ Paid" : "Mark paid"}
+                              </button>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -581,7 +599,25 @@ export default function AdminSessions() {
                         <div>
                           <p className="text-xs font-semibold text-orange-600 mb-1">⏳ Waitlist ({waitlisted.length})</p>
                           {waitlisted.map((b, i) => (
-                            <p key={i} className="text-xs text-slate-700 pl-2">{i + 1}. {b.user_name} <span className="text-slate-400">({b.user_email})</span></p>
+                            <div key={i} className="flex items-center justify-between gap-2 pl-2">
+                              <p className="text-xs text-slate-700">{i + 1}. {b.user_name} <span className="text-slate-400">({b.user_email})</span></p>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const updated = await base44.entities.Booking.update(b.id, { paid: !b.paid });
+                                    setBookings(prev => prev.map(x => x.id === b.id ? { ...x, paid: updated.paid } : x));
+                                    toast.success(updated.paid ? `${b.user_name} marked as paid` : `${b.user_name} marked unpaid`);
+                                  } catch (e) { toast.error("Failed to update payment status."); }
+                                }}
+                                className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors ${
+                                  b.paid
+                                    ? "bg-green-100 text-green-700 border-green-300"
+                                    : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
+                                }`}
+                              >
+                                {b.paid ? "✓ Paid" : "Mark paid"}
+                              </button>
+                            </div>
                           ))}
                         </div>
                       )}
