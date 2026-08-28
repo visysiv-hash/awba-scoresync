@@ -55,7 +55,7 @@ export default function BookingSessions() {
         base44.entities.Session.list("date", 100),
         base44.entities.Booking.list("-created_date", 500),
       ]);
-      const today = new Date().toISOString().split("T")[0];
+      const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
       setSessions(allSessions.filter(s => s.date >= today).sort((a, b) => a.date.localeCompare(b.date)));
       setBookings(allBookings);
       setLoading(false);
