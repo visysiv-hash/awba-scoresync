@@ -152,8 +152,9 @@ export default function AdminSessions() {
     const creatorName = member ? (member.display_name || member.full_name || "") : "";
 
     for (let i = 0; i < weeks; i++) {
-      const dateObj = addWeeks(new Date(form.date + "T00:00:00"), i);
-      const dateStr = dateObj.toISOString().split("T")[0];
+      const [y, m, d] = form.date.split("-").map(Number);
+      const dateObj = addWeeks(new Date(y, m - 1, d), i);
+      const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
       const session = await base44.entities.Session.create({ ...baseData, date: dateStr, created_by_name: creatorName || undefined });
       created.push(session);
     }
