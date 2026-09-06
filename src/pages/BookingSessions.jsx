@@ -12,6 +12,17 @@ import PageBanner from "../components/PageBanner";
 import { getCurrentMember } from "../lib/currentMember";
 import { formatAusDate } from "../lib/dateFormat";
 
+const SESSION_COLORS = [
+  { dot: "bg-teal-500", accent: "border-l-teal-500", text: "text-teal-700", chip: "bg-teal-100 text-teal-700 border-teal-300" },
+  { dot: "bg-blue-500", accent: "border-l-blue-500", text: "text-blue-700", chip: "bg-blue-100 text-blue-700 border-blue-300" },
+  { dot: "bg-purple-500", accent: "border-l-purple-500", text: "text-purple-700", chip: "bg-purple-100 text-purple-700 border-purple-300" },
+  { dot: "bg-amber-500", accent: "border-l-amber-500", text: "text-amber-700", chip: "bg-amber-100 text-amber-700 border-amber-300" },
+  { dot: "bg-rose-500", accent: "border-l-rose-500", text: "text-rose-700", chip: "bg-rose-100 text-rose-700 border-rose-300" },
+  { dot: "bg-emerald-500", accent: "border-l-emerald-500", text: "text-emerald-700", chip: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+  { dot: "bg-indigo-500", accent: "border-l-indigo-500", text: "text-indigo-700", chip: "bg-indigo-100 text-indigo-700 border-indigo-300" },
+  { dot: "bg-orange-500", accent: "border-l-orange-500", text: "text-orange-700", chip: "bg-orange-100 text-orange-700 border-orange-300" },
+];
+
 export default function BookingSessions() {
   const [sessions, setSessions] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -26,7 +37,7 @@ export default function BookingSessions() {
   const [addMoreMode, setAddMoreMode] = useState(false);
   const [excludeNames, setExcludeNames] = useState([]);
   const [showPlayerPicker, setShowPlayerPicker] = useState(false);
-  const [filterTitle, setFilterTitle] = useState("All");
+  const [filterTitle, setFilterTitle] = useState("");
   const [viewMode, setViewMode] = useState("list"); // "list" | "calendar"
 
   const selectNextN = (n) => {
@@ -122,8 +133,15 @@ export default function BookingSessions() {
   const selectedSessions = sessions.filter(s => selectedIds.has(s.id));
   const selectableCount = sessions.filter(s => !myBooking(s.id)).length;
 
-  const uniqueTitles = ["All", ...Array.from(new Set(sessions.map(s => s.title)))];
-  const visibleSessions = filterTitle === "All" ? sessions : sessions.filter(s => s.title === filterTitle);
+  const uniqueTitles = Array.from(new Set(sessions.map(s => s.title)));
+  const visibleSessions = filterTitle ? sessions.filter(s => s.title === filterTitle) : [];
+  const colorForTitle = (title) => SESSION_COLORS[uniqueTitles.indexOf(title) % SESSION_COLORS.length];
+
+  useEffect(() => {
+    if (sessions.length > 0 && uniqueTitles.length === 1 && !filterTitle) {
+      setFilterTitle(uniqueTitles[0]);
+    }
+  }, [sessions, uniqueTitles, filterTitle]);
 
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center">
@@ -155,7 +173,7 @@ export default function BookingSessions() {
           <Card><CardContent className="pt-6 text-center text-muted-foreground">No upcoming sessions available.</CardContent></Card>
         )}
 
-        {sessions.length > 0 && (
+        {filterTitle && sessions.length > 0 && (
           <>
             {/* View toggle */}
             <div className="flex gap-2 mb-3">
@@ -199,7 +217,7 @@ export default function BookingSessions() {
           </>
         )}
 
-        {viewMode === "calendar" && sessions.length > 0 && (
+        {viewMode === "calendar" && filterTitle && sessions.length > 0 && (
           <div className="mb-4">
             <SessionCalendar
               sessions={visibleSessions}
@@ -231,22 +249,24 @@ export default function BookingSessions() {
           </div>
         )}
 
-        {sessions.length > 0 && uniqueTitles.length > 2 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-1">
-            {uniqueTitles.map(title => (
-              <button
-                key={title}
-                onClick={() => setFilterTitle(title)}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${
-                  filterTitle === title
-                    ? "bg-teal-500 text-white border-teal-500"
-                    : "bg-white/10 text-slate-200 border-white/20 hover:bg-white/20"
-                }`}
-              >
-                {title}
-              </button>
-            ))}
+        {sessions.length > 0 && (
+          <div className="mb-3">
+            <label className="text-xs text-slate-300 mb-1.5 block font-medium">Select session type</label>
+            <select
+              value={filterTitle}
+              onChange={e => setFilterTitle(e.target.value)}
+              className="w-full h-11 rounded-lg border border-white/20 bg-white/10 text-white px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-400"
+            >
+              <option value="" disabled className="text-slate-500">Choose a session type…</option>
+              {uniqueTitles.map(title => (
+                <option key={title} value={title} className="text-slate-800">{title}</option>
+              ))}
+            </select>
           </div>
+        )}
+
+        {sessions.length > 0 && !filterTitle && (
+          <Card><CardContent className="pt-6 text-center text-muted-foreground text-sm">Select a session type above to see available dates.</CardContent></Card>
         )}
 
         <div className={`space-y-4 ${viewMode !== "list" ? "hidden" : ""}`}>
@@ -260,9 +280,9 @@ export default function BookingSessions() {
             return (
               <Card
                 key={session.id}
-                className={`shadow-lg transition-all cursor-pointer border-2 ${
-                  isSelected ? "border-teal-500 ring-2 ring-teal-400/40" :
-                  myBk ? "border-border opacity-80" : "border-transparent"
+                className={`shadow-lg transition-all cursor-pointer border-2 border-l-4 ${colorForTitle(session.title).accent} ${
+                  isSelected ? "ring-2 ring-teal-400/40 border-teal-500" :
+                  myBk ? "opacity-80 border-border" : "border-transparent"
                 }`}
                 onClick={() => !myBk && toggleSelect(session)}
               >
@@ -275,7 +295,10 @@ export default function BookingSessions() {
                         </div>
                       )}
                       <div className="flex-1">
-                        <h2 className="font-bold text-base">{session.title}</h2>
+                        <h2 className="font-bold text-base flex items-center gap-2">
+                          <span className={`w-2.5 h-2.5 rounded-full ${colorForTitle(session.title).dot}`} />
+                          {session.title}
+                        </h2>
                         {session.payment_notes && session.payment_notes.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {session.payment_notes.map((pn, i) => {
