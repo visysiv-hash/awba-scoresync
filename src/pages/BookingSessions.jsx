@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CalendarDays, MapPin, Users, Clock, Loader2, CheckSquare, Square, LayoutList, Zap } from "lucide-react";
+import { CalendarDays, MapPin, Users, Clock, Loader2, CheckSquare, Square, LayoutList, Zap, ChevronDown, ChevronUp } from "lucide-react";
 import MultiBookingModal from "../components/booking/MultiBookingModal";
 import PlayerSelector from "../components/booking/PlayerSelector";
 import SessionCalendar from "../components/booking/SessionCalendar";
@@ -39,6 +39,7 @@ export default function BookingSessions() {
   const [showPlayerPicker, setShowPlayerPicker] = useState(false);
   const [filterTitle, setFilterTitle] = useState("");
   const [viewMode, setViewMode] = useState("list"); // "list" | "calendar"
+  const [myBookingsExpanded, setMyBookingsExpanded] = useState(false);
 
   const selectNextN = (n) => {
     const available = visibleSessions.filter(s => !myBooking(s.id) && confirmedCount(s.id) < s.max_spots);
@@ -178,34 +179,44 @@ export default function BookingSessions() {
 
         {player && myUpcomingBookings.length > 0 && (
           <div className="mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckSquare className="w-4 h-4 text-green-400" />
-              <h2 className="text-sm font-bold text-white">My Booked Sessions ({myUpcomingBookings.length})</h2>
-            </div>
-            <div className="space-y-2">
-              {myUpcomingBookings.map(({ booking: b, session: sess }) => (
-                <div key={b.id} className="bg-green-900/30 border border-green-500/40 rounded-lg px-3 py-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{b.session_title || sess?.title}</p>
-                      <p className="text-xs text-slate-300 flex items-center gap-1 flex-wrap mt-0.5">
-                        <CalendarDays className="w-3 h-3" />{formatAusDateWithDay(sess.date)}
-                        {sess?.start_time && <><Clock className="w-3 h-3 ml-1" />{sess.start_time}{sess.end_time ? `–${sess.end_time}` : ""}</>}
-                        {sess?.location && <><MapPin className="w-3 h-3 ml-1" />{sess.location}</>}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <Badge className={b.status === "confirmed" ? "bg-green-500 text-white border-green-500 text-xs" : "bg-amber-500 text-white border-amber-500 text-xs"}>
-                        {b.status === "confirmed" ? "Confirmed" : "Waitlist"}
-                      </Badge>
-                      <Button size="sm" variant="ghost" className="text-red-300 hover:text-red-200 hover:bg-white/10 h-6 text-xs px-2" onClick={() => handleCancel(b)}>
-                        Cancel
-                      </Button>
+            <button
+              onClick={() => setMyBookingsExpanded(prev => !prev)}
+              className="w-full flex items-center justify-between gap-2 bg-green-900/40 border border-green-500/40 rounded-lg px-3 py-2.5 hover:bg-green-900/50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <CheckSquare className="w-4 h-4 text-green-400" />
+                <h2 className="text-sm font-bold text-white text-left">My Booked Sessions ({myUpcomingBookings.length})</h2>
+              </div>
+              {myBookingsExpanded
+                ? <ChevronUp className="w-4 h-4 text-green-300 shrink-0" />
+                : <ChevronDown className="w-4 h-4 text-green-300 shrink-0" />}
+            </button>
+            {myBookingsExpanded && (
+              <div className="space-y-2 mt-2">
+                {myUpcomingBookings.map(({ booking: b, session: sess }) => (
+                  <div key={b.id} className="bg-green-900/30 border border-green-500/40 rounded-lg px-3 py-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{b.session_title || sess?.title}</p>
+                        <p className="text-xs text-slate-300 flex items-center gap-1 flex-wrap mt-0.5">
+                          <CalendarDays className="w-3 h-3" />{formatAusDateWithDay(sess.date)}
+                          {sess?.start_time && <><Clock className="w-3 h-3 ml-1" />{sess.start_time}{sess.end_time ? `–${sess.end_time}` : ""}</>}
+                          {sess?.location && <><MapPin className="w-3 h-3 ml-1" />{sess.location}</>}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <Badge className={b.status === "confirmed" ? "bg-green-500 text-white border-green-500 text-xs" : "bg-amber-500 text-white border-amber-500 text-xs"}>
+                          {b.status === "confirmed" ? "Confirmed" : "Waitlist"}
+                        </Badge>
+                        <Button size="sm" variant="ghost" className="text-red-300 hover:text-red-200 hover:bg-white/10 h-6 text-xs px-2" onClick={() => handleCancel(b)}>
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
