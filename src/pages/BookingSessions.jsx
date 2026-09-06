@@ -173,6 +173,26 @@ export default function BookingSessions() {
           <Card><CardContent className="pt-6 text-center text-muted-foreground">No upcoming sessions available.</CardContent></Card>
         )}
 
+        {sessions.length > 0 && (
+          <div className="mb-3">
+            <label className="text-xs text-slate-300 mb-1.5 block font-medium">Select a session</label>
+            <select
+              value={filterTitle}
+              onChange={e => setFilterTitle(e.target.value)}
+              className="w-full h-11 rounded-lg border border-white/20 bg-white/10 text-white px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-400"
+            >
+              <option value="" disabled className="text-slate-500">Choose a session…</option>
+              {uniqueTitles.map(title => (
+                <option key={title} value={title} className="text-slate-800">{title}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {sessions.length > 0 && !filterTitle && (
+          <Card><CardContent className="pt-6 text-center text-muted-foreground text-sm">Select a session above to see available dates.</CardContent></Card>
+        )}
+
         {filterTitle && sessions.length > 0 && (
           <>
             {/* View toggle */}
@@ -247,26 +267,6 @@ export default function BookingSessions() {
               );
             })()}
           </div>
-        )}
-
-        {sessions.length > 0 && (
-          <div className="mb-3">
-            <label className="text-xs text-slate-300 mb-1.5 block font-medium">Select session type</label>
-            <select
-              value={filterTitle}
-              onChange={e => setFilterTitle(e.target.value)}
-              className="w-full h-11 rounded-lg border border-white/20 bg-white/10 text-white px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-400"
-            >
-              <option value="" disabled className="text-slate-500">Choose a session type…</option>
-              {uniqueTitles.map(title => (
-                <option key={title} value={title} className="text-slate-800">{title}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {sessions.length > 0 && !filterTitle && (
-          <Card><CardContent className="pt-6 text-center text-muted-foreground text-sm">Select a session type above to see available dates.</CardContent></Card>
         )}
 
         <div className={`space-y-4 ${viewMode !== "list" ? "hidden" : ""}`}>
