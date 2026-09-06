@@ -40,7 +40,7 @@ export default function AdminSessions() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
-  const [filterTitle, setFilterTitle] = useState("All");
+  const [filterTitle, setFilterTitle] = useState("");
   const [defaultBank, setDefaultBank] = useState(loadDefaultBank);
   const [bankDraft, setBankDraft] = useState(() => {
     const d = loadDefaultBank();
@@ -54,7 +54,7 @@ export default function AdminSessions() {
   const loadData = async () => {
     setLoading(true);
     const [s, b] = await Promise.all([
-      base44.entities.Session.list("-date", 200),
+      base44.entities.Session.list("date", 200),
       base44.entities.Booking.list("-created_date", 1000),
     ]);
     setSessions(s);
@@ -85,8 +85,8 @@ export default function AdminSessions() {
   const sessionBookings = (sessionId) => bookings.filter(b => b.session_id === sessionId && b.status !== "cancelled");
 
   // Unique session titles act as "main headings" (e.g. Tuesday Games, Thursday Games)
-  const uniqueTitles = ["All", ...Array.from(new Set(sessions.map(s => s.title)))];
-  const filteredSessions = filterTitle === "All" ? sessions : sessions.filter(s => s.title === filterTitle);
+  const uniqueTitles = Array.from(new Set(sessions.map(s => s.title)));
+  const filteredSessions = !filterTitle || filterTitle === "All" ? sessions : sessions.filter(s => s.title === filterTitle);
 
   const handleCreate = async () => {
     if (!form.title || !form.date || !form.start_time || !form.max_spots) {
@@ -501,27 +501,30 @@ export default function AdminSessions() {
           </Card>
         )}
 
-        {uniqueTitles.length > 2 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
-            {uniqueTitles.map(title => (
-              <button
-                key={title}
-                onClick={() => setFilterTitle(title)}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${
-                  filterTitle === title
-                    ? "bg-teal-600 text-white border-teal-600"
-                    : "bg-white/10 text-slate-200 border-white/20 hover:bg-white/20"
-                }`}
-              >
-                {title}
-              </button>
-            ))}
+        {sessions.length > 0 && (
+          <div className="mb-3">
+            <label className="text-xs text-slate-300 mb-1.5 block font-medium">Select a session</label>
+            <select
+              value={filterTitle}
+              onChange={e => setFilterTitle(e.target.value)}
+              className="w-full h-11 rounded-lg border border-white/20 bg-white/10 text-white px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-400"
+            >
+              <option value="" disabled className="text-slate-500">Choose a session…</option>
+              <option value="All" className="text-slate-800">All sessions</option>
+              {uniqueTitles.map(title => (
+                <option key={title} value={title} className="text-slate-800">{title}</option>
+              ))}
+            </select>
           </div>
         )}
 
+        {sessions.length > 0 && !filterTitle && (
+          <Card><CardContent className="pt-6 text-center text-muted-foreground text-sm">Select a session above to manage sessions.</CardContent></Card>
+        )}
+
         <div className="space-y-3">
-          {filteredSessions.length === 0 && (
-            <Card><CardContent className="pt-6 text-center text-muted-foreground text-sm">No sessions{filterTitle !== "All" ? ` for "${filterTitle}"` : ""}.</CardContent></Card>
+          {filteredSessions.length === 0 && filterTitle && filterTitle !== "All" && (
+            <Card><CardContent className="pt-6 text-center text-muted-foreground text-sm">No sessions for "{filterTitle}".</CardContent></Card>
           )}
           {filteredSessions.map(session => {
             const bks = sessionBookings(session.id);
