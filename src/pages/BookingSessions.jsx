@@ -10,7 +10,7 @@ import PlayerSelector from "../components/booking/PlayerSelector";
 import SessionCalendar from "../components/booking/SessionCalendar";
 import PageBanner from "../components/PageBanner";
 import { getCurrentMember } from "../lib/currentMember";
-import { formatAusDate } from "../lib/dateFormat";
+import { formatAusDate, formatAusDateWithDay } from "../lib/dateFormat";
 
 const SESSION_COLORS = [
   { dot: "bg-teal-500", accent: "border-l-teal-500", text: "text-teal-700", chip: "bg-teal-100 text-teal-700 border-teal-300" },
@@ -256,7 +256,7 @@ export default function BookingSessions() {
                     <div key={s.id} className="bg-white/10 rounded-lg px-3 py-2 flex items-center justify-between">
                       <div>
                         <p className="text-sm font-semibold text-white">{s.title}</p>
-                        <p className="text-xs text-slate-300">{formatAusDate(s.date)} · {s.start_time}{s.location ? ` · ${s.location}` : ""}</p>
+                        <p className="text-xs text-slate-300">{formatAusDateWithDay(s.date)} · {s.start_time}{s.location ? ` · ${s.location}` : ""}</p>
                       </div>
                       <Button size="sm" variant="ghost" className="text-red-300 hover:text-red-200 h-7 text-xs" onClick={() => toggleSelect(s)}>
                         Remove
@@ -280,9 +280,10 @@ export default function BookingSessions() {
             return (
               <Card
                 key={session.id}
-                className={`shadow-lg transition-all cursor-pointer border-2 border-l-4 ${colorForTitle(session.title).accent} ${
-                  isSelected ? "ring-2 ring-teal-400/40 border-teal-500" :
-                  myBk ? "opacity-80 border-border" : "border-transparent"
+                className={`shadow-lg transition-all border-2 border-l-4 ${colorForTitle(session.title).accent} ${
+                  isSelected ? "ring-2 ring-teal-400/40 border-teal-500 cursor-pointer" :
+                  myBk ? "border-green-400 bg-green-50/60" :
+                  "border-transparent cursor-pointer"
                 }`}
                 onClick={() => !myBk && toggleSelect(session)}
               >
@@ -294,10 +295,18 @@ export default function BookingSessions() {
                           {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5 text-slate-400" />}
                         </div>
                       )}
+                      {myBk && (
+                        <div className="mt-0.5 shrink-0">
+                          <div className="w-5 h-5 rounded bg-green-500 flex items-center justify-center">
+                            <CheckSquare className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        </div>
+                      )}
                       <div className="flex-1">
                         <h2 className="font-bold text-base flex items-center gap-2">
                           <span className={`w-2.5 h-2.5 rounded-full ${colorForTitle(session.title).dot}`} />
                           {session.title}
+                          {myBk && <Badge className="bg-green-500 text-white border-green-500 text-xs">Booked</Badge>}
                         </h2>
                         {session.payment_notes && session.payment_notes.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
@@ -344,7 +353,7 @@ export default function BookingSessions() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{formatAusDate(session.date)}</span>
+                    <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{formatAusDateWithDay(session.date)}</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{session.start_time}{session.end_time ? ` – ${session.end_time}` : ""}</span>
                     {session.location && <span className="flex items-center gap-1 col-span-2"><MapPin className="w-3 h-3" />{session.location}</span>}
                     {session.created_by_name && <span className="flex items-center gap-1 col-span-2"><Users className="w-3 h-3" />Created by {session.created_by_name}</span>}
