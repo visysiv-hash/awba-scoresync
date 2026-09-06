@@ -35,7 +35,7 @@ export default function PlayerSelector({ onSelect, onClose }) {
   }, []);
 
   const q = query.trim().toLowerCase();
-  const filtered = q
+  const filtered = q.length >= 2
     ? roster
         .filter(m => m.display_name.toLowerCase().includes(q) || m.full_name.toLowerCase().includes(q))
         .slice(0, 50)
@@ -63,8 +63,8 @@ export default function PlayerSelector({ onSelect, onClose }) {
 
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
-        ) : !q ? (
-          <p className="text-center text-sm text-muted-foreground py-8">Start typing your name to find it.</p>
+        ) : q.length < 2 ? (
+          <p className="text-center text-sm text-muted-foreground py-8">Type at least 2 characters to search.</p>
         ) : filtered.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-8">No matches found.</p>
         ) : (

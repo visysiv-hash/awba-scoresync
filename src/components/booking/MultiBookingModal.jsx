@@ -74,10 +74,12 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
   const people = roster.filter((m, i, arr) => selectedPeople.has(m.display_name) && arr.findIndex(x => x.display_name === m.display_name) === i);
   const q = query.toLowerCase();
   const excl = excludeNames || [];
-  const filtered = roster
-    .filter(m => !excl.includes(m.display_name))
-    .filter(m => m.display_name.toLowerCase().includes(q) || m.full_name.toLowerCase().includes(q))
-    .slice(0, 50);
+  const filtered = q.length >= 2
+    ? roster
+        .filter(m => !excl.includes(m.display_name))
+        .filter(m => m.display_name.toLowerCase().includes(q) || m.full_name.toLowerCase().includes(q))
+        .slice(0, 50)
+    : [];
 
   const handleConfirm = async () => {
     if (selectedPeople.size === 0) {
@@ -199,17 +201,17 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
                   <Input className="pl-9" placeholder="Add a name (kid, family...)..." value={query} onChange={e => setQuery(e.target.value)} />
                 </div>
                 <div className="space-y-1 max-h-48 overflow-y-auto border rounded-lg p-1">
-                  {!q && (
+                  {q.length < 2 && (
                     <p className="text-xs text-muted-foreground text-center py-4">
-                      Type a name to search…
+                      Type at least 2 characters to search…
                     </p>
                   )}
-                  {q && filtered.length === 0 && (
+                  {q.length >= 2 && filtered.length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-4">
                       No matches for "{query}".
                     </p>
                   )}
-                  {q && filtered.map(m => (
+                  {q.length >= 2 && filtered.map(m => (
                     <button
                       key={m.display_name}
                       onClick={() => togglePerson(m.display_name)}
