@@ -3,13 +3,12 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, LogIn, UserPlus } from
+  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus } from
   "lucide-react";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
 import PageBanner from "../components/PageBanner";
 import MyBookingsThisWeek from "../components/MyBookingsThisWeek";
-import AdminPinGate from "../components/AdminPinGate";
 
 const tiles = [
 {
@@ -146,33 +145,10 @@ function Tile({ label, description, icon: Icon, to, gradient, onClick }) {
 
 export default function Home() {
   const [adminExpanded, setAdminExpanded] = useState(false);
-  const [loginGateEnabled, setLoginGateEnabled] = useState(
-    () => localStorage.getItem("awba_member_login_enabled") === "true"
-  );
-  const [showPinGate, setShowPinGate] = useState(false);
 
   useEffect(() => {
     base44.entities.PageVisit.create({ page: 'landing' });
   }, []);
-
-  const doToggle = () => {
-    const next = !loginGateEnabled;
-    setLoginGateEnabled(next);
-    if (next) {
-      localStorage.setItem("awba_member_login_enabled", "true");
-    } else {
-      localStorage.removeItem("awba_member_login_enabled");
-      localStorage.removeItem("awba_member");
-    }
-  };
-
-  const toggleLoginGate = () => {
-    if (sessionStorage.getItem("adminPinUnlocked") === "true") {
-      doToggle();
-    } else {
-      setShowPinGate(true);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 pb-24">
@@ -228,45 +204,10 @@ export default function Home() {
                     <Tile key={tile.label} {...tile} />
                   ))}
                 </div>
-                {/* Member Login Gate toggle — testing only */}
-                <button
-                  onClick={toggleLoginGate}
-                  className={`mt-3 w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                    loginGateEnabled
-                      ? "bg-emerald-500/10 border-emerald-500/30"
-                      : "bg-slate-800/50 border-slate-700"
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                    loginGateEnabled ? "bg-emerald-500" : "bg-slate-700"
-                  }`}>
-                    <LogIn className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-white text-xs font-bold">Member Login Gate</p>
-                    <p className="text-slate-400 text-[10px]">
-                      {loginGateEnabled ? "Enabled — members must log in" : "Disabled — open access"}
-                    </p>
-                  </div>
-                  <div className={`w-10 h-5 rounded-full relative transition-colors ${
-                    loginGateEnabled ? "bg-emerald-500" : "bg-slate-600"
-                  }`}>
-                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${
-                      loginGateEnabled ? "left-5" : "left-0.5"
-                    }`} />
-                  </div>
-                </button>
               </>
             )}
           </div>
       </div>
-
-      {showPinGate && (
-        <AdminPinGate
-          onSuccess={() => { setShowPinGate(false); doToggle(); }}
-          onCancel={() => setShowPinGate(false)}
-        />
-      )}
 
     </div>);
 

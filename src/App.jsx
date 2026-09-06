@@ -29,9 +29,7 @@ import Dashboard from './pages/Dashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
-  const memberLoginEnabled = localStorage.getItem("awba_member_login_enabled") === "true";
   const [memberVerified, setMemberVerified] = useState(() => {
-    if (!memberLoginEnabled) return true; // feature off — skip gate
     try {
       const member = JSON.parse(localStorage.getItem("awba_member") || "null");
       if (!member || !member.login_time) {
@@ -68,8 +66,8 @@ const AuthenticatedApp = () => {
     }
   }
 
-  // Member login gate — only when feature is enabled by admin
-  if (memberLoginEnabled && !memberVerified) {
+  // Member login is mandatory
+  if (!memberVerified) {
     return <MemberLogin onVerified={() => setMemberVerified(true)} />;
   }
 
