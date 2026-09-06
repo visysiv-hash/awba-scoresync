@@ -99,7 +99,7 @@ export default function SessionCalendar({ sessions, selectedIds, toggleDay, myBo
               {hasSessions && !isPast && (
                 <span className="flex gap-0.5 mt-0.5">
                   {cell.sessions.slice(0, 3).map((s, idx) => (
-                    <span key={idx} className={`w-1 h-1 rounded-full ${myBooking(s.id) ? "bg-green-500" : allSelected ? "bg-white" : "bg-teal-500"}`} />
+                    <span key={idx} className={`w-1 h-1 rounded-full ${myBooking(s.id) ? "bg-blue-600" : allSelected ? "bg-white" : "bg-teal-500"}`} />
                   ))}
                 </span>
               )}
@@ -112,7 +112,7 @@ export default function SessionCalendar({ sessions, selectedIds, toggleDay, myBo
       </div>
       <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground border-t pt-2">
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-500" /> Available</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /> You're booked</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-600" /> You're booked</span>
         <span className="flex items-center gap-1"><span className="text-red-500 font-bold text-[10px]">F</span> Full</span>
       </div>
     </div>
