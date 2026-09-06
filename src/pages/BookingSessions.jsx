@@ -137,6 +137,13 @@ export default function BookingSessions() {
   const visibleSessions = filterTitle ? sessions.filter(s => s.title === filterTitle) : [];
   const colorForTitle = (title) => SESSION_COLORS[uniqueTitles.indexOf(title) % SESSION_COLORS.length];
 
+  // All of the current player's upcoming bookings, across every session type
+  const myUpcomingBookings = bookings
+    .filter(b => b.status !== "cancelled" && (b.user_email === player?.email || b.booked_by_email === player?.email))
+    .map(b => ({ booking: b, session: sessions.find(s => s.id === b.session_id) }))
+    .filter(x => x.session)
+    .sort((a, b) => a.session.date.localeCompare(b.session.date));
+
   useEffect(() => {
     if (sessions.length > 0 && uniqueTitles.length === 1 && !filterTitle) {
       setFilterTitle(uniqueTitles[0]);
@@ -168,6 +175,39 @@ export default function BookingSessions() {
             {player ? "Change" : "Select name"}
           </Button>
         </div>
+
+        {player && myUpcomingBookings.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckSquare className="w-4 h-4 text-green-400" />
+              <h2 className="text-sm font-bold text-white">My Booked Sessions ({myUpcomingBookings.length})</h2>
+            </div>
+            <div className="space-y-2">
+              {myUpcomingBookings.map(({ booking: b, session: sess }) => (
+                <div key={b.id} className="bg-green-900/30 border border-green-500/40 rounded-lg px-3 py-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{b.session_title || sess?.title}</p>
+                      <p className="text-xs text-slate-300 flex items-center gap-1 flex-wrap mt-0.5">
+                        <CalendarDays className="w-3 h-3" />{formatAusDateWithDay(sess.date)}
+                        {sess?.start_time && <><Clock className="w-3 h-3 ml-1" />{sess.start_time}{sess.end_time ? `–${sess.end_time}` : ""}</>}
+                        {sess?.location && <><MapPin className="w-3 h-3 ml-1" />{sess.location}</>}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Badge className={b.status === "confirmed" ? "bg-green-500 text-white border-green-500 text-xs" : "bg-amber-500 text-white border-amber-500 text-xs"}>
+                        {b.status === "confirmed" ? "Confirmed" : "Waitlist"}
+                      </Badge>
+                      <Button size="sm" variant="ghost" className="text-red-300 hover:text-red-200 hover:bg-white/10 h-6 text-xs px-2" onClick={() => handleCancel(b)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {sessions.length === 0 && (
           <Card><CardContent className="pt-6 text-center text-muted-foreground">No upcoming sessions available.</CardContent></Card>
