@@ -48,6 +48,8 @@ export default function AdminSessions() {
   });
   const [editingBank, setEditingBank] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [showEmail, setShowEmail] = useState(true);
+  const [sortAlpha, setSortAlpha] = useState(false);
 
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
@@ -573,12 +575,32 @@ export default function AdminSessions() {
                   {isExpanded && (
                     <div className="mt-3 border-t pt-3 space-y-2">
                       {bks.length === 0 && <p className="text-xs text-muted-foreground">No bookings yet.</p>}
+                      {bks.length > 0 && (
+                        <div className="flex items-center gap-3 pb-1">
+                          <button
+                            onClick={() => setShowEmail(v => !v)}
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
+                          >
+                            {showEmail ? "Hide emails" : "Show emails"}
+                          </button>
+                          <button
+                            onClick={() => setSortAlpha(v => !v)}
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors ${
+                              sortAlpha
+                                ? "bg-teal-100 text-teal-700 border-teal-300"
+                                : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            {sortAlpha ? "✓ Sorted A–Z" : "Sort A–Z"}
+                          </button>
+                        </div>
+                      )}
                       {confirmed.length > 0 && (
                         <div>
                           <p className="text-xs font-semibold text-green-700 mb-1">✅ Confirmed ({confirmed.length})</p>
-                          {confirmed.map((b, i) => (
+                          {(sortAlpha ? [...confirmed].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || "")) : confirmed).map((b, i) => (
                             <div key={i} className="flex items-center justify-between gap-2 pl-2">
-                              <p className="text-xs text-slate-700">{i + 1}. {b.user_name} <span className="text-slate-400">({b.user_email})</span></p>
+                              <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
                               <button
                                 onClick={async () => {
                                   try {
@@ -602,9 +624,9 @@ export default function AdminSessions() {
                       {waitlisted.length > 0 && (
                         <div>
                           <p className="text-xs font-semibold text-orange-600 mb-1">⏳ Waitlist ({waitlisted.length})</p>
-                          {waitlisted.map((b, i) => (
+                          {(sortAlpha ? [...waitlisted].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || "")) : waitlisted).map((b, i) => (
                             <div key={i} className="flex items-center justify-between gap-2 pl-2">
-                              <p className="text-xs text-slate-700">{i + 1}. {b.user_name} <span className="text-slate-400">({b.user_email})</span></p>
+                              <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
                               <button
                                 onClick={async () => {
                                   try {
