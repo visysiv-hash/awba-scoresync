@@ -86,7 +86,7 @@ export default function AdminSessions() {
 
   // Unique session titles act as "main headings" (e.g. Tuesday Games, Thursday Games)
   const uniqueTitles = Array.from(new Set(sessions.map(s => s.title)));
-  const filteredSessions = !filterTitle || filterTitle === "All" ? sessions : sessions.filter(s => s.title === filterTitle);
+  const filteredSessions = filterTitle ? sessions.filter(s => s.title === filterTitle) : [];
 
   const handleCreate = async () => {
     if (!form.title || !form.date || !form.start_time || !form.max_spots) {
@@ -510,7 +510,6 @@ export default function AdminSessions() {
               className="w-full h-11 rounded-lg border border-white/20 bg-white/10 text-white px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-400"
             >
               <option value="" disabled className="text-slate-500">Choose a session…</option>
-              <option value="All" className="text-slate-800">All sessions</option>
               {uniqueTitles.map(title => (
                 <option key={title} value={title} className="text-slate-800">{title}</option>
               ))}
@@ -523,7 +522,7 @@ export default function AdminSessions() {
         )}
 
         <div className="space-y-3">
-          {filteredSessions.length === 0 && filterTitle && filterTitle !== "All" && (
+          {filteredSessions.length === 0 && filterTitle && (
             <Card><CardContent className="pt-6 text-center text-muted-foreground text-sm">No sessions for "{filterTitle}".</CardContent></Card>
           )}
           {filteredSessions.map(session => {
