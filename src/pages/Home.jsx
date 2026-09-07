@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus } from
+  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users } from
   "lucide-react";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
@@ -113,11 +113,18 @@ to: "/admin/sponsors",
 gradient: "from-yellow-500 to-amber-600"
 },
 {
-label: "Add Member",
-description: "Add a new member to the sheet",
-icon: UserPlus,
-to: "/admin/add-member",
-gradient: "from-cyan-500 to-teal-700"
+ label: "Add Member",
+ description: "Add a new member to the sheet",
+ icon: UserPlus,
+ to: "/admin/add-member",
+ gradient: "from-cyan-500 to-teal-700"
+},
+{
+ label: "Member List",
+ description: "View all members & mark paid",
+ icon: Users,
+ to: "/admin/members",
+ gradient: "from-emerald-500 to-green-700"
 }];
 
 
