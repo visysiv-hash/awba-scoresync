@@ -48,9 +48,9 @@ export default function AdminSessions() {
   });
   const [editingBank, setEditingBank] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [showEmail, setShowEmail] = useState(true);
-  const [sortAlpha, setSortAlpha] = useState(false);
-  const [publishView, setPublishView] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
+  const [sortAlpha, setSortAlpha] = useState(true);
+  const [publishView, setPublishView] = useState(true);
 
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
@@ -607,7 +607,7 @@ export default function AdminSessions() {
                         </div>
                       )}
                       {publishView ? (
-                        <div className="flex gap-3 overflow-x-auto pb-1">
+                        <div className="flex gap-1 overflow-x-auto pb-1">
                           {(() => {
                             const sorted = sortAlpha
                               ? [...confirmed].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""))
@@ -622,14 +622,14 @@ export default function AdminSessions() {
                             return (
                               <>
                                 {cols.map((col, ci) => (
-                                  <div key={`c${ci}`} className="border rounded-lg overflow-hidden shrink-0">
-                                    <p className="text-xs font-bold text-white bg-green-600 px-2 py-1">Confirmed {ci + 1}</p>
+                                  <div key={`c${ci}`} className="border rounded-md overflow-hidden shrink-0 w-[60px]">
+                                    <p className="text-[10px] font-bold text-white bg-green-600 px-1.5 py-0.5 text-center">Confirmed</p>
                                     {Array.from({ length: 8 }).map((_, ri) => {
                                       const b = col[ri];
                                       return (
-                                        <div key={ri} className="px-2 py-1 border-t text-xs min-h-[28px] flex items-center">
+                                        <div key={ri} className="px-1.5 py-1 border-t text-[10px] min-h-[22px] flex items-center">
                                           {b ? (
-                                            <span className="text-slate-700">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
+                                            <span className="text-slate-700 truncate">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
                                           ) : <span className="text-slate-300">—</span>}
                                         </div>
                                       );
@@ -637,14 +637,14 @@ export default function AdminSessions() {
                                   </div>
                                 ))}
                                 {waitCols.map((col, ci) => (
-                                  <div key={`w${ci}`} className="border rounded-lg overflow-hidden shrink-0">
-                                    <p className="text-xs font-bold text-white bg-orange-500 px-2 py-1">Waitlist {ci + 1}</p>
+                                  <div key={`w${ci}`} className="border rounded-md overflow-hidden shrink-0 w-[60px]">
+                                    <p className="text-[10px] font-bold text-white bg-orange-500 px-1.5 py-0.5 text-center">Waitlist</p>
                                     {Array.from({ length: 8 }).map((_, ri) => {
                                       const b = col[ri];
                                       return (
-                                        <div key={ri} className="px-2 py-1 border-t text-xs min-h-[28px] flex items-center">
+                                        <div key={ri} className="px-1.5 py-1 border-t text-[10px] min-h-[22px] flex items-center">
                                           {b ? (
-                                            <span className="text-slate-700">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
+                                            <span className="text-slate-700 truncate">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
                                           ) : <span className="text-slate-300">—</span>}
                                         </div>
                                       );
