@@ -50,6 +50,7 @@ export default function AdminSessions() {
   const [editingId, setEditingId] = useState(null);
   const [showEmail, setShowEmail] = useState(true);
   const [sortAlpha, setSortAlpha] = useState(false);
+  const [publishView, setPublishView] = useState(false);
 
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
@@ -593,59 +594,122 @@ export default function AdminSessions() {
                           >
                             {sortAlpha ? "✓ Sorted A–Z" : "Sort A–Z"}
                           </button>
+                          <button
+                            onClick={() => setPublishView(v => !v)}
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors ${
+                              publishView
+                                ? "bg-indigo-100 text-indigo-700 border-indigo-300"
+                                : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            {publishView ? "✓ Publish view" : "Publish view"}
+                          </button>
                         </div>
                       )}
-                      {confirmed.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold text-green-700 mb-1">✅ Confirmed ({confirmed.length})</p>
-                          {(sortAlpha ? [...confirmed].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || "")) : confirmed).map((b, i) => (
-                            <div key={i} className="flex items-center justify-between gap-2 pl-2">
-                              <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    const updated = await base44.entities.Booking.update(b.id, { paid: !b.paid });
-                                    setBookings(prev => prev.map(x => x.id === b.id ? { ...x, paid: updated.paid } : x));
-                                    toast.success(updated.paid ? `${b.user_name} marked as paid` : `${b.user_name} marked unpaid`);
-                                  } catch (e) { toast.error("Failed to update payment status."); }
-                                }}
-                                className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors ${
-                                  b.paid
-                                    ? "bg-green-100 text-green-700 border-green-300"
-                                    : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
-                                }`}
-                              >
-                                {b.paid ? "✓ Paid" : "Mark paid"}
-                              </button>
-                            </div>
-                          ))}
+                      {publishView ? (
+                        <div className="flex gap-3 overflow-x-auto pb-1">
+                          {(() => {
+                            const sorted = sortAlpha
+                              ? [...confirmed].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""))
+                              : confirmed;
+                            const cols = [];
+                            for (let i = 0; i < sorted.length; i += 8) cols.push(sorted.slice(i, i + 8));
+                            const waitSorted = sortAlpha
+                              ? [...waitlisted].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""))
+                              : waitlisted;
+                            const waitCols = [];
+                            for (let i = 0; i < waitSorted.length; i += 8) waitCols.push(waitSorted.slice(i, i + 8));
+                            return (
+                              <>
+                                {cols.map((col, ci) => (
+                                  <div key={`c${ci}`} className="border rounded-lg overflow-hidden shrink-0">
+                                    <p className="text-xs font-bold text-white bg-green-600 px-2 py-1">Confirmed {ci + 1}</p>
+                                    {Array.from({ length: 8 }).map((_, ri) => {
+                                      const b = col[ri];
+                                      return (
+                                        <div key={ri} className="px-2 py-1 border-t text-xs min-h-[28px] flex items-center">
+                                          {b ? (
+                                            <span className="text-slate-700">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
+                                          ) : <span className="text-slate-300">—</span>}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ))}
+                                {waitCols.map((col, ci) => (
+                                  <div key={`w${ci}`} className="border rounded-lg overflow-hidden shrink-0">
+                                    <p className="text-xs font-bold text-white bg-orange-500 px-2 py-1">Waitlist {ci + 1}</p>
+                                    {Array.from({ length: 8 }).map((_, ri) => {
+                                      const b = col[ri];
+                                      return (
+                                        <div key={ri} className="px-2 py-1 border-t text-xs min-h-[28px] flex items-center">
+                                          {b ? (
+                                            <span className="text-slate-700">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
+                                          ) : <span className="text-slate-300">—</span>}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ))}
+                              </>
+                            );
+                          })()}
                         </div>
-                      )}
-                      {waitlisted.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold text-orange-600 mb-1">⏳ Waitlist ({waitlisted.length})</p>
-                          {(sortAlpha ? [...waitlisted].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || "")) : waitlisted).map((b, i) => (
-                            <div key={i} className="flex items-center justify-between gap-2 pl-2">
-                              <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    const updated = await base44.entities.Booking.update(b.id, { paid: !b.paid });
-                                    setBookings(prev => prev.map(x => x.id === b.id ? { ...x, paid: updated.paid } : x));
-                                    toast.success(updated.paid ? `${b.user_name} marked as paid` : `${b.user_name} marked unpaid`);
-                                  } catch (e) { toast.error("Failed to update payment status."); }
-                                }}
-                                className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors ${
-                                  b.paid
-                                    ? "bg-green-100 text-green-700 border-green-300"
-                                    : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
-                                }`}
-                              >
-                                {b.paid ? "✓ Paid" : "Mark paid"}
-                              </button>
+                      ) : (
+                        <>
+                          {confirmed.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold text-green-700 mb-1">✅ Confirmed ({confirmed.length})</p>
+                              {(sortAlpha ? [...confirmed].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || "")) : confirmed).map((b, i) => (
+                                <div key={i} className="flex items-center justify-between gap-2 pl-2">
+                                  <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        const updated = await base44.entities.Booking.update(b.id, { paid: !b.paid });
+                                        setBookings(prev => prev.map(x => x.id === b.id ? { ...x, paid: updated.paid } : x));
+                                        toast.success(updated.paid ? `${b.user_name} marked as paid` : `${b.user_name} marked unpaid`);
+                                      } catch (e) { toast.error("Failed to update payment status."); }
+                                    }}
+                                    className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors ${
+                                      b.paid
+                                        ? "bg-green-100 text-green-700 border-green-300"
+                                        : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
+                                    }`}
+                                  >
+                                    {b.paid ? "✓ Paid" : "Mark paid"}
+                                  </button>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
+                          )}
+                          {waitlisted.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold text-orange-600 mb-1">⏳ Waitlist ({waitlisted.length})</p>
+                              {(sortAlpha ? [...waitlisted].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || "")) : waitlisted).map((b, i) => (
+                                <div key={i} className="flex items-center justify-between gap-2 pl-2">
+                                  <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        const updated = await base44.entities.Booking.update(b.id, { paid: !b.paid });
+                                        setBookings(prev => prev.map(x => x.id === b.id ? { ...x, paid: updated.paid } : x));
+                                        toast.success(updated.paid ? `${b.user_name} marked as paid` : `${b.user_name} marked unpaid`);
+                                      } catch (e) { toast.error("Failed to update payment status."); }
+                                    }}
+                                    className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors ${
+                                      b.paid
+                                        ? "bg-green-100 text-green-700 border-green-300"
+                                        : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
+                                    }`}
+                                  >
+                                    {b.paid ? "✓ Paid" : "Mark paid"}
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
