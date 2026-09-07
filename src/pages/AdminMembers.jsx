@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export default function AdminMembers() {
   const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
@@ -14,6 +15,11 @@ export default function AdminMembers() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [payingRow, setPayingRow] = useState(null);
+  const [query, setQuery] = useState("");
+
+  const filteredRows = query.trim()
+    ? rows.filter(r => r.cells.some(c => String(c || "").toLowerCase().includes(query.trim().toLowerCase())))
+    : rows;
 
   const loadData = async () => {
     setLoading(true);
@@ -60,8 +66,17 @@ export default function AdminMembers() {
           <h1 className="text-2xl font-bold text-white">Member List</h1>
         </div>
 
-        <div className="flex justify-between items-center mb-4">
-          <Badge variant="outline" className="text-white border-white/30 bg-white/10">{rows.length} members</Badge>
+        <div className="flex justify-between items-center mb-4 gap-2">
+          <Badge variant="outline" className="text-white border-white/30 bg-white/10 shrink-0">{filteredRows.length} of {rows.length}</Badge>
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search any field…"
+              className="pl-8 h-9 bg-white"
+            />
+          </div>
           <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Refresh
           </Button>
@@ -71,6 +86,8 @@ export default function AdminMembers() {
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>
         ) : rows.length === 0 ? (
           <Card><CardContent className="pt-6 text-center text-muted-foreground">No members found.</CardContent></Card>
+        ) : filteredRows.length === 0 ? (
+          <Card><CardContent className="pt-6 text-center text-muted-foreground">No members match "{query}".</CardContent></Card>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-white/20 bg-white shadow-lg">
             <table className="w-full text-sm">
@@ -84,7 +101,7 @@ export default function AdminMembers() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => (
+                {filteredRows.map((r, i) => (
                   <tr key={r.row_number} className={i % 2 ? "bg-slate-50" : "bg-white"}>
                     <td className="px-3 py-2 text-slate-400 border-b">{i + 1}</td>
                     {r.cells.map((c, ci) => {
