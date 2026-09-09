@@ -3,6 +3,13 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 const MEMBER_SPREADSHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
 const SHEET = "MemberData";
 
+// In-memory cache — survives across warm invocations of the function.
+// Avoids re-fetching the entire sheet on every single login attempt.
+let cachedMembers: any[] | null = null;
+let cachedById: Map<string, any> | null = null;
+let cacheTime = 0;
+const CACHE_TTL = 60_000; // 60 seconds
+
 function normalizeDate(s: string): string {
   if (!s) return "";
   const m = String(s).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -16,32 +23,45 @@ function normalizePhone(s: string): string {
   return String(s || "").replace(/\s+/g, "").replace(/^0+/, "");
 }
 
+async function loadMembers(base44): Promise<{ members: any[]; byId: Map<string, any> }> {
+  if (cachedMembers && cachedById && Date.now() - cacheTime < CACHE_TTL) {
+    return { members: cachedMembers, byId: cachedById };
+  }
+  const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${MEMBER_SPREADSHEET_ID}/values/${SHEET}!A:H`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  const data = await res.json();
+  const rows = (data.values || []).slice(1);
+
+  const members = rows.map(r => ({
+    display_name: String(r[0] || "").trim(),
+    email: String(r[1] || "").trim().toLowerCase(),
+    phone: String(r[2] || "").trim(),
+    full_name: String(r[3] || "").trim(),
+    dob: String(r[4] || "").trim(),
+    gender: String(r[5] || "").trim(),
+    mobile: String(r[6] || "").trim(),
+    bv_member: String(r[7] || "").trim(),
+  })).filter(m => m.bv_member);
+
+  const byId = new Map<string, any>();
+  for (const m of members) byId.set(m.bv_member, m);
+
+  cachedMembers = members;
+  cachedById = byId;
+  cacheTime = Date.now();
+  return { members, byId };
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
-
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${MEMBER_SPREADSHEET_ID}/values/${SHEET}!A:H`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-    const data = await res.json();
-    const rows = (data.values || []).slice(1);
-
-    const members = rows.map(r => ({
-      display_name: String(r[0] || "").trim(),
-      email: String(r[1] || "").trim().toLowerCase(),
-      phone: String(r[2] || "").trim(),
-      full_name: String(r[3] || "").trim(),
-      dob: String(r[4] || "").trim(),
-      gender: String(r[5] || "").trim(),
-      mobile: String(r[6] || "").trim(),
-      bv_member: String(r[7] || "").trim(),
-    })).filter(m => m.bv_member);
-
     const body = await req.json();
+    const { members, byId } = await loadMembers(base44);
 
-    // Mode 1: Verify by BV member ID
+    // Mode 1: Verify by BV member ID (O(1) lookup)
     if (body.memberId) {
-      const member = members.find(m => m.bv_member === String(body.memberId).trim());
+      const member = byId.get(String(body.memberId).trim());
       if (member) {
         return Response.json({
           valid: true,
