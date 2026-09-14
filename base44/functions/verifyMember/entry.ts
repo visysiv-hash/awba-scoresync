@@ -59,9 +59,10 @@ export default async function(req: Request): Promise<Response> {
     const body = await req.json();
     const { members, byId } = await loadMembers(base44);
 
-    // Mode 1: Verify by BV member ID (O(1) lookup)
+    // Mode 1: Verify by BV member ID (O(1) lookup) — ignore leading "BV" prefix
     if (body.memberId) {
-      const member = byId.get(String(body.memberId).trim());
+      const id = String(body.memberId).trim().replace(/^BV/i, "");
+      const member = byId.get(id);
       if (member) {
         return Response.json({
           valid: true,

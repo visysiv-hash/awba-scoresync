@@ -27,7 +27,8 @@ export default function MemberLogin({ onVerified }) {
     setLoading(true);
     setError("");
     try {
-      const res = await base44.functions.invoke("verifyMember", { memberId: memberId.trim() });
+      const cleanId = memberId.trim().replace(/^BV/i, "");
+      const res = await base44.functions.invoke("verifyMember", { memberId: cleanId });
       if (res.data?.valid) {
         localStorage.setItem("awba_member", JSON.stringify({
           ...res.data.member,
