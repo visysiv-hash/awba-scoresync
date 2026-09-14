@@ -202,6 +202,20 @@ export default function AdminSessions() {
     toast.success("Session deleted.");
   };
 
+  // Remove a player from a session: cancels the booking + deletes the row from
+  // the BookingData Google Sheet + promotes the next waitlisted person (all in cancelBooking)
+  const handleRemovePlayer = async (b) => {
+    if (!window.confirm(`Remove ${b.user_name} from this session?\n\nThis cancels their booking and deletes the corresponding row from the booking sheet.`)) return;
+    try {
+      await base44.functions.invoke("cancelBooking", { bookingId: b.id, playerEmail: b.user_email });
+      const refreshed = await base44.entities.Booking.list("-created_date", 1000);
+      setBookings(refreshed);
+      toast.success(`${b.user_name} removed from session.`);
+    } catch (e) {
+      toast.error("Failed to remove player.");
+    }
+  };
+
   const handleDeleteAll = async () => {
     setDeletingAll(true);
     try {
@@ -663,22 +677,31 @@ export default function AdminSessions() {
                               {(sortAlpha ? [...confirmed].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || "")) : confirmed).map((b, i) => (
                                 <div key={i} className="flex items-center justify-between gap-2 pl-2">
                                   <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
-                                  <button
-                                    onClick={async () => {
-                                      try {
-                                        const updated = await base44.entities.Booking.update(b.id, { paid: !b.paid });
-                                        setBookings(prev => prev.map(x => x.id === b.id ? { ...x, paid: updated.paid } : x));
-                                        toast.success(updated.paid ? `${b.user_name} marked as paid` : `${b.user_name} marked unpaid`);
-                                      } catch (e) { toast.error("Failed to update payment status."); }
-                                    }}
-                                    className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors ${
-                                      b.paid
-                                        ? "bg-green-100 text-green-700 border-green-300"
-                                        : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
-                                    }`}
-                                  >
-                                    {b.paid ? "✓ Paid" : "Mark paid"}
-                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          const updated = await base44.entities.Booking.update(b.id, { paid: !b.paid });
+                                          setBookings(prev => prev.map(x => x.id === b.id ? { ...x, paid: updated.paid } : x));
+                                          toast.success(updated.paid ? `${b.user_name} marked as paid` : `${b.user_name} marked unpaid`);
+                                        } catch (e) { toast.error("Failed to update payment status."); }
+                                      }}
+                                      className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors ${
+                                        b.paid
+                                          ? "bg-green-100 text-green-700 border-green-300"
+                                          : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
+                                      }`}
+                                    >
+                                      {b.paid ? "✓ Paid" : "Mark paid"}
+                                    </button>
+                                    <button
+                                      onClick={() => handleRemovePlayer(b)}
+                                      className="shrink-0 h-6 w-6 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-full"
+                                      title="Remove from session"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -689,22 +712,31 @@ export default function AdminSessions() {
                               {(sortAlpha ? [...waitlisted].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || "")) : waitlisted).map((b, i) => (
                                 <div key={i} className="flex items-center justify-between gap-2 pl-2">
                                   <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
-                                  <button
-                                    onClick={async () => {
-                                      try {
-                                        const updated = await base44.entities.Booking.update(b.id, { paid: !b.paid });
-                                        setBookings(prev => prev.map(x => x.id === b.id ? { ...x, paid: updated.paid } : x));
-                                        toast.success(updated.paid ? `${b.user_name} marked as paid` : `${b.user_name} marked unpaid`);
-                                      } catch (e) { toast.error("Failed to update payment status."); }
-                                    }}
-                                    className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors ${
-                                      b.paid
-                                        ? "bg-green-100 text-green-700 border-green-300"
-                                        : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
-                                    }`}
-                                  >
-                                    {b.paid ? "✓ Paid" : "Mark paid"}
-                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          const updated = await base44.entities.Booking.update(b.id, { paid: !b.paid });
+                                          setBookings(prev => prev.map(x => x.id === b.id ? { ...x, paid: updated.paid } : x));
+                                          toast.success(updated.paid ? `${b.user_name} marked as paid` : `${b.user_name} marked unpaid`);
+                                        } catch (e) { toast.error("Failed to update payment status."); }
+                                      }}
+                                      className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors ${
+                                        b.paid
+                                          ? "bg-green-100 text-green-700 border-green-300"
+                                          : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
+                                      }`}
+                                    >
+                                      {b.paid ? "✓ Paid" : "Mark paid"}
+                                    </button>
+                                    <button
+                                      onClick={() => handleRemovePlayer(b)}
+                                      className="shrink-0 h-6 w-6 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-full"
+                                      title="Remove from session"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
