@@ -629,7 +629,7 @@ export default function AdminSessions() {
                                       return (
                                         <div key={ri} className="px-1.5 py-1 border-t text-[10px] min-h-[22px] flex items-center">
                                           {b ? (
-                                            <span className="text-slate-700 truncate">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
+                                            <span className="text-slate-700 break-words leading-tight">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
                                           ) : <span className="text-slate-300">—</span>}
                                         </div>
                                       );
@@ -644,7 +644,7 @@ export default function AdminSessions() {
                                       return (
                                         <div key={ri} className="px-1.5 py-1 border-t text-[10px] min-h-[22px] flex items-center">
                                           {b ? (
-                                            <span className="text-slate-700 truncate">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
+                                            <span className="text-slate-700 break-words leading-tight">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
                                           ) : <span className="text-slate-300">—</span>}
                                         </div>
                                       );
