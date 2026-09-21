@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users } from
+  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut } from
   "lucide-react";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
@@ -161,8 +161,19 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 pb-24">
       <div className="max-w-lg mx-auto">
         {/* Header */}
-        <div className="text-center pt-0 pb-2">
+        <div className="flex items-center justify-between pt-0 pb-2">
+          <div className="w-8" />
           <PageBanner className="h-16" />
+          <button
+            onClick={() => {
+              localStorage.removeItem("awba_member");
+              window.location.reload();
+            }}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 transition-colors"
+            title="Logout"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Sponsor Strip */}
