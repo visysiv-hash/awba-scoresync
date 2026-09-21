@@ -51,6 +51,7 @@ export default function AdminSessions() {
   const [showEmail, setShowEmail] = useState(false);
   const [sortAlpha, setSortAlpha] = useState(true);
   const [publishView, setPublishView] = useState(true);
+  const [showPast, setShowPast] = useState(false);
 
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
@@ -89,7 +90,10 @@ export default function AdminSessions() {
 
   // Unique session titles act as "main headings" (e.g. Tuesday Games, Thursday Games)
   const uniqueTitles = Array.from(new Set(sessions.map(s => s.title)));
-  const filteredSessions = filterTitle ? sessions.filter(s => s.title === filterTitle) : [];
+  const todaysStr = todayStr();
+  const filteredSessions = filterTitle
+    ? sessions.filter(s => s.title === filterTitle && (showPast || s.date >= todaysStr))
+    : [];
 
   const handleCreate = async () => {
     if (!form.title || !form.date || !form.start_time || !form.max_spots) {
@@ -531,6 +535,16 @@ export default function AdminSessions() {
                 <option key={title} value={title} className="text-slate-800">{title}</option>
               ))}
             </select>
+            <button
+              onClick={() => setShowPast(v => !v)}
+              className={`mt-2 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+                showPast
+                  ? "bg-amber-100 text-amber-700 border-amber-300"
+                  : "bg-white/10 text-slate-300 border-white/20 hover:bg-white/20"
+              }`}
+            >
+              {showPast ? "✓ Showing past sessions" : "Show past sessions"}
+            </button>
           </div>
         )}
 
@@ -540,7 +554,9 @@ export default function AdminSessions() {
 
         <div className="space-y-3">
           {filteredSessions.length === 0 && filterTitle && (
-            <Card><CardContent className="pt-6 text-center text-muted-foreground text-sm">No sessions for "{filterTitle}".</CardContent></Card>
+            <Card><CardContent className="pt-6 text-center text-muted-foreground text-sm">
+              No upcoming sessions for "{filterTitle}".{!showPast && " Toggle \"Show past sessions\" to view past ones."}
+            </CardContent></Card>
           )}
           {filteredSessions.map(session => {
             const bks = sessionBookings(session.id);
