@@ -11,7 +11,7 @@ const REGISTRATION_URL = "https://www.revolutionise.com.au/awba/registration";
 
 export default function MemberLogin({ onVerified }) {
   const [mode, setMode] = useState("login");
-  const [memberId, setMemberId] = useState("");
+  const [memberId, setMemberId] = useState(() => localStorage.getItem("awba_last_member_id") || "");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [dob, setDob] = useState("");
@@ -30,6 +30,7 @@ export default function MemberLogin({ onVerified }) {
       const cleanId = memberId.trim().replace(/^BV/i, "");
       const res = await base44.functions.invoke("verifyMember", { memberId: cleanId });
       if (res.data?.valid) {
+        localStorage.setItem("awba_last_member_id", memberId.trim());
         localStorage.setItem("awba_member", JSON.stringify({
           ...res.data.member,
           login_time: Date.now(),
