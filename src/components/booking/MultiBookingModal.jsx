@@ -67,8 +67,7 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
 
   const selectOthers = () => {
     setMode("others");
-    // ensure self stays selected when expanding
-    if (player?.name) setSelectedPeople(prev => new Set(prev).add(player.name));
+    // Don't force self — let the user book for others without booking themselves
   };
 
   const people = roster.filter((m, i, arr) => selectedPeople.has(m.display_name) && arr.findIndex(x => x.display_name === m.display_name) === i);
@@ -222,7 +221,21 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">{selectedPeople.size} selected</p>
+                {selectedPeople.size > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {people.map(p => (
+                      <button
+                        key={p.display_name}
+                        onClick={() => togglePerson(p.display_name)}
+                        className="flex items-center gap-1 rounded-full bg-teal-100 text-teal-800 border border-teal-300 px-2.5 py-1 text-xs font-semibold hover:bg-teal-200"
+                      >
+                        {p.display_name}{p.display_name === player?.name && " (you)"}
+                        <X className="w-3 h-3" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">{selectedPeople.size} selected{selectedPeople.size === 0 && " — tap a name above to add"}</p>
               </>
             )}
           </div>
