@@ -19,6 +19,11 @@ function getWeekRange() {
   return { start: monday, end: sunday };
 }
 
+// Today's date in Melbourne time as YYYY-MM-DD (lexicographically comparable)
+function todayMelbourne() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
+}
+
 function fmt(dateStr) {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
@@ -41,9 +46,10 @@ export default function MyBookingsThisWeek() {
           base44.entities.Booking.list("-created_date", 500),
         ]);
         const { start, end } = getWeekRange();
+        const today = todayMelbourne();
         const inWeek = sessions.filter(s => {
           const d = new Date(s.date + "T00:00:00");
-          return d >= start && d <= end;
+          return d >= start && d <= end && s.date >= today;
         });
         const sessionMap = new Map(inWeek.map(s => [s.id, s]));
         const my = bookings
