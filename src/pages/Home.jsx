@@ -8,7 +8,7 @@ import {
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
 import PageBanner from "../components/PageBanner";
-import MyBookingsThisWeek from "../components/MyBookingsThisWeek";
+import MyBookingsCard from "../components/MyBookingsCard";
 
 const tiles = [
 {
@@ -191,9 +191,9 @@ export default function Home() {
           <NewsTicker />
         </div>
 
-        {/* My bookings this week */}
+        {/* My bookings */}
         <div className="mt-4">
-          <MyBookingsThisWeek />
+          <MyBookingsCard />
         </div>
 
         {/* Main tiles */}
