@@ -91,22 +91,39 @@ export default function PlayerAvailability() {
   };
 
   const handleExportToSheet = async () => {
-    const names = schedulePlayers.map((p) => p.name);
-    if (names.length === 0) {
-      toast.error("No players available to export.");
-      return;
-    }
     if (!window.confirm(
-      `Write ${names.length} player${names.length === 1 ? "" : "s"} (rating-sorted, groups of 8) to the "ListOfNames" sheet?\n\nThis clears the existing names in columns D, G, J, M, P, S first.`
+      `This will refresh today's available players from booking data, update the PlayerAvailability sheet, then send the rating-sorted names in groups of 8 to the ListOfNames sheet. Continue?`
     )) return;
     setExporting(true);
     try {
-      const res = await base44.functions.invoke("writeAvailabilityGroups", { players: names });
+      // Step 1: Fill the player list from today's bookings (updates the sheet + returns names)
+      const fillRes = await base44.functions.invoke("fillPlayersList", {});
+      const todayPlayers = fillRes.data?.players || [];
+      if (todayPlayers.length === 0) {
+        toast.error("No players found booked for today.");
+        return;
+      }
+      // Refresh the available player list shown on this page
+      setAvailablePlayers(todayPlayers);
+
+      // Step 2: Rating-sort the refreshed names (using existing ratings), nulls last
+      const names = todayPlayers
+        .map((name) => ({ name, rating: ratingMap[name]?.rating ?? null }))
+        .sort((a, b) => {
+          if (a.rating === null && b.rating === null) return 0;
+          if (a.rating === null) return 1;
+          if (b.rating === null) return -1;
+          return a.rating - b.rating;
+        })
+        .map((p) => p.name);
+
+      // Step 3: Write groups of 8 to the ListOfNames sheet
+      const writeRes = await base44.functions.invoke("writeAvailabilityGroups", { players: names });
       toast.success(
-        `Wrote ${res.data?.totalPlayers} players across ${res.data?.groupsWritten} group${res.data?.groupsWritten === 1 ? "" : "s"} to the sheet.`
+        `Refreshed ${todayPlayers.length} available player${todayPlayers.length === 1 ? "" : "s"} and wrote ${writeRes.data?.totalPlayers} across ${writeRes.data?.groupsWritten} group${writeRes.data?.groupsWritten === 1 ? "" : "s"}.`
       );
     } catch (e) {
-      toast.error("Failed to write to sheet.");
+      toast.error("Failed to refresh and send players.");
     } finally {
       setExporting(false);
     }
@@ -146,7 +163,7 @@ export default function PlayerAvailability() {
               className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold"
             >
               {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-              {exporting ? "Writing to sheet…" : "Send names to ListOfNames sheet"}
+              {exporting ? "Refreshing & sending…" : "Refresh & send names to sheet"}
             </Button>
           )}
 
