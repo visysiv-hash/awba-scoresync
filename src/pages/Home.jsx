@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { getCurrentMember } from "../lib/currentMember";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
   User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut } from
@@ -152,6 +153,8 @@ function Tile({ label, description, icon: Icon, to, gradient, onClick }) {
 
 export default function Home() {
   const [adminExpanded, setAdminExpanded] = useState(false);
+  const member = getCurrentMember();
+  const isAdmin = member?.is_admin === true;
 
   useEffect(() => {
     base44.entities.PageVisit.create({ page: 'landing' });
@@ -202,7 +205,8 @@ export default function Home() {
         </div>
 
         {/* Admin section */}
-        <div className="mt-6">
+        {isAdmin && (
+          <div className="mt-6">
             <button
               onClick={() => setAdminExpanded(v => !v)}
               className="w-full flex items-center gap-3 py-2"
@@ -225,6 +229,7 @@ export default function Home() {
               </>
             )}
           </div>
+        )}
       </div>
 
     </div>);

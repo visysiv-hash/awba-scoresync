@@ -28,7 +28,7 @@ async function loadMembers(base44): Promise<{ members: any[]; byId: Map<string, 
     return { members: cachedMembers, byId: cachedById };
   }
   const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${MEMBER_SPREADSHEET_ID}/values/${SHEET}!A:H`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${MEMBER_SPREADSHEET_ID}/values/${SHEET}!A:L`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   const data = await res.json();
   const rows = (data.values || []).slice(1);
@@ -42,6 +42,7 @@ async function loadMembers(base44): Promise<{ members: any[]; byId: Map<string, 
     gender: String(r[5] || "").trim(),
     mobile: String(r[6] || "").trim(),
     bv_member: String(r[7] || "").trim(),
+    is_admin: String(r[11] || "").trim().toLowerCase() === "yes",
   })).filter(m => m.bv_member);
 
   const byId = new Map<string, any>();
@@ -71,6 +72,7 @@ export default async function(req: Request): Promise<Response> {
             full_name: member.full_name,
             email: member.email,
             bv_member: member.bv_member,
+            is_admin: member.is_admin,
           }
         });
       }
