@@ -42,7 +42,7 @@ async function loadMembers(base44): Promise<{ members: any[]; byId: Map<string, 
     gender: String(r[5] || "").trim(),
     mobile: String(r[6] || "").trim(),
     bv_member: String(r[7] || "").trim(),
-    is_admin: String(r[11] || "").trim().toLowerCase() === "yes",
+    is_admin: ["yes", "y", "true", "1"].includes(String(r[11] || "").trim().toLowerCase()),
   })).filter(m => m.bv_member);
 
   const byId = new Map<string, any>();
