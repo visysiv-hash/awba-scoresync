@@ -637,7 +637,7 @@ export default function AdminSessions() {
                         </div>
                       )}
                       {publishView ? (
-                        <div className="flex gap-1 overflow-x-auto pb-1">
+                        <div className="flex flex-wrap gap-1">
                           {(() => {
                             const sorted = sortAlpha
                               ? [...confirmed].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || ""))
