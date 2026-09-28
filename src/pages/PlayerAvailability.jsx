@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users } from "lucide-react";
+import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SuggestedGroups from "../components/SuggestedGroups";
 import PageBanner from "../components/PageBanner";
+import { getCurrentMember } from "../lib/currentMember";
+import { toast } from "sonner";
 
 export default function PlayerAvailability() {
   const [availablePlayers, setAvailablePlayers] = useState([]);
@@ -13,6 +15,8 @@ export default function PlayerAvailability() {
   const [sortField, setSortField] = useState("rating");
   const [sortDir, setSortDir] = useState("asc");
   const [showGroups, setShowGroups] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const isAdmin = getCurrentMember()?.is_admin === true;
 
   useEffect(() => {
     Promise.all([
@@ -86,6 +90,28 @@ export default function PlayerAvailability() {
     return sortDir === "asc" ? <ArrowUp className="w-3 h-3 text-yellow-500" /> : <ArrowDown className="w-3 h-3 text-yellow-500" />;
   };
 
+  const handleExportToSheet = async () => {
+    const names = schedulePlayers.map((p) => p.name);
+    if (names.length === 0) {
+      toast.error("No players available to export.");
+      return;
+    }
+    if (!window.confirm(
+      `Write ${names.length} player${names.length === 1 ? "" : "s"} (rating-sorted, groups of 8) to the "ListOfNames" sheet?\n\nThis clears the existing names in columns D, G, J, M, P, S first.`
+    )) return;
+    setExporting(true);
+    try {
+      const res = await base44.functions.invoke("writeAvailabilityGroups", { players: names });
+      toast.success(
+        `Wrote ${res.data?.totalPlayers} players across ${res.data?.groupsWritten} group${res.data?.groupsWritten === 1 ? "" : "s"} to the sheet.`
+      );
+    } catch (e) {
+      toast.error("Failed to write to sheet.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 pb-20">
       <div className="max-w-lg mx-auto space-y-4">
@@ -112,6 +138,17 @@ export default function PlayerAvailability() {
             <Users className="w-4 h-4 mr-2" />
             {showGroups ? "Hide Groups" : "Show Groups"}
           </Button>
+
+          {isAdmin && (
+            <Button
+              onClick={handleExportToSheet}
+              disabled={exporting}
+              className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold"
+            >
+              {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+              {exporting ? "Writing to sheet…" : "Send names to ListOfNames sheet"}
+            </Button>
+          )}
 
           {showGroups && <SuggestedGroups players={schedulePlayers} />}
 
