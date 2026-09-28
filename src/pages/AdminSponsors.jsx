@@ -18,7 +18,7 @@ const emptyForm = () => ({
 });
 
 export default function AdminSponsors() {
-  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
+  const [pinUnlocked, setPinUnlocked] = useState(false);
   const [sponsors, setSponsors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(emptyForm());

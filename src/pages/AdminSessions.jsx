@@ -32,7 +32,7 @@ const loadDefaultBank = () => {
 };
 
 export default function AdminSessions() {
-  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
+  const [pinUnlocked, setPinUnlocked] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [form, setForm] = useState(emptyForm());

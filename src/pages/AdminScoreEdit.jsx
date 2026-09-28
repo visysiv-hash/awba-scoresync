@@ -9,7 +9,7 @@ import AdminPinGate from "../components/AdminPinGate";
 import PageBanner from "../components/PageBanner";
 
 export default function AdminScoreEdit() {
-  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
+  const [pinUnlocked, setPinUnlocked] = useState(false);
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingKey, setEditingKey] = useState(null);

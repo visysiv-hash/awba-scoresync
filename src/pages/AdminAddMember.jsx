@@ -35,7 +35,7 @@ function sanitizeMobile(raw) {
 }
 
 export default function AdminAddMember() {
-  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
+  const [pinUnlocked, setPinUnlocked] = useState(false);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [lastAdded, setLastAdded] = useState(null);

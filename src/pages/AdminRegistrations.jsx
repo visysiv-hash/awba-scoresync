@@ -14,7 +14,7 @@ const statusColor = { pending: "bg-yellow-100 text-yellow-800", approved: "bg-gr
 const paymentColor = { unpaid: "bg-slate-100 text-slate-600", paid: "bg-emerald-100 text-emerald-700" };
 
 export default function AdminRegistrations() {
-  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
+  const [pinUnlocked, setPinUnlocked] = useState(false);
   const [seasons, setSeasons] = useState([]);
   const [registrations, setRegistrations] = useState([]);
   const [selectedSeason, setSelectedSeason] = useState(null);

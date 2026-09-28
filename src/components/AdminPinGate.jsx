@@ -21,7 +21,6 @@ export default function AdminPinGate({ onSuccess, onCancel }) {
       const res = await base44.functions.invoke("verifyAdminPin", { pin: pin.trim() });
       setPinLoading(false);
       if (res.data?.success) {
-        sessionStorage.setItem("adminPinUnlocked", "true");
         onSuccess();
       } else {
         setPinError(true);

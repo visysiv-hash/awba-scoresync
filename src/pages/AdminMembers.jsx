@@ -10,7 +10,7 @@ import { Loader2, RefreshCw, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export default function AdminMembers() {
-  const [pinUnlocked, setPinUnlocked] = useState(() => sessionStorage.getItem("adminPinUnlocked") === "true");
+  const [pinUnlocked, setPinUnlocked] = useState(false);
   const [headers, setHeaders] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
