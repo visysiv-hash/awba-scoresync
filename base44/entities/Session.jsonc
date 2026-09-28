@@ -87,6 +87,11 @@
       "type": "string",
       "title": "Notes"
     },
+    "bookings_open": {
+      "type": "boolean",
+      "title": "Bookings Open",
+      "default": true
+    },
     "created_by_name": {
       "type": "string",
       "title": "Created By"

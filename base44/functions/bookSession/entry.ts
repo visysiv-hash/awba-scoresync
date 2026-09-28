@@ -45,6 +45,11 @@ Deno.serve(async (req) => {
   const session = sessions[0];
   if (!session) return Response.json({ error: 'Session not found' }, { status: 404 });
 
+  // Block bookings when admin has closed them for this session
+  if (session.bookings_open === false) {
+    return Response.json({ error: 'Bookings are currently closed for this session.' }, { status: 400 });
+  }
+
   // Check if this person already has an active booking for this session
   // Key on name (not email) so family members sharing one email are distinct people
   const existingBookings = await base44.asServiceRole.entities.Booking.filter({ session_id: sessionId, user_name: playerName });

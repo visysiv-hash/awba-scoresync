@@ -42,7 +42,7 @@ export default function BookingSessions() {
   const [myBookingsExpanded, setMyBookingsExpanded] = useState(false);
 
   const selectNextN = (n) => {
-    const available = visibleSessions.filter(s => !myBooking(s.id) && confirmedCount(s.id) < s.max_spots);
+    const available = visibleSessions.filter(s => !myBooking(s.id) && s.bookings_open !== false && confirmedCount(s.id) < s.max_spots);
     const next = new Set(selectedIds);
     available.slice(0, n).forEach(s => next.add(s.id));
     setSelectedIds(next);
@@ -91,8 +91,8 @@ export default function BookingSessions() {
   );
 
   const toggleSelect = (session) => {
-    // Can't select if already booked
-    if (myBooking(session.id)) return;
+    // Can't select if already booked or bookings closed
+    if (myBooking(session.id) || session.bookings_open === false) return;
     setSelectedIds(prev => {
       const next = new Set(prev);
       next.has(session.id) ? next.delete(session.id) : next.add(session.id);
@@ -336,7 +336,7 @@ export default function BookingSessions() {
                   myBk ? "border-green-400 bg-green-50/60" :
                   "border-transparent cursor-pointer"
                 }`}
-                onClick={() => !myBk && toggleSelect(session)}
+                onClick={() => !myBk && session.bookings_open !== false && toggleSelect(session)}
               >
                 <CardContent className="pt-4 pb-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -358,6 +358,7 @@ export default function BookingSessions() {
                           <span className={`w-2.5 h-2.5 rounded-full ${colorForTitle(session.title).dot}`} />
                           {session.title}
                           {myBk && <Badge className="bg-green-500 text-white border-green-500 text-xs">Booked</Badge>}
+                          {session.bookings_open === false && !myBk && <Badge className="bg-red-500 text-white border-red-500 text-xs">Bookings closed</Badge>}
                         </h2>
                         {session.payment_notes && session.payment_notes.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">

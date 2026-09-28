@@ -8,7 +8,7 @@ const SHEET = "MemberData";
 let cachedMembers: any[] | null = null;
 let cachedById: Map<string, any> | null = null;
 let cacheTime = 0;
-const CACHE_TTL = 60_000; // 60 seconds
+const CACHE_TTL = 300_000; // 5 minutes — reduces slow Google Sheet fetches on login
 
 function normalizeDate(s: string): string {
   if (!s) return "";

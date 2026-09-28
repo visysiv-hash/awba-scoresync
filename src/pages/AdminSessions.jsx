@@ -20,7 +20,7 @@ import {
 const emptyForm = () => ({
   title: "", date: "", start_time: "", end_time: "",
   location: "", max_spots: 10, max_waitlist: "", payment_notes: [],
-  bank_details: null,
+  bank_details: null, bookings_open: true,
   // recurring
   recurring: false, recur_weeks: 4,
 });
@@ -113,6 +113,7 @@ export default function AdminSessions() {
 
     const baseData = {
       title: form.title,
+      bookings_open: form.bookings_open !== false,
       start_time: form.start_time,
       end_time: form.end_time || undefined,
       location: form.location || undefined,
@@ -187,6 +188,7 @@ export default function AdminSessions() {
         ? session.payment_notes.map(p => ({ type: p.type, amount: p.amount ?? "", label: p.label || "" }))
         : [],
       bank_details: session.bank_details || null,
+      bookings_open: session.bookings_open !== false,
       recurring: false, recur_weeks: 4,
     });
     setShowForm(true);
@@ -217,6 +219,17 @@ export default function AdminSessions() {
       toast.success(`${b.user_name} removed from session.`);
     } catch (e) {
       toast.error("Failed to remove player.");
+    }
+  };
+
+  const toggleBookingsOpen = async (session) => {
+    const next = session.bookings_open === false;
+    try {
+      const updated = await base44.entities.Session.update(session.id, { bookings_open: next });
+      setSessions(prev => prev.map(s => s.id === session.id ? { ...s, ...updated } : s));
+      toast.success(next ? "Bookings opened." : "Bookings closed.");
+    } catch (e) {
+      toast.error("Failed to update booking status.");
     }
   };
 
@@ -483,6 +496,24 @@ export default function AdminSessions() {
                   )}
                 </div>
 
+                {/* Bookings open toggle */}
+                <div className="col-span-2 border-t pt-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="bookings_open"
+                      checked={form.bookings_open !== false}
+                      onChange={e => setForm(p => ({ ...p, bookings_open: e.target.checked }))}
+                    />
+                    <Label htmlFor="bookings_open" className="flex items-center gap-1.5">
+                      {form.bookings_open === false
+                        ? <span className="text-red-600 font-semibold">🚫 Bookings closed</span>
+                        : <span className="text-green-700 font-semibold">✅ Bookings open</span>}
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-6 mt-0.5">Turn off to stop taking new bookings for this session.</p>
+                </div>
+
                 {/* Recurring option */}
                 {!editingId && (
                 <div className="col-span-2 border-t pt-3 space-y-2">
@@ -572,6 +603,9 @@ export default function AdminSessions() {
                       <p className="font-semibold text-sm">{session.title}</p>
                       <p className="text-xs text-muted-foreground">{formatAusDate(session.date)} · {session.start_time}{session.end_time ? ` – ${session.end_time}` : ""}</p>
                       <div className="flex gap-2 mt-1 flex-wrap">
+                        {session.bookings_open === false && (
+                          <Badge variant="outline" className="text-xs text-red-600 border-red-300 bg-red-50">🚫 Bookings closed</Badge>
+                        )}
                         <Badge variant="outline" className="text-xs">{confirmed.length}/{session.max_spots} confirmed</Badge>
                         {session.max_waitlist != null && (
                           <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
@@ -608,6 +642,16 @@ export default function AdminSessions() {
                       {bks.length === 0 && <p className="text-xs text-muted-foreground">No bookings yet.</p>}
                       {bks.length > 0 && (
                         <div className="flex items-center gap-3 pb-1">
+                          <button
+                            onClick={() => toggleBookingsOpen(session)}
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors ${
+                              session.bookings_open === false
+                                ? "bg-green-100 text-green-700 border-green-300"
+                                : "bg-red-100 text-red-700 border-red-300"
+                            }`}
+                          >
+                            {session.bookings_open === false ? "Open bookings" : "Close bookings"}
+                          </button>
                           <button
                             onClick={() => setShowEmail(v => !v)}
                             className="text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
