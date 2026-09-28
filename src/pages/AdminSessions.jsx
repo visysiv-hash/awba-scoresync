@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { addWeeks } from "date-fns";
 import { getCurrentMember } from "../lib/currentMember";
 import { formatAusDate } from "../lib/dateFormat";
@@ -624,7 +625,17 @@ export default function AdminSessions() {
                           : session.payment_required && <Badge variant="outline" className="text-xs text-blue-600 border-blue-300">💳 ${session.price}</Badge>}
                       </div>
                     </div>
-                    <div className="flex gap-1 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <Switch
+                          checked={session.bookings_open !== false}
+                          onCheckedChange={() => toggleBookingsOpen(session)}
+                          className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-red-400"
+                        />
+                        <span className={`text-[10px] font-semibold ${session.bookings_open === false ? "text-red-600" : "text-green-700"}`}>
+                          {session.bookings_open === false ? "Closed" : "Open"}
+                        </span>
+                      </div>
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setExpandedSession(isExpanded ? null : session.id)}>
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </Button>
