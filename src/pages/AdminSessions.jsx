@@ -233,6 +233,21 @@ export default function AdminSessions() {
     toast.success("Session deleted.");
   };
 
+  // Delete every session belonging to a title (including past dates not shown).
+  const handleDeleteByTitle = async (title) => {
+    const matching = sessions.filter(s => s.title === title);
+    if (matching.length === 0) return;
+    if (!window.confirm(`Delete all ${matching.length} session${matching.length === 1 ? "" : "s"} for "${title}"?\n\nThis removes past and upcoming dates. Existing bookings remain but will no longer be linked.`)) return;
+    try {
+      await base44.entities.Session.deleteMany({ title });
+      setSessions(prev => prev.filter(s => s.title !== title));
+      setFilterTitle("");
+      toast.success(`Deleted all ${matching.length} "${title}" sessions.`);
+    } catch (e) {
+      toast.error("Failed to delete sessions.");
+    }
+  };
+
   // Remove a player from a session: cancels the booking + deletes the row from
   // the BookingData Google Sheet + promotes the next waitlisted person (all in cancelBooking)
   const handleRemovePlayer = async (b) => {
@@ -601,6 +616,14 @@ export default function AdminSessions() {
             >
               {showPast ? "✓ Showing past sessions" : "Show past sessions"}
             </button>
+            {filterTitle && (
+              <button
+                onClick={() => handleDeleteByTitle(filterTitle)}
+                className="mt-2 ml-2 text-xs font-semibold px-2.5 py-1 rounded-full border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+              >
+                🗑 Delete all "{filterTitle}"
+              </button>
+            )}
           </div>
         )}
 
