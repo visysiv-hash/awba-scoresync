@@ -24,17 +24,21 @@ Deno.serve(async (req) => {
     const scheduleRows = (scheduleData.values || []).slice(1);
     const scoresRows = (scoresData.values || []); // no header row in Scores sheet
 
-    // Build a hash map of scores for O(1) lookup (keyed by net|game|teamA|teamB, both orderings)
-    const norm = (v) => String(v || "").trim().toLowerCase();
+    // Build a hash map of scores keyed by net|game only, so player swaps and
+    // 1-v-2 entries still link to the scheduled slot. If multiple rows exist
+    // for the same net|game, keep the latest app-submitted one (has a
+    // timestamp in column K); fall back to the last row seen otherwise.
     const scoreMap = new Map();
     for (const s of scoresRows) {
       const net = String(s[0]).trim();
       const game = String(s[1]).trim();
-      const a = norm(s[2]);
-      const b = norm(s[3]);
       if (!net || !game) continue;
-      scoreMap.set(`${net}|${game}|${a}|${b}`, s);
-      scoreMap.set(`${net}|${game}|${b}|${a}`, s);
+      const key = `${net}|${game}`;
+      const existing = scoreMap.get(key);
+      const hasTimestamp = !!String(s[10] || "").trim();
+      if (!existing || hasTimestamp) {
+        scoreMap.set(key, s);
+      }
     }
 
     const games = scheduleRows
@@ -45,9 +49,7 @@ Deno.serve(async (req) => {
         const team1 = row[2] || "";
         const team2 = row[3] || "";
 
-        const t1 = norm(team1);
-        const t2 = norm(team2);
-        const scoreRow = scoreMap.get(`${net}|${game}|${t1}|${t2}`);
+        const scoreRow = scoreMap.get(`${net}|${game}`);
 
         if (scoreRow) {
           // App-submitted: A=net,B=game,C=t1,D=t2,E=r1s1,F=r1s2,G=r2s1,H=r2s2,I=tot1,J=tot2,K=ts

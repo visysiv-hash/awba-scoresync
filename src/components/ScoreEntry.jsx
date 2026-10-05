@@ -3,6 +3,7 @@ import confetti from "canvas-confetti";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
@@ -17,6 +18,8 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
   const [netNumber, setNetNumber] = useState("");
   const [gameNumber, setGameNumber] = useState("");
   const [gameDetails, setGameDetails] = useState(null);
+  const [team1, setTeam1] = useState("");
+  const [team2, setTeam2] = useState("");
   const [rounds, setRounds] = useState(emptyRounds());
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -29,6 +32,8 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
       setNetNumber(String(prefilledGame.net));
       setGameNumber(String(prefilledGame.game));
       setGameDetails(prefilledGame);
+      setTeam1(prefilledGame.team1 || "");
+      setTeam2(prefilledGame.team2 || "");
       setRounds(emptyRounds());
       setSubmitted(false);
       onPrefilledUsed?.();
@@ -50,6 +55,8 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
       toast.error(res.data.error);
     } else {
       setGameDetails(res.data);
+      setTeam1(res.data.team1 || "");
+      setTeam2(res.data.team2 || "");
     }
   };
 
@@ -83,8 +90,8 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
     const res = await base44.functions.invoke("submitScore", {
       netNumber: gameDetails.net,
       gameNumber: gameDetails.game,
-      team1: gameDetails.team1,
-      team2: gameDetails.team2,
+      team1,
+      team2,
       rounds,
       total1,
       total2,
@@ -102,6 +109,10 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
   };
 
   const handleSubmit = async () => {
+    if (!team1.trim() || !team2.trim()) {
+      toast.error("Please enter names for both teams.");
+      return;
+    }
     if (!validateRounds()) return;
     if (hasZeroScore()) {
       setShowZeroConfirm(true);
@@ -114,6 +125,8 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
     setNetNumber("");
     setGameNumber("");
     setGameDetails(null);
+    setTeam1("");
+    setTeam2("");
     setRounds(emptyRounds());
     setSubmitted(false);
   };
@@ -160,16 +173,27 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
 
         {gameDetails && !submitted && (
           <div className="space-y-5 border-t pt-5">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Net {gameDetails.net} · Match {gameDetails.game}</p>
-              <div className="flex items-center justify-center gap-4">
-                <span className="text-lg font-bold text-blue-600">{gameDetails.team1}</span>
-                <span className="text-muted-foreground font-semibold">VS</span>
-                <span className="text-lg font-bold text-red-600">{gameDetails.team2}</span>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground text-center">Net {gameDetails.net} · Match {gameDetails.game}</p>
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                <Input
+                  value={team1}
+                  onChange={(e) => setTeam1(e.target.value)}
+                  className="text-lg font-bold text-blue-600 border-blue-200 text-center"
+                  placeholder="Team 1"
+                />
+                <span className="text-muted-foreground font-semibold text-sm">VS</span>
+                <Input
+                  value={team2}
+                  onChange={(e) => setTeam2(e.target.value)}
+                  className="text-lg font-bold text-red-600 border-red-200 text-center"
+                  placeholder="Team 2"
+                />
               </div>
+              <p className="text-xs text-muted-foreground text-center">Edit a name if players were swapped or it's a 1-v-2 (use " / " between partners).</p>
             </div>
 
-            <RoundScores rounds={rounds} onChange={setRounds} team1={gameDetails.team1} team2={gameDetails.team2} />
+            <RoundScores rounds={rounds} onChange={setRounds} team1={team1} team2={team2} />
 
             <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleSubmit} disabled={submitting}>
               {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
@@ -203,9 +227,9 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
                 <p key={i}>Game {i + 1}: <span className="font-bold">{r.score1}</span> – <span className="font-bold">{r.score2}</span></p>
               ))}
               <p className="font-semibold mt-2">
-                Total: {gameDetails.team1} <span className="font-bold">{rounds.reduce((s, r) => s + Number(r.score1), 0)}</span>
+                Total: {team1} <span className="font-bold">{rounds.reduce((s, r) => s + Number(r.score1), 0)}</span>
                 {" – "}
-                <span className="font-bold">{rounds.reduce((s, r) => s + Number(r.score2), 0)}</span> {gameDetails.team2}
+                <span className="font-bold">{rounds.reduce((s, r) => s + Number(r.score2), 0)}</span> {team2}
               </p>
             </div>
             <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => onScoreSubmitted?.({ goBack: true })}>← Back to Game List</Button>
