@@ -13,7 +13,12 @@ export default function BookingModal({ session, user, onBooked, onClose }) {
     setLoading(false);
     if (res.data?.success) {
       const status = res.data.status;
-      toast.success(status === "confirmed" ? "✅ Booking confirmed! Check your email." : "⏳ Added to waitlist. We'll email you if a spot opens.");
+      const closed = res.data.waitlistReason === "closed";
+      toast.success(status === "confirmed"
+        ? "✅ Booking confirmed! Check your email."
+        : closed
+          ? "⏳ Bookings are closed — you've been added to the waitlist. We'll email you if a spot opens."
+          : "⏳ Session is full — added to waitlist. We'll email you if a spot opens.");
       onBooked(res.data.booking);
     } else {
       toast.error(res.data?.error || "Booking failed.");
@@ -39,6 +44,13 @@ export default function BookingModal({ session, user, onBooked, onClose }) {
           }
           {session.notes && <p className="text-slate-500 text-xs mt-1">{session.notes}</p>}
         </div>
+
+        {session.bookings_open === false && (
+          <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 text-sm text-amber-800">
+            <p className="font-semibold">⏳ Bookings are closed — waitlist only</p>
+            <p className="mt-1">Confirmed spots are full or closed for this session. Your booking will be placed on the waitlist, and you'll be emailed if a spot opens up.</p>
+          </div>
+        )}
 
         <p className="text-sm text-muted-foreground">Booking as: <span className="font-semibold text-slate-800">{user?.full_name} ({user?.email})</span></p>
 

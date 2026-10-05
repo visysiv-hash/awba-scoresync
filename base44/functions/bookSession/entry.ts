@@ -45,11 +45,6 @@ Deno.serve(async (req) => {
   const session = sessions[0];
   if (!session) return Response.json({ error: 'Session not found' }, { status: 404 });
 
-  // Block bookings when admin has closed them for this session
-  if (session.bookings_open === false) {
-    return Response.json({ error: 'Bookings are currently closed for this session.' }, { status: 400 });
-  }
-
   // Check if this person already has an active booking for this session
   // Key on name (not email) so family members sharing one email are distinct people
   const existingBookings = await base44.asServiceRole.entities.Booking.filter({ session_id: sessionId, user_name: playerName });
@@ -61,8 +56,17 @@ Deno.serve(async (req) => {
   const confirmedCount = allBookings.filter(b => b.status === 'confirmed').length;
   const waitlistedCount = allBookings.filter(b => b.status === 'waitlisted').length;
 
+  const closed = session.bookings_open === false;
   let status;
-  if (confirmedCount < session.max_spots) {
+  let waitlistReason = null;
+  if (closed) {
+    // Bookings closed by admin — new bookings go straight to the waitlist.
+    if (session.max_waitlist && waitlistedCount >= session.max_waitlist) {
+      return Response.json({ error: 'Bookings are closed and the waitlist is full.' }, { status: 400 });
+    }
+    status = 'waitlisted';
+    waitlistReason = 'closed';
+  } else if (confirmedCount < session.max_spots) {
     status = 'confirmed';
   } else if (session.max_waitlist && waitlistedCount < session.max_waitlist) {
     status = 'waitlisted';
@@ -122,9 +126,13 @@ Deno.serve(async (req) => {
     ? `✅ Booking Confirmed — ${session.title}`
     : `⏳ Waitlist — ${session.title}`;
 
+  const waitlistIntro = waitlistReason === 'closed'
+    ? `Bookings for this session are currently closed, so your request has been placed on the waitlist. You will be contacted if a confirmed spot becomes available.`
+    : `This session is currently full, so you've been added to the waitlist.`;
+
   const body = status === 'confirmed'
     ? `Hi ${playerName},\n\nYour booking is confirmed. Here are the details:\n\n${detailsBlock}\n\n${paymentBlock}\n\nSee you there!\n\n— Albury Wodonga Badminton Association`
-    : `Hi ${playerName},\n\nThis session is currently full, so you've been added to the waitlist.\n\n${detailsBlock}\n\n${paymentBlock}\n\nWe'll email you if a spot opens up.\n\n— Albury Wodonga Badminton Association`;
+    : `Hi ${playerName},\n\n${waitlistIntro}\n\n${detailsBlock}\n\n${paymentBlock}\n\nWe'll email you if a spot opens up.\n\n— Albury Wodonga Badminton Association`;
 
   try {
     await base44.asServiceRole.integrations.Core.SendEmail({ to: playerEmail, subject, body });
@@ -132,5 +140,5 @@ Deno.serve(async (req) => {
     // Email is a side-effect — don't fail the booking if the email can't be sent
   }
 
-  return Response.json({ success: true, status, booking });
+  return Response.json({ success: true, status, waitlistReason, booking });
 });
