@@ -69,6 +69,18 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  // If bookings are closed, only an admin may cancel — players must contact the committee
+  if (!isAdmin) {
+    const sessions = await base44.asServiceRole.entities.Session.filter({ id: booking.session_id });
+    const session = sessions[0];
+    if (session && session.bookings_open === false) {
+      return Response.json(
+        { error: 'Bookings are closed for this session. Please contact the committee to cancel your booking.' },
+        { status: 403 }
+      );
+    }
+  }
+
   await base44.asServiceRole.entities.Booking.update(bookingId, { status: 'cancelled' });
 
   // Remove the matching row from the BookingData sheet

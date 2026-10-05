@@ -12,6 +12,8 @@ import PageBanner from "../components/PageBanner";
 import { getCurrentMember } from "../lib/currentMember";
 import { formatAusDate, formatAusDateWithDay } from "../lib/dateFormat";
 
+const isAdmin = getCurrentMember()?.is_admin === true;
+
 const SESSION_COLORS = [
   { dot: "bg-teal-500", accent: "border-l-teal-500", text: "text-teal-700", chip: "bg-teal-100 text-teal-700 border-teal-300" },
   { dot: "bg-blue-500", accent: "border-l-blue-500", text: "text-blue-700", chip: "bg-blue-100 text-blue-700 border-blue-300" },
@@ -127,7 +129,7 @@ export default function BookingSessions() {
       setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: "cancelled" } : b));
       toast.success("Booking cancelled.");
     } else {
-      toast.error("Failed to cancel.");
+      toast.error(res.data?.error || "Failed to cancel.");
     }
   };
 
@@ -208,9 +210,13 @@ export default function BookingSessions() {
                         <Badge className={b.status === "confirmed" ? "bg-green-500 text-white border-green-500 text-xs" : "bg-amber-500 text-white border-amber-500 text-xs"}>
                           {b.status === "confirmed" ? "Confirmed" : "Waitlist"}
                         </Badge>
-                        <Button size="sm" variant="ghost" className="text-red-300 hover:text-red-200 hover:bg-white/10 h-6 text-xs px-2" onClick={() => handleCancel(b)}>
-                          Cancel
-                        </Button>
+                        {sess?.bookings_open === false && !isAdmin ? (
+                          <span className="text-[10px] text-amber-300 text-right leading-tight max-w-[120px]">Bookings closed — contact committee to cancel</span>
+                        ) : (
+                          <Button size="sm" variant="ghost" className="text-red-300 hover:text-red-200 hover:bg-white/10 h-6 text-xs px-2" onClick={() => handleCancel(b)}>
+                            Cancel
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -428,9 +434,13 @@ export default function BookingSessions() {
                             <span className="font-semibold">
                               {b.status === "confirmed" ? "✅" : "⏳"} {b.user_name}{b.user_email === player?.email ? " (you)" : ""}
                             </span>
-                            <Button size="sm" variant="outline" className="text-red-500 border-red-200 h-7 text-xs" onClick={() => handleCancel(b)}>
-                              Cancel
-                            </Button>
+                            {session.bookings_open === false && !isAdmin ? (
+                              <span className="text-[10px] text-amber-600 text-right leading-tight max-w-[140px]">Bookings closed — contact committee</span>
+                            ) : (
+                              <Button size="sm" variant="outline" className="text-red-500 border-red-200 h-7 text-xs" onClick={() => handleCancel(b)}>
+                                Cancel
+                              </Button>
+                            )}
                           </div>
                         ))}
                         <button
