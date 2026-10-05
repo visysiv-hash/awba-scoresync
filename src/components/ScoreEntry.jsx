@@ -10,11 +10,13 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import RoundScores from "./RoundScores";
+import { getCurrentMember } from "@/lib/currentMember";
 
 const emptyRounds = () => [{ score1: "", score2: "", }, { score1: "", score2: "" }];
 
 
 export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubmitted }) {
+  const isAdmin = !!getCurrentMember()?.is_admin;
   const [netNumber, setNetNumber] = useState("");
   const [gameNumber, setGameNumber] = useState("");
   const [gameDetails, setGameDetails] = useState(null);
@@ -179,18 +181,22 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
                 <Input
                   value={team1}
                   onChange={(e) => setTeam1(e.target.value)}
-                  className="text-lg font-bold text-blue-600 border-blue-200 text-center"
+                  readOnly={!isAdmin}
+                  className={`text-lg font-bold text-center ${isAdmin ? "border-blue-200 text-blue-600" : "border-transparent text-blue-600 cursor-default focus-visible:ring-0"}`}
                   placeholder="Team 1"
                 />
                 <span className="text-muted-foreground font-semibold text-sm">VS</span>
                 <Input
                   value={team2}
                   onChange={(e) => setTeam2(e.target.value)}
-                  className="text-lg font-bold text-red-600 border-red-200 text-center"
+                  readOnly={!isAdmin}
+                  className={`text-lg font-bold text-center ${isAdmin ? "border-red-200 text-red-600" : "border-transparent text-red-600 cursor-default focus-visible:ring-0"}`}
                   placeholder="Team 2"
                 />
               </div>
-              <p className="text-xs text-muted-foreground text-center">Edit a name if players were swapped or it's a 1-v-2 (use " / " between partners).</p>
+              {isAdmin && (
+                <p className="text-xs text-muted-foreground text-center">Edit a name if players were swapped or it's a 1-v-2 (use " / " between partners).</p>
+              )}
             </div>
 
             <RoundScores rounds={rounds} onChange={setRounds} team1={team1} team2={team2} />
