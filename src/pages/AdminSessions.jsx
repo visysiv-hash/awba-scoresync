@@ -605,14 +605,19 @@ export default function AdminSessions() {
               {uniqueTitles
                 .filter(title => showPast || sessions.some(s => s.title === title && s.date >= todaysStr))
                 .map(title => {
-                  const count = sessions.filter(s => s.title === title && (showPast || s.date >= todaysStr)).length;
-                  const totalCount = sessions.filter(s => s.title === title).length;
-                  return (
-                    <option key={title} value={title} className="text-slate-800">
-                      {title} ({count} upcoming{count !== totalCount ? ` / ${totalCount} total` : ""})
-                    </option>
-                  );
-                })}
+                  const groupSessions = sessions
+                    .filter(s => s.title === title && (showPast || s.date >= todaysStr))
+                    .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+                  const refDate = groupSessions[0]?.date;
+                  const dayName = refDate
+                    ? new Date(refDate + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long" })
+                    : "Session";
+                  return { title, label: `${dayName} - ${title}` };
+                })
+                .sort((a, b) => a.label.localeCompare(b.label))
+                .map(({ title, label }) => (
+                  <option key={title} value={title} className="text-slate-800">{label}</option>
+                ))}
             </select>
             <button
               onClick={() => setShowPast(v => !v)}
