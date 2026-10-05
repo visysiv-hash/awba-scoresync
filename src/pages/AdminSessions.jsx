@@ -602,15 +602,17 @@ export default function AdminSessions() {
               className="w-full h-11 rounded-lg border border-white/20 bg-white/10 text-white px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-400"
             >
               <option value="" disabled className="text-slate-500">Choose a session…</option>
-              {uniqueTitles.map(title => {
-                const count = sessions.filter(s => s.title === title && (showPast || s.date >= todaysStr)).length;
-                const totalCount = sessions.filter(s => s.title === title).length;
-                return (
-                  <option key={title} value={title} className="text-slate-800">
-                    {title} ({count} upcoming{count !== totalCount ? ` / ${totalCount} total` : ""})
-                  </option>
-                );
-              })}
+              {uniqueTitles
+                .filter(title => showPast || sessions.some(s => s.title === title && s.date >= todaysStr))
+                .map(title => {
+                  const count = sessions.filter(s => s.title === title && (showPast || s.date >= todaysStr)).length;
+                  const totalCount = sessions.filter(s => s.title === title).length;
+                  return (
+                    <option key={title} value={title} className="text-slate-800">
+                      {title} ({count} upcoming{count !== totalCount ? ` / ${totalCount} total` : ""})
+                    </option>
+                  );
+                })}
             </select>
             <button
               onClick={() => setShowPast(v => !v)}
