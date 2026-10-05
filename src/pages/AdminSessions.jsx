@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil, Copy } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { addWeeks } from "date-fns";
 import { getCurrentMember } from "../lib/currentMember";
@@ -200,6 +200,30 @@ export default function AdminSessions() {
     setEditingId(null);
     setForm(emptyForm());
     setShowForm(false);
+  };
+
+  // Duplicate an existing session's settings onto a new date — creates a new
+  // session (does not modify the original). Clears the date so the admin picks one.
+  const handleDuplicate = (session) => {
+    setEditingId(null);
+    setForm({
+      title: session.title || "",
+      date: "",
+      start_time: session.start_time || "",
+      end_time: session.end_time || "",
+      location: session.location || "",
+      max_spots: session.max_spots ?? 10,
+      max_waitlist: session.max_waitlist ?? "",
+      payment_notes: (session.payment_notes && session.payment_notes.length > 0)
+        ? session.payment_notes.map(p => ({ type: p.type, amount: p.amount ?? "", label: p.label || "" }))
+        : [],
+      bank_details: session.bank_details || null,
+      bookings_open: session.bookings_open !== false,
+      recurring: false, recur_weeks: 4,
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast.info("Enter a new date to create another session with these details.");
   };
 
   const handleDelete = async (id) => {
@@ -638,6 +662,9 @@ export default function AdminSessions() {
                       </div>
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setExpandedSession(isExpanded ? null : session.id)}>
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-teal-600" onClick={() => handleDuplicate(session)} title="Duplicate to new date">
+                        <Copy className="w-3.5 h-3.5" />
                       </Button>
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-500" onClick={() => handleEdit(session)}>
                         <Pencil className="w-3.5 h-3.5" />
