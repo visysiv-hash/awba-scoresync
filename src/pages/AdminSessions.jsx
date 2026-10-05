@@ -612,9 +612,12 @@ export default function AdminSessions() {
                   const dayName = refDate
                     ? new Date(refDate + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long" })
                     : "Session";
-                  return { title, label: `${dayName} - ${title}` };
+                  return { title, label: `${dayName} - ${title}`, dayName };
                 })
-                .sort((a, b) => a.label.localeCompare(b.label))
+                .sort((a, b) => {
+                  const order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday","Session"];
+                  return order.indexOf(a.dayName) - order.indexOf(b.dayName);
+                })
                 .map(({ title, label }) => (
                   <option key={title} value={title} className="text-slate-800">{label}</option>
                 ))}
