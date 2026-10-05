@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Pencil } from "lucide-react";
 import PageBanner from "../components/PageBanner";
 
 const FILTERS = ["All", "Scored", "Unscored"];
@@ -12,6 +12,11 @@ export default function Dashboard() {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
+  const navigate = useNavigate();
+
+  const enterScores = (g) => {
+    navigate("/match-details", { state: { game: g } });
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -71,7 +76,7 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-3">
               {filtered.map((g, i) => (
-                <Card key={i}>
+                <Card key={i} className={!g.scored ? "cursor-pointer hover:ring-2 hover:ring-blue-400 transition" : ""} onClick={() => !g.scored && enterScores(g)}>
                   <CardContent className="pt-4 pb-4">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-xs text-muted-foreground">Net {g.net} · Match {g.game}</span>
@@ -103,6 +108,13 @@ export default function Dashboard() {
                       <p className="text-xs text-muted-foreground text-right mt-1">
                         {new Date(g.timestamp).toLocaleString()}
                       </p>
+                    )}
+                    {!g.scored && (
+                      <div className="mt-3 pt-3 border-t flex justify-end">
+                        <Button size="sm" className="gap-1 text-xs h-7 bg-blue-600 hover:bg-blue-700" onClick={(e) => { e.stopPropagation(); enterScores(g); }}>
+                          <Pencil className="w-3 h-3" /> Enter Scores
+                        </Button>
+                      </div>
                     )}
                   </CardContent>
                 </Card>

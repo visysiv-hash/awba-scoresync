@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
 import ScoreEntry from "../components/ScoreEntry";
@@ -8,20 +9,29 @@ import PageBanner from "../components/PageBanner";
 import { getCurrentPlayerName } from "../lib/currentMember";
 
 export default function MatchDetails() {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("search");
   const [prefilledGame, setPrefilledGame] = useState(null);
   const [submittedScores, setSubmittedScores] = useState({});
   const [searchQuery, setSearchQuery] = useState(() => getCurrentPlayerName());
   const [searchResults, setSearchResults] = useState(null);
 
-  useEffect(() => {
-    base44.entities.PageVisit.create({ page: 'match-details' });
-  }, []);
-
   const handleSelectGame = (game) => {
     setPrefilledGame(game);
     setActiveTab("entry");
   };
+
+  useEffect(() => {
+    base44.entities.PageVisit.create({ page: 'match-details' });
+  }, []);
+
+  // Open straight into score entry when navigated from the Results Dashboard
+  useEffect(() => {
+    const incoming = location.state?.game;
+    if (incoming) {
+      handleSelectGame(incoming);
+    }
+  }, [location.state]);
 
   const handleScoreSubmitted = ({ net, game, rounds, total1, total2 }) => {
     if (net && game) {
