@@ -1,7 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 
 const SHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
-const BOOKING_DATA_TAB = "BookingData";
 const AVAILABILITY_TAB = "PlayerAvailability";
 const AVAIL_START_ROW = 17;
 const AVAIL_COL = "B";
@@ -15,7 +14,7 @@ export default async function(req: Request): Promise<Response> {
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
 
-    // 1. Get the spreadsheet timezone so "today" matches the sheet's dates
+    // 1. Determine "today" in the spreadsheet's timezone so it matches session dates
     const metaRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=properties.timeZone`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -23,15 +22,6 @@ export default async function(req: Request): Promise<Response> {
     const meta = await metaRes.json();
     const timeZone = meta?.properties?.timeZone || "Australia/Sydney";
 
-    // 2. Read BookingData columns A (player name) and B (booking date)
-    const dataRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${BOOKING_DATA_TAB}!A:B`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const dataJson = await dataRes.json();
-    const rows = dataJson.values || [];
-
-    // 3. Today's date in yyyy-MM-dd in the spreadsheet's timezone
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone,
       year: "numeric",
@@ -39,21 +29,26 @@ export default async function(req: Request): Promise<Response> {
       day: "2-digit",
     }).format(new Date());
 
+    // 2. Read today's active bookings from the Booking entity (source of truth).
+    //    This avoids drift that can happen when the BookingData sheet write fails.
+    const page = await base44.asServiceRole.entities.Booking.filter(
+      { session_date: today, status: { $ne: "cancelled" } },
+      { limit: 500, fields: ["user_name"] }
+    );
+
     const seen = new Set();
     const players: string[] = [];
-    for (const row of rows) {
-      const playerName = String(row[0] || "").trim();
-      const bookingDate = String(row[1] || "").trim();
-      if (playerName && bookingDate === today) {
-        const key = playerName.toLowerCase();
-        if (!seen.has(key)) {
-          seen.add(key);
-          players.push(playerName);
-        }
+    for (const b of (page.items || [])) {
+      const playerName = String(b.user_name || "").trim();
+      if (!playerName) continue;
+      const key = playerName.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        players.push(playerName);
       }
     }
 
-    // 4. Clear the existing player list from B17 downward
+    // 3. Clear the existing player list from B17 downward
     const clearRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchClear`,
       {
@@ -72,7 +67,7 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: `Failed to clear availability list: ${errText}` }, { status: 500 });
     }
 
-    // 5. Write the unique player names starting at B17
+    // 4. Write the unique player names starting at B17
     if (players.length > 0) {
       const values = players.map((name) => [name]);
       const writeRes = await fetch(
