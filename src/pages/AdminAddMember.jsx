@@ -156,7 +156,12 @@ export default function AdminAddMember() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Date of birth</Label>
-                <Input type="date" value={form.dob} onChange={e => set("dob", e.target.value)} />
+                <Input
+                  type="text"
+                  value={form.dob}
+                  onChange={e => set("dob", e.target.value)}
+                  placeholder="dd/mm/yyyy"
+                />
               </div>
               <div className="space-y-1">
                 <Label>Gender</Label>
