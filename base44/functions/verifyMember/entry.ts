@@ -71,6 +71,7 @@ export default async function(req: Request): Promise<Response> {
             display_name: member.display_name,
             full_name: member.full_name,
             email: member.email,
+            dob: member.dob,
             bv_member: member.bv_member,
             is_admin: member.is_admin,
           }

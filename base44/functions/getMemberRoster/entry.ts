@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
 
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${MEMBER_SPREADSHEET_ID}/values/MemberData!A:D`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${MEMBER_SPREADSHEET_ID}/values/MemberData!A:H`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     const data = await res.json();
     const rows = (data.values || []).slice(1); // skip header
@@ -18,6 +18,8 @@ Deno.serve(async (req) => {
         email: String(r[1] || "").trim(),
         phone: String(r[2] || "").trim(),
         full_name: String(r[3] || "").trim(),
+        dob: String(r[4] || "").trim(),
+        bv_member: String(r[7] || "").trim(),
       }))
       .filter(m => m.display_name && m.email);
 

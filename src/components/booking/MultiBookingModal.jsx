@@ -46,9 +46,12 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
   // Ensure the remembered player is pre-selected (resolves email from roster if missing)
   useEffect(() => {
     if (!roster.length || !player || !preselectSelf) return;
-    // Match by display_name only — emails can be shared by family members,
-    // so matching by email could pre-select the wrong person.
-    const me = roster.find(m => m.display_name === player.name);
+    // When family members share an email, match by BV member ID (unique per person)
+    // to pre-select the correct one. Fall back to DOB, then display_name.
+    const me = player.bv_member
+      ? roster.find(m => m.bv_member === player.bv_member)
+      : roster.find(m => m.display_name === player.name && m.dob === player.dob)
+        || roster.find(m => m.display_name === player.name);
     if (me && !selectedPeople.has(me.display_name)) {
       setSelectedPeople(prev => new Set(prev).add(me.display_name));
     }

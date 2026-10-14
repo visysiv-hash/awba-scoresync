@@ -30,7 +30,7 @@ export default function BookingSessions() {
   const [bookings, setBookings] = useState([]);
   const [player, setPlayer] = useState(() => {
     const member = getCurrentMember();
-    if (member) return { name: member.display_name || member.full_name, email: member.email };
+    if (member) return { name: member.display_name || member.full_name, email: member.email, bv_member: member.bv_member, dob: member.dob };
     try { return JSON.parse(localStorage.getItem("awba_player") || "null"); } catch { return null; }
   });
   const [loading, setLoading] = useState(true);
