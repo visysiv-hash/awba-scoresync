@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import AdminPinGate from "../components/AdminPinGate";
+import AddGuestModal from "../components/admin/AddGuestModal";
 import PageBanner from "../components/PageBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil, Copy } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil, Copy, UserPlus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { addWeeks } from "date-fns";
 import { getCurrentMember } from "../lib/currentMember";
@@ -53,6 +54,7 @@ export default function AdminSessions() {
   const [sortAlpha, setSortAlpha] = useState(true);
   const [publishView, setPublishView] = useState(true);
   const [showPast, setShowPast] = useState(false);
+  const [guestSession, setGuestSession] = useState(null);
 
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
@@ -259,6 +261,34 @@ export default function AdminSessions() {
       toast.success(`${b.user_name} removed from session.`);
     } catch (e) {
       toast.error("Failed to remove player.");
+    }
+  };
+
+  // Admins can book a guest straight onto a session: no member record, no email
+  // address and no date of birth, and no email is sent to the guest.
+  const handleAddGuest = async (name) => {
+    const session = guestSession;
+    if (!session) return;
+    const existing = sessionBookings(session.id);
+    const confirmedCount = existing.filter(b => b.status === "confirmed").length;
+    const status = confirmedCount < (session.max_spots || 0) ? "confirmed" : "waitlisted";
+    try {
+      await base44.entities.Booking.create({
+        session_id: session.id,
+        session_title: session.title,
+        session_date: session.date,
+        user_name: name,
+        user_email: "guest",
+        booked_by_email: "guest",
+        status,
+        paid: false,
+      });
+      const refreshed = await base44.entities.Booking.list("-created_date", 1000);
+      setBookings(refreshed);
+      toast.success(`${name} added to ${session.title}. No email sent.`);
+    } catch (e) {
+      toast.error("Failed to add guest player.");
+      throw e;
     }
   };
 
@@ -716,7 +746,17 @@ export default function AdminSessions() {
 
                   {isExpanded && (
                     <div className="mt-3 border-t pt-3 space-y-2">
-                      {bks.length === 0 && <p className="text-xs text-muted-foreground">No bookings yet.</p>}
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => setGuestSession(session)}
+                        >
+                          <UserPlus className="w-3.5 h-3.5" /> Add guest
+                        </Button>
+                        {bks.length === 0 && <span className="text-xs text-muted-foreground">No bookings yet.</span>}
+                      </div>
                       {bks.length > 0 && (
                         <div className="flex items-center gap-3 pb-1">
                           <button
@@ -888,6 +928,14 @@ export default function AdminSessions() {
           })}
         </div>
       </div>
+
+      {guestSession && (
+        <AddGuestModal
+          session={guestSession}
+          onClose={() => setGuestSession(null)}
+          onAdd={handleAddGuest}
+        />
+      )}
     </div>
   );
 }
