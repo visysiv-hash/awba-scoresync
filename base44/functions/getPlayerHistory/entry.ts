@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
 
     return Response.json({ games: playerGames, h2h });
   } catch (error) {
-    return Response.json({ error: error.message });
+    // Keep the response shape stable — callers read `games` directly.
+    return Response.json({ games: [], h2h: null, error: error.message });
   }
 });

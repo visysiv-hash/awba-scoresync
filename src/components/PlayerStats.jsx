@@ -30,16 +30,20 @@ export default function PlayerStats({ playerName }) {
 
   const load = async (player) => {
     setLoading(true);
-    const res = await base44.functions.invoke("getPlayerHistory", { player, opponent: "" });
-    setData(res.data);
-    setLoading(false);
+    try {
+      const res = await base44.functions.invoke("getPlayerHistory", { player, opponent: "" });
+      setData(res.data || {});
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!playerName) return null;
   if (loading) return <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   if (!data) return null;
 
-  const { games, h2h } = data;
+  const { h2h } = data;
+  const games = data.games || [];
 
   // Points scored vs conceded per recent game (last 10)
   const chartData = games.slice(0, 10).reverse().map((g, i) => ({
