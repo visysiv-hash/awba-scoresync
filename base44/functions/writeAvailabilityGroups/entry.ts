@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
+import { sheetsRequest } from "../../shared/sheetWrite.ts";
 
 // Columns where each group of 8 names is written, starting at row 3.
 const GROUP_COLUMNS = ["D", "G", "J", "M", "P", "S"];
@@ -10,8 +11,6 @@ const TAB_NAME = "ListOfNames";
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const players: string[] = Array.isArray(body?.players) ? body.players : [];
@@ -27,14 +26,11 @@ export default async function(req: Request): Promise<Response> {
       (col) => `${TAB_NAME}!${col}${START_ROW}:${col}${START_ROW + GROUP_SIZE - 1}`
     );
 
-    const clearRes = await fetch(
+    const clearRes = await sheetsRequest(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchClear`,
+      accessToken,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ ranges: clearRanges }),
       }
     );
@@ -56,14 +52,11 @@ export default async function(req: Request): Promise<Response> {
       };
     });
 
-    const writeRes = await fetch(
+    const writeRes = await sheetsRequest(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate`,
+      accessToken,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ valueInputOption: "RAW", data }),
       }
     );

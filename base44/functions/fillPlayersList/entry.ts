@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
+import { sheetsRequest } from "../../shared/sheetWrite.ts";
 
 const SHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
 const AVAILABILITY_TAB = "PlayerAvailability";
@@ -9,9 +10,6 @@ const CLEAR_END_ROW = 1000;
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
 
     // 1. Determine "today" in the spreadsheet's timezone so it matches session dates
@@ -49,14 +47,11 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // 3. Clear the existing player list from B17 downward
-    const clearRes = await fetch(
+    const clearRes = await sheetsRequest(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchClear`,
+      accessToken,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           ranges: [`${AVAILABILITY_TAB}!${AVAIL_COL}${AVAIL_START_ROW}:${AVAIL_COL}${CLEAR_END_ROW}`],
         }),
@@ -70,14 +65,11 @@ export default async function(req: Request): Promise<Response> {
     // 4. Write the unique player names starting at B17
     if (players.length > 0) {
       const values = players.map((name) => [name]);
-      const writeRes = await fetch(
+      const writeRes = await sheetsRequest(
         `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${AVAILABILITY_TAB}!${AVAIL_COL}${AVAIL_START_ROW}?valueInputOption=RAW`,
+        accessToken,
         {
           method: "PUT",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({ values }),
         }
       );
