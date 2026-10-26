@@ -9,6 +9,10 @@
 export const DEFAULT_TTL_MS = 60_000;
 export const LIVE_TTL_MS = 30_000;
 
+// A read that stalls or comes back rate-limited gets one retry before the call fails.
+const READ_TIMEOUT_MS = 12_000;
+const RETRY_DELAY_MS = 400;
+
 const cache = new Map<string, { at: number; body: any }>();
 const inflight = new Map<string, Promise<Response>>();
 
@@ -29,10 +33,24 @@ export function sheetFetch(url: string, accessToken: string, ttlMs: number = DEF
   if (pending) return pending;
 
   const request = (async () => {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      signal: AbortSignal.timeout(20_000),
-    });
+    const read = () =>
+      fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(READ_TIMEOUT_MS),
+      });
+
+    let res: Response;
+    try {
+      res = await read();
+      if (!res.ok && (res.status === 429 || res.status >= 500)) {
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        res = await read();
+      }
+    } catch {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      res = await read();
+    }
+
     if (!res.ok) return res;
     const body = await res.json();
     cache.set(url, { at: Date.now(), body });

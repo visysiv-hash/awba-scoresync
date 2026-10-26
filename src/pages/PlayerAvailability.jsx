@@ -18,13 +18,31 @@ export default function PlayerAvailability() {
   const [exporting, setExporting] = useState(false);
   const isAdmin = getCurrentMember()?.is_admin === true;
 
+  // The ratings call reads several sheets, so it can come back empty now and
+  // then (a stalled sheet read). Retry once before giving up on it.
+  const fetchRatings = async () => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await base44.functions.invoke("getPlayerRatingsV2", {});
+        const list = res.data?.players || [];
+        if (list.length > 0) return list;
+      } catch {
+        // fall through to the retry
+      }
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    return [];
+  };
+
   useEffect(() => {
     Promise.all([
       base44.functions.invoke("getPlayerAvailability", {}),
-      base44.functions.invoke("getPlayerRatingsV2", {}),
-    ]).then(([availRes, ratingsRes]) => {
+      fetchRatings(),
+    ]).then(([availRes, ratingsList]) => {
       setAvailablePlayers(availRes.data?.players || []);
-      setRatings(ratingsRes.data?.players || []);
+      setRatings(ratingsList);
+    }).catch(() => {
+      toast.error("Couldn't load today's players — please reload the page.");
     }).finally(() => setLoading(false));
   }, []);
 
@@ -106,9 +124,22 @@ export default function PlayerAvailability() {
       // Refresh the available player list shown on this page
       setAvailablePlayers(todayPlayers);
 
-      // Step 2: Rating-sort the refreshed names (using existing ratings), nulls last
+      // Step 2: Rating-sort the refreshed names, nulls last. If the page never
+      // got the ratings, fetch them now so the sheet isn't sent unsorted.
+      let ratingsList = ratings;
+      if (ratingsList.length === 0) {
+        ratingsList = await fetchRatings();
+        setRatings(ratingsList);
+      }
+      if (ratingsList.length === 0) {
+        toast.error("Couldn't load player ratings, so nothing was sent. Please try again.");
+        return;
+      }
+      const map = {};
+      for (const p of ratingsList) map[p.player] = p;
+
       const names = todayPlayers
-        .map((name) => ({ name, rating: ratingMap[name]?.rating ?? null }))
+        .map((name) => ({ name, rating: map[name]?.rating ?? null }))
         .sort((a, b) => {
           if (a.rating === null && b.rating === null) return 0;
           if (a.rating === null) return 1;
