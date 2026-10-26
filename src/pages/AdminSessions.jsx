@@ -269,20 +269,8 @@ export default function AdminSessions() {
   const handleAddGuest = async (name) => {
     const session = guestSession;
     if (!session) return;
-    const existing = sessionBookings(session.id);
-    const confirmedCount = existing.filter(b => b.status === "confirmed").length;
-    const status = confirmedCount < (session.max_spots || 0) ? "confirmed" : "waitlisted";
     try {
-      await base44.entities.Booking.create({
-        session_id: session.id,
-        session_title: session.title,
-        session_date: session.date,
-        user_name: name,
-        user_email: "guest",
-        booked_by_email: "guest",
-        status,
-        paid: false,
-      });
+      await base44.functions.invoke("addGuestBooking", { sessionId: session.id, playerName: name });
       const refreshed = await base44.entities.Booking.list("-created_date", 1000);
       setBookings(refreshed);
       toast.success(`${name} added to ${session.title}. No email sent.`);
