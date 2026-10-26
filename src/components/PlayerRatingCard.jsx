@@ -90,7 +90,7 @@ export default function PlayerRatingCard({ playerName }) {
   useEffect(() => {
     setLoading(true);
     setPlayerData(null);
-    base44.functions.invoke("getPlayerRatingsV2", {})
+    base44.functions.invoke("getPlayerRatingsV2", { player: playerName })
       .then(res => {
         const players = res.data?.players || [];
         const found = players.find(p => p.player.toLowerCase() === playerName.toLowerCase());

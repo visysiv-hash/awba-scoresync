@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetFetch, LIVE_TTL_MS } from "../../shared/sheetCache.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -11,9 +12,7 @@ Deno.serve(async (req) => {
       : rawId.split("/")[0].split("?")[0];
 
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!A:K`;
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+    const response = await sheetFetch(url, accessToken, LIVE_TTL_MS);
     const data = await response.json();
     const rows = (data.values || []); // no header row in Scores sheet
 

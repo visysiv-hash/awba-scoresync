@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,12 @@ export default function MemberLogin({ onVerified }) {
   const [loading, setLoading] = useState(false);
   const [recovered, setRecovered] = useState(null);
   const [error, setError] = useState("");
+
+  // Load the member list as soon as this screen opens, so the first login
+  // doesn't wait on the member sheet being fetched from scratch.
+  useEffect(() => {
+    base44.functions.invoke("verifyMember", { warmup: true }).catch(() => {});
+  }, []);
 
   const handleLogin = async () => {
     if (!memberId.trim()) {

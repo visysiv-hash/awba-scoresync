@@ -29,14 +29,23 @@ export default function Leaderboard() {
   const urlParams = new URLSearchParams(window.location.search);
   const [groups, setGroups] = useState({});
   const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState(urlParams.get("name") || getCurrentPlayerName());
   const [selectedPlayer, setSelectedPlayer] = useState(urlParams.get("name") || getCurrentPlayerName());
   const [activeTab, setActiveTab] = useState(urlParams.get("tab") || "rankings");
   const [visitCount, setVisitCount] = useState(null);
 
   useEffect(() => {
     base44.entities.PageVisit.create({ page: 'leaderboard' }).catch(() => {});
-    base44.entities.PageVisit.filter({ page: 'leaderboard' }).then(visits => setVisitCount(visits.length)).catch(() => {});
+    base44.entities.PageVisit.count({ page: 'leaderboard' }).then(setVisitCount).catch(() => {});
   }, []);
+
+  // A player lookup runs several stat lookups, so only search once the typing
+  // settles instead of searching for every partial name.
+  useEffect(() => {
+    if (searchInput === selectedPlayer) return;
+    const id = setTimeout(() => setSelectedPlayer(searchInput), 400);
+    return () => clearTimeout(id);
+  }, [searchInput, selectedPlayer]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -133,8 +142,8 @@ export default function Leaderboard() {
                 <input
                   className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                   placeholder="Search by player name..."
-                  value={selectedPlayer}
-                  onChange={e => setSelectedPlayer(e.target.value)}
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
                 />
                 {selectedPlayer && playerData.length === 0 && (
                   <p className="text-muted-foreground text-center py-4 text-sm">No results found for this player.</p>

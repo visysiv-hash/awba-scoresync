@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetFetch } from "../../shared/sheetCache.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -13,9 +14,7 @@ Deno.serve(async (req) => {
     const sheetId = '1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U';
     
     const gamesUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/games!A:Z`;
-    const gamesRes = await fetch(gamesUrl, {
-      headers: { 'Authorization': `Bearer ${conn.accessToken}` }
-    });
+    const gamesRes = await sheetFetch(gamesUrl, conn.accessToken);
     const gamesData = await gamesRes.json();
     const rows = gamesData.values || [];
 

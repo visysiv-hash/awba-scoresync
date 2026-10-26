@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetFetch } from "../../shared/sheetCache.ts";
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -8,9 +9,7 @@ Deno.serve(async (req) => {
 
   // Fetch round-date mapping from Raw Responses sheet (col A = date, col K = round)
   const rawRange = encodeURIComponent("Raw_Responses!A2:K5000");
-  const rawRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${scoreSpreadsheetId}/values/${rawRange}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const rawRes = await sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${scoreSpreadsheetId}/values/${rawRange}`, accessToken);
   const roundDateMap = {};
   if (rawRes.ok) {
     const rawJson = await rawRes.json();
@@ -26,9 +25,7 @@ Deno.serve(async (req) => {
   const range = encodeURIComponent("Group_Round_Standings!A1:Z5000");
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
 
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const res = await sheetFetch(url, accessToken);
 
   if (!res.ok) {
     const err = await res.text();
@@ -38,27 +35,21 @@ Deno.serve(async (req) => {
   const json = await res.json();
   const rows = json.values || [];
 
-  if (rows.length === 0) return Response.json({ rounds: [], data: {} });
+  if (rows.length === 0) return Response.json({ rounds: [], roundDateMap });
 
   // First row is headers
   const headers = rows[0].map(h => h.trim().toLowerCase());
   const dataRows = rows.slice(1);
 
-  // Group by round
+  // The caller only needs the round numbers here — the per-round rows are
+  // fetched per player by getPlayerHistory, so they are not shipped back.
   const roundIndex = headers.indexOf("round");
   const rounds = new Set();
-  const data = {}; // { round: [{ player, wins, losses, pointsFor, pointsAgainst, diff, ... }] }
 
   for (const row of dataRows) {
     const round = row[roundIndex] || "";
-    if (!round) continue;
-    rounds.add(round);
-    if (!data[round]) data[round] = [];
-
-    const entry = {};
-    headers.forEach((h, i) => { entry[h] = row[i] || ""; });
-    data[round].push(entry);
+    if (round) rounds.add(round);
   }
 
-  return Response.json({ rounds: Array.from(rounds), data, roundDateMap });
+  return Response.json({ rounds: Array.from(rounds), roundDateMap });
 });

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetFetch } from "../../shared/sheetCache.ts";
 
 const MEMBER_SPREADSHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
 
@@ -8,8 +9,7 @@ Deno.serve(async (req) => {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
 
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${MEMBER_SPREADSHEET_ID}/values/MemberData!A:H`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-    const data = await res.json();
+    const data = await (await sheetFetch(url, accessToken)).json();
     const rows = (data.values || []).slice(1); // skip header
 
     const roster = rows

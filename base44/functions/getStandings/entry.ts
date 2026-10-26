@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetFetch, LIVE_TTL_MS } from "../../shared/sheetCache.ts";
 
 const PENALTY_POINTS = 21;
 
@@ -22,12 +23,8 @@ Deno.serve(async (req) => {
   const scoresRange = encodeURIComponent("Scores!A:K");
 
   const [standingsRes, scoresRes] = await Promise.all([
-    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${standingsRange}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }),
-    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${scoresSpreadsheetId}/values/${scoresRange}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }),
+    sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${standingsRange}`, accessToken),
+    sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${scoresSpreadsheetId}/values/${scoresRange}`, accessToken, LIVE_TTL_MS),
   ]);
 
   if (!standingsRes.ok) {

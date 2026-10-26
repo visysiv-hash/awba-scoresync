@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { sheetFetch } from "../../shared/sheetCache.ts";
 
 const MEMBER_SPREADSHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
 const SHEET = "MemberData";
@@ -29,8 +30,7 @@ async function loadMembers(base44): Promise<{ members: any[]; byId: Map<string, 
   }
   const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${MEMBER_SPREADSHEET_ID}/values/${SHEET}!A:L`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-  const data = await res.json();
+  const data = await (await sheetFetch(url, accessToken, CACHE_TTL)).json();
   const rows = (data.values || []).slice(1);
 
   const members = rows.map(r => ({
@@ -59,6 +59,10 @@ export default async function(req: Request): Promise<Response> {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
     const { members, byId } = await loadMembers(base44);
+
+    // Mode 0: Warm-up — the login screen calls this so the member list is
+    // already loaded before anyone types their ID.
+    if (body.warmup) return Response.json({ ok: true });
 
     // Mode 1: Verify by BV member ID (O(1) lookup) — ignore leading "BV" prefix
     if (body.memberId) {

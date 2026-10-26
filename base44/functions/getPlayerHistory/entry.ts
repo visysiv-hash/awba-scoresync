@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetFetch } from "../../shared/sheetCache.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -9,9 +10,7 @@ Deno.serve(async (req) => {
     const sid = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
     const range = encodeURIComponent("Raw_Responses!A2:K2000");
 
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${range}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const response = await sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${range}`, accessToken);
     const data = await response.json();
     const rows = data.values || [];
 
