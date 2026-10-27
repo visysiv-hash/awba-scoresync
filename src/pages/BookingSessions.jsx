@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CalendarDays, MapPin, Users, Clock, Loader2, CheckSquare, Square, LayoutList, Zap, ChevronDown, ChevronUp } from "lucide-react";
 import MultiBookingModal from "../components/booking/MultiBookingModal";
+import LateCancellationDialog from "../components/booking/LateCancellationDialog";
 import PlayerSelector from "../components/booking/PlayerSelector";
 import SessionCalendar from "../components/booking/SessionCalendar";
 import PageBanner from "../components/PageBanner";
@@ -42,6 +43,7 @@ export default function BookingSessions() {
   const [filterTitle, setFilterTitle] = useState("");
   const [viewMode, setViewMode] = useState("list"); // "list" | "calendar"
   const [myBookingsExpanded, setMyBookingsExpanded] = useState(false);
+  const [lateNotice, setLateNotice] = useState(null);
 
   const selectNextN = (n) => {
     const available = visibleSessions.filter(s => !myBooking(s.id) && s.bookings_open !== false && confirmedCount(s.id) < s.max_spots);
@@ -127,7 +129,8 @@ export default function BookingSessions() {
     const res = await base44.functions.invoke("cancelBooking", { bookingId: booking.id, playerEmail: player?.email });
     if (res.data?.success) {
       setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: "cancelled" } : b));
-      toast.success("Booking cancelled.");
+      if (res.data.lateCancellation) setLateNotice(res.data.lateCancellation);
+      else toast.success("Booking cancelled.");
     } else {
       toast.error(res.data?.error || "Failed to cancel.");
     }
@@ -489,6 +492,8 @@ export default function BookingSessions() {
       {showPlayerPicker && (
         <PlayerSelector onSelect={rememberPlayer} onClose={() => setShowPlayerPicker(false)} />
       )}
+
+      <LateCancellationDialog notice={lateNotice} onClose={() => setLateNotice(null)} />
     </div>
   );
 }

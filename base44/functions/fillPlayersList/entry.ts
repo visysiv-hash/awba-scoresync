@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { sheetsRequest } from "../../shared/sheetWrite.ts";
+import { unpaidPenaltyNames } from "../../shared/penalties.ts";
 
 const SHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
 const AVAILABILITY_TAB = "PlayerAvailability";
@@ -34,16 +35,23 @@ export default async function(req: Request): Promise<Response> {
       { limit: 500, fields: ["user_name"] }
     );
 
+    // Players still owing a late-cancellation fee are not considered for scheduling
+    const unpaidNames = await unpaidPenaltyNames(base44);
+
     const seen = new Set();
     const players: string[] = [];
+    const excluded: string[] = [];
     for (const b of (page.items || [])) {
       const playerName = String(b.user_name || "").trim();
       if (!playerName) continue;
       const key = playerName.toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        players.push(playerName);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (unpaidNames.has(key)) {
+        excluded.push(playerName);
+        continue;
       }
+      players.push(playerName);
     }
 
     // 3. Clear the existing player list from B17 downward
@@ -84,6 +92,7 @@ export default async function(req: Request): Promise<Response> {
       today,
       players,
       count: players.length,
+      excluded,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

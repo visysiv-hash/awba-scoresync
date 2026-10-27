@@ -1,0 +1,66 @@
+{
+  "name": "LateCancellation",
+  "type": "object",
+  "properties": {
+    "player_name": {
+      "type": "string",
+      "title": "Player Name"
+    },
+    "player_email": {
+      "type": "string",
+      "title": "Player Email"
+    },
+    "session_id": {
+      "type": "string",
+      "title": "Session ID"
+    },
+    "session_title": {
+      "type": "string",
+      "title": "Session Title"
+    },
+    "session_date": {
+      "type": "string",
+      "title": "Session Date"
+    },
+    "cancelled_at": {
+      "type": "string",
+      "title": "Cancelled At"
+    },
+    "fee_amount": {
+      "type": "number",
+      "title": "Fee Owed (AUD)"
+    },
+    "fee_status": {
+      "type": "string",
+      "title": "Fee Status",
+      "enum": [
+        "unpaid",
+        "paid",
+        "waived"
+      ],
+      "default": "unpaid"
+    },
+    "suspended": {
+      "type": "boolean",
+      "title": "Suspended From Booking",
+      "default": false
+    },
+    "suspension_note": {
+      "type": "string",
+      "title": "Suspension Note"
+    },
+    "handled_by": {
+      "type": "string",
+      "title": "Handled By"
+    },
+    "handled_at": {
+      "type": "string",
+      "title": "Handled At"
+    }
+  },
+  "required": [
+    "player_name",
+    "session_date",
+    "fee_status"
+  ]
+}

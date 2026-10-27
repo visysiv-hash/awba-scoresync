@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { CalendarDays, MapPin, Clock, Loader2, CheckSquare, ChevronDown, ChevronUp } from "lucide-react";
 import { getCurrentMember } from "@/lib/currentMember";
 import { formatAusDateWithDay } from "@/lib/dateFormat";
+import LateCancellationDialog from "@/components/booking/LateCancellationDialog";
 
 // Today's date in Melbourne time as YYYY-MM-DD (lexicographically comparable)
 function todayMelbourne() {
@@ -23,6 +24,7 @@ export default function MyBookingsCard() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
+  const [lateNotice, setLateNotice] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -55,7 +57,8 @@ export default function MyBookingsCard() {
       const res = await base44.functions.invoke("cancelBooking", { bookingId: booking.id, playerEmail: player?.email });
       if (res.data?.success) {
         setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: "cancelled" } : b));
-        toast.success("Booking cancelled.");
+        if (res.data.lateCancellation) setLateNotice(res.data.lateCancellation);
+        else toast.success("Booking cancelled.");
       } else {
         toast.error("Failed to cancel.");
       }
@@ -136,6 +139,8 @@ export default function MyBookingsCard() {
           )}
         </div>
       )}
+
+      <LateCancellationDialog notice={lateNotice} onClose={() => setLateNotice(null)} />
     </div>
   );
 }

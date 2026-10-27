@@ -23,6 +23,7 @@ import BottomNav from './components/BottomNav';
 import AdminSponsors from './pages/AdminSponsors';
 import AdminAddMember from './pages/AdminAddMember';
 import AdminMembers from './pages/AdminMembers';
+import AdminLateCancellations from './pages/AdminLateCancellations';
 import Home from './pages/Home';
 import MatchDetails from './pages/MatchDetails';
 import PlayerAvailability from './pages/PlayerAvailability';
@@ -96,6 +97,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/sponsors" element={<AdminSponsors />} />
           <Route path="/admin/add-member" element={<AdminAddMember />} />
           <Route path="/admin/members" element={<AdminMembers />} />
+          <Route path="/admin/late-cancellations" element={<AdminLateCancellations />} />
 
           <Route path="*" element={<PageNotFound />} />
         </Routes>

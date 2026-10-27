@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import { appendBookingToSheet } from "../../shared/bookingSheet.ts";
+import { findActiveSuspension, suspensionMessage } from "../../shared/penalties.ts";
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -12,6 +13,12 @@ Deno.serve(async (req) => {
   const sessions = await base44.asServiceRole.entities.Session.filter({ id: sessionId });
   const session = sessions[0];
   if (!session) return Response.json({ error: 'Session not found' }, { status: 404 });
+
+  // A suspension set by the committee stops this player booking until it is cleared
+  const suspension = await findActiveSuspension(base44, playerName);
+  if (suspension) {
+    return Response.json({ success: false, error: suspensionMessage(playerName) });
+  }
 
   // Check if this person already has an active booking for this session
   // Key on name (not email) so family members sharing one email are distinct people

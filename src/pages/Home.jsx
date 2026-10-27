@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getCurrentMember } from "../lib/currentMember";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut } from
+  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban } from
   "lucide-react";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
@@ -126,6 +126,13 @@ gradient: "from-yellow-500 to-amber-600"
  icon: Users,
  to: "/admin/members",
  gradient: "from-emerald-500 to-green-700"
+},
+{
+ label: "Late Cancels",
+ description: "Fees owed & suspensions",
+ icon: Ban,
+ to: "/admin/late-cancellations",
+ gradient: "from-red-500 to-rose-700"
 }];
 
 

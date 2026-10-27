@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users, Send } from "lucide-react";
+import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users, Send, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SuggestedGroups from "../components/SuggestedGroups";
 import PageBanner from "../components/PageBanner";
@@ -16,6 +16,7 @@ export default function PlayerAvailability() {
   const [sortDir, setSortDir] = useState("asc");
   const [showGroups, setShowGroups] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [excludedNames, setExcludedNames] = useState([]);
   const isAdmin = getCurrentMember()?.is_admin === true;
 
   // The ratings call reads several sheets, so it can come back empty now and
@@ -38,9 +39,17 @@ export default function PlayerAvailability() {
     Promise.all([
       base44.functions.invoke("getPlayerAvailability", {}),
       fetchRatings(),
-    ]).then(([availRes, ratingsList]) => {
+      base44.entities.LateCancellation
+        .list("-created_date", 200)
+        .then(res => {
+          const all = Array.isArray(res) ? res : res?.items || [];
+          return all.filter(r => r.fee_status === "unpaid");
+        })
+        .catch(() => []),
+    ]).then(([availRes, ratingsList, unpaidRecords]) => {
       setAvailablePlayers(availRes.data?.players || []);
       setRatings(ratingsList);
+      setExcludedNames(unpaidRecords.map(r => r.player_name).filter(Boolean));
     }).catch(() => {
       toast.error("Couldn't load today's players — please reload the page.");
     }).finally(() => setLoading(false));
@@ -172,6 +181,16 @@ export default function PlayerAvailability() {
             <p className="text-xs text-slate-400">Players available this week, sorted by rating</p>
           </div>
         </div>
+
+        {isAdmin && excludedNames.length > 0 && (
+          <div className="rounded-xl bg-amber-900/40 border border-amber-500/50 px-3 py-2 flex items-start gap-2">
+            <Ban className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
+            <p className="text-xs text-amber-100 leading-snug">
+              <span className="font-semibold">Not considered for scheduling — late cancellation fee outstanding:</span>{" "}
+              {excludedNames.join(", ")}
+            </p>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
