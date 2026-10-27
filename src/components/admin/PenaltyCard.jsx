@@ -17,6 +17,11 @@ const cancelledLabel = (iso) => {
   });
 };
 
+const feeLabel = (record) =>
+  Number(record.fee_amount || 0) > 0
+    ? `${money(record.fee_amount)} · ${record.fee_status}`
+    : "No fee · first warning";
+
 const statusClass = (status) => {
   if (status === "paid") return "bg-green-100 text-green-700 border-green-300";
   if (status === "waived") return "bg-slate-100 text-slate-600 border-slate-300";
@@ -37,7 +42,7 @@ export default function PenaltyCard({ record, busy, onMarkPaid, onWaive, onSuspe
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
             <Badge variant="outline" className={statusClass(record.fee_status)}>
-              {money(record.fee_amount)} · {record.fee_status}
+              {feeLabel(record)}
             </Badge>
             {record.suspended && <Badge className="bg-red-600 text-white border-red-600">Suspended</Badge>}
           </div>
@@ -50,7 +55,7 @@ export default function PenaltyCard({ record, busy, onMarkPaid, onWaive, onSuspe
         )}
 
         <div className="flex flex-wrap gap-2 pt-1">
-          {record.fee_status !== "paid" && (
+          {record.fee_status !== "paid" && Number(record.fee_amount || 0) > 0 && (
             <Button size="sm" variant="outline" className="h-7 text-xs" disabled={busy} onClick={() => onMarkPaid(record)}>
               {busy ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
               Mark paid
