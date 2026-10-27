@@ -92,10 +92,12 @@ Deno.serve(async (req) => {
     const prior = priorRes?.items || (Array.isArray(priorRes) ? priorRes : []);
     const occurrences = prior.length + 1;
 
-    // First late cancellation is a warning only — the fee applies from the second one.
+    // The first late cancellation is a warning only: nothing is charged, but the
+    // warning still names the fine that further cancellations will attract.
     const sessionRows = await base44.asServiceRole.entities.Session.filter({ id: booking.session_id });
-    const feeAmount = occurrences > 1 ? sessionFee(sessionRows[0]) : 0;
-    const message = penaltyMessage(occurrences, feeAmount);
+    const sessionFeeAmount = sessionFee(sessionRows[0]);
+    const feeAmount = occurrences > 1 ? sessionFeeAmount : 0;
+    const message = penaltyMessage(occurrences, sessionFeeAmount);
 
     await base44.asServiceRole.entities.LateCancellation.create({
       player_name: booking.user_name,

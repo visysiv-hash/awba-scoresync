@@ -67,13 +67,14 @@ export function sessionFee(session: any): number {
 
 // The first late cancellation is a warning only; from the second on the session
 // fee applies and the committee decides on a suspension.
-export function penaltyMessage(occurrences: number, feeAmount: number): string {
-  const fee = feeAmount > 0 ? ` ($${feeAmount.toFixed(2)})` : "";
+export function penaltyMessage(occurrences: number, sessionFeeAmount: number): string {
+  const amount = sessionFeeAmount > 0 ? ` ($${sessionFeeAmount.toFixed(2)})` : "";
+  const fine = sessionFeeAmount > 0 ? `a fine of $${sessionFeeAmount.toFixed(2)}` : "a fine";
 
   if (occurrences > 1) {
-    return `Because you have cancelled after the cut-off time more than once, you are required to pay the session fee${fee}, and any suspension will be determined by the committee.`;
+    return `Because you have cancelled after the cut-off time more than once, you are required to pay the session fee${amount}, and any suspension will be determined by the committee.`;
   }
-  return "This is your first cancellation after the cut-off time, so no fee applies this time. Please note that any further cancellations after the cut-off will attract a fine and may result in suspension from booking.";
+  return `This is your first cancellation after the cut-off time, so no fine applies this time. Please note that any further cancellations after the cut-off will attract ${fine} and may result in suspension from booking.`;
 }
 
 export function suspensionMessage(playerName: string): string {
