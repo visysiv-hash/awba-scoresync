@@ -11,6 +11,7 @@ Deno.serve(async (req) => {
   const rawRange = encodeURIComponent("Raw_Responses!A2:K5000");
   const rawRes = await sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${scoreSpreadsheetId}/values/${rawRange}`, accessToken);
   const roundDateMap = {};
+  const playedRounds = new Set();
   if (rawRes.ok) {
     const rawJson = await rawRes.json();
     for (const row of (rawJson.values || [])) {
@@ -19,7 +20,16 @@ Deno.serve(async (req) => {
       if (round && date && !roundDateMap[round]) {
         roundDateMap[round] = date;
       }
+      if (round) playedRounds.add(round);
     }
+  }
+
+  // Rounds come from the scored responses themselves, so a week shows up as soon
+  // as its results are in — waiting on the precomputed Group_Round_Standings tab
+  // (which the sheet's own formulas have to extend) left the latest week missing.
+  if (playedRounds.size > 0) {
+    const rounds = Array.from(playedRounds).sort((a, b) => parseInt(a) - parseInt(b));
+    return Response.json({ rounds, roundDateMap });
   }
 
   const range = encodeURIComponent("Group_Round_Standings!A1:Z5000");
