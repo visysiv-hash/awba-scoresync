@@ -36,17 +36,23 @@ export default function MemberLogin({ onVerified }) {
       const cleanId = memberId.trim().replace(/^BV/i, "");
       const res = await base44.functions.invoke("verifyMember", { memberId: cleanId });
       if (res.data?.valid) {
-        localStorage.setItem("awba_last_member_id", memberId.trim());
-        localStorage.setItem("awba_member", JSON.stringify({
-          ...res.data.member,
-          login_time: Date.now(),
-        }));
+        // Remember the ID for next time — a device that blocks storage (e.g. private
+        // browsing) must not turn a successful login into an error.
+        try {
+          localStorage.setItem("awba_last_member_id", memberId.trim());
+          localStorage.setItem("awba_member", JSON.stringify({
+            ...res.data.member,
+            login_time: Date.now(),
+          }));
+        } catch {
+          // Storage unavailable — continue with this session only.
+        }
         onVerified();
       } else {
         setError(res.data?.error || "Could not find a member with that ID. Please check and try again.");
       }
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      setError(err?.response?.data?.error || "Something went wrong. Please try again.");
     }
     setLoading(false);
   };
