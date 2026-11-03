@@ -90,11 +90,15 @@ export default function PlayerRatingCard({ playerName }) {
   useEffect(() => {
     setLoading(true);
     setPlayerData(null);
-    base44.functions.invoke("getPlayerRatingsV2", { player: playerName })
+    base44.functions.invoke("getAppRatings", {})
       .then(res => {
         const players = res.data?.players || [];
         const found = players.find(p => p.player.toLowerCase() === playerName.toLowerCase());
-        setPlayerData(found || null);
+        setPlayerData(found ? {
+          ...found,
+          hasStats: (found.rounds || []).length > 0,
+          baseRating: found.rating,
+        } : null);
       })
       .finally(() => setLoading(false));
   }, [playerName]);
@@ -122,6 +126,8 @@ export default function PlayerRatingCard({ playerName }) {
         </CardTitle>
         <p className="text-xs text-muted-foreground">
           Group {playerData.currentGroup} · {playerData.gp} MP · Diff {playerData.diff >= 0 ? "+" : ""}{playerData.diff}
+          {playerData.lastRound ? ` · as at Round ${playerData.lastRound}` : ""}
+          {playerData.provisional ? " · provisional (under 3 rounds)" : ""}
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
