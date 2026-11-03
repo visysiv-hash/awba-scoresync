@@ -84,8 +84,28 @@ Deno.serve(async (req) => {
       day: "2-digit",
     }).format(new Date());
 
+    // A game entered after the session (for example the next morning) still
+    // belongs to that session's night: the night the Scores tab is recording.
+    let scoreDate = sydneyDate;
+    const nightCounts: Record<string, number> = {};
+    for (const row of scoreRows) {
+      const m = String(row[10] || "").match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (!m) continue;
+      const d = `${m[3]}-${m[2]}-${m[1]}`;
+      nightCounts[d] = (nightCounts[d] || 0) + 1;
+    }
+    const nightDate = Object.entries(nightCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const fourDaysAgo = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    if (nightDate && nightDate !== sydneyDate && nightDate >= fourDaysAgo) {
+      const onToday = await base44.asServiceRole.entities.MatchResult.filter(
+        { date: sydneyDate },
+        { limit: 1 }
+      );
+      if (!(onToday.items || []).length) scoreDate = nightDate;
+    }
+
     const record: any = {
-      date: sydneyDate,
+      date: scoreDate,
       net: Number(netNumber),
       game: Number(gameNumber),
       team1,
@@ -100,7 +120,7 @@ Deno.serve(async (req) => {
 
     // One result per game per night: a second submission corrects the first.
     const existing = await base44.asServiceRole.entities.MatchResult.filter(
-      { date: sydneyDate, net: Number(netNumber), game: Number(gameNumber) },
+      { date: scoreDate, net: Number(netNumber), game: Number(gameNumber) },
       { limit: 5 }
     );
     const previous = (existing.items || [])[0];

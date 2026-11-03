@@ -72,12 +72,29 @@ async function syncSheetScores(base44: any, rows: any[]) {
 
     const cutoff = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const seen = new Set(rows.map((r) => `${r.date}|${r.net}|${r.game}`));
+
+    // The Scores tab records one night's games, so a row typed in late (or one
+    // entered without a timestamp) belongs to that same night, not to the day it
+    // was typed on.
+    const byDate: Record<string, number> = {};
+    for (const s of values) {
+      const d = isoFromStamp(s[10]);
+      if (d) byDate[d] = (byDate[d] || 0) + 1;
+    }
+    const mostCommon = Object.entries(byDate).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+    const recentNight =
+      mostCommon && mostCommon >= new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+        ? mostCommon
+        : null;
+
     const latest: Record<string, any> = {};
     for (const s of values) {
-      const date = isoFromStamp(s[10]);
       const net = String(s[0] || "").trim();
       const game = String(s[1] || "").trim();
-      if (!date || date < cutoff || !net || !game) continue;
+      if (!/^\d+$/.test(net) || !/^\d+$/.test(game)) continue;
+      const own = isoFromStamp(s[10]);
+      const date = !own ? recentNight : recentNight && own > recentNight ? recentNight : own;
+      if (!date || date < cutoff) continue;
       latest[`${date}|${net}|${game}`] = s;
     }
 
