@@ -32,6 +32,7 @@ export default function Leaderboard() {
   const [searchInput, setSearchInput] = useState(urlParams.get("name") || getCurrentPlayerName());
   const [selectedPlayer, setSelectedPlayer] = useState(urlParams.get("name") || getCurrentPlayerName());
   const [activeTab, setActiveTab] = useState(urlParams.get("tab") || "rankings");
+  const [source, setSource] = useState("app");
   const [visitCount, setVisitCount] = useState(null);
 
   useEffect(() => {
@@ -50,14 +51,17 @@ export default function Leaderboard() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const standingsRes = await base44.functions.invoke("getStandings", {});
+      const standingsRes = await base44.functions.invoke(
+        source === "app" ? "getAppStandings" : "getStandings",
+        {}
+      );
       setGroups(standingsRes.data?.groups || {});
     } catch (e) {
       console.error("Failed to load standings:", e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [source]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -124,10 +128,28 @@ export default function Leaderboard() {
           ))}
         </div>
 
+        {/* Where the numbers come from — the app's own results by default */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-xs text-slate-400">Source:</span>
+          {[{ id: "app", label: "App data" }, { id: "sheet", label: "Google Sheet" }].map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => setSource(opt.id)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                source === opt.id
+                  ? "bg-white text-slate-900"
+                  : "bg-white/10 text-white hover:bg-white/20"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <LeaderboardSkeleton />
         ) : activeTab === "rankings" ? (
-          <OverallRankings groups={groups} />
+          <OverallRankings groups={groups} source={source} onSourceChange={setSource} />
         ) : activeTab === "points" ? (
           <PointsTable groups={groups} />
         ) : (

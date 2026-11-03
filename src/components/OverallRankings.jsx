@@ -93,8 +93,8 @@ function normalizeAppPlayer(p) {
   return { ...p, hasStats: Number(p.gp) > 0, baseRating: p.rating };
 }
 
-export default function OverallRankings({ groups }) {
-  const [source, setSource] = useState("sheet");
+export default function OverallRankings({ groups, source: sourceProp, onSourceChange }) {
+  const [source, setSource] = useState(sourceProp || "app");
   const [appRound, setAppRound] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [loadingRatings, setLoadingRatings] = useState(true);
@@ -102,6 +102,11 @@ export default function OverallRankings({ groups }) {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [showExplainer, setShowExplainer] = useState(false);
+
+  // The leaderboard's source switch drives this tab too, so both stay in step.
+  useEffect(() => {
+    if (sourceProp && sourceProp !== source) setSource(sourceProp);
+  }, [sourceProp]);
 
   useEffect(() => {
     let cancelled = false;
@@ -232,10 +237,10 @@ export default function OverallRankings({ groups }) {
           <CardTitle className="text-sm flex items-center gap-2">All Player Ratings</CardTitle>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <span className="text-xs text-slate-400">Source:</span>
-            {[{ id: "sheet", label: "Google Sheet" }, { id: "app", label: "App data" }].map(opt => (
+            {[{ id: "app", label: "App data" }, { id: "sheet", label: "Google Sheet" }].map(opt => (
               <button
                 key={opt.id}
-                onClick={() => setSource(opt.id)}
+                onClick={() => (onSourceChange ? onSourceChange(opt.id) : setSource(opt.id))}
                 className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
                   source === opt.id
                     ? "bg-slate-900 text-white"
