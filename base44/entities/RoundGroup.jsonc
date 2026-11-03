@@ -1,0 +1,34 @@
+{
+  "name": "RoundGroup",
+  "type": "object",
+  "properties": {
+    "round": {
+      "type": "number",
+      "title": "Round"
+    },
+    "date": {
+      "type": "string",
+      "title": "Date"
+    },
+    "entries": {
+      "type": "array",
+      "title": "Players & Groups",
+      "items": {
+        "type": "object",
+        "properties": {
+          "player": {
+            "type": "string",
+            "title": "Player"
+          },
+          "group": {
+            "type": "number",
+            "title": "Group"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "round"
+  ]
+}

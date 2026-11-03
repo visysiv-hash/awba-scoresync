@@ -20,9 +20,9 @@ export default function AppRatings() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const load = async (date) => {
+  const load = async (round) => {
     setLoading(true);
-    const res = await base44.functions.invoke("getAppRatings", date ? { date } : {});
+    const res = await base44.functions.invoke("getAppRatings", round ? { round } : {});
     setData(res.data);
     setLoading(false);
   };
@@ -30,6 +30,8 @@ export default function AppRatings() {
   useEffect(() => {
     load();
   }, []);
+
+  const rounds = data?.rounds || [];
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 pb-24">
@@ -43,7 +45,7 @@ export default function AppRatings() {
           <Calculator className="w-6 h-6 text-yellow-400" />
           <div>
             <h1 className="text-lg font-bold tracking-tight leading-tight">App Ratings (Trial)</h1>
-            <p className="text-[11px] text-slate-400">Calculated only from scores entered in the app</p>
+            <p className="text-[11px] text-slate-400">Calculated only from results stored in the app</p>
           </div>
         </div>
 
@@ -55,21 +57,23 @@ export default function AppRatings() {
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-yellow-400" />
           </div>
-        ) : !data?.date ? (
+        ) : !data?.round ? (
           <div className="rounded-xl bg-slate-800 border border-slate-700 p-6 text-center">
             <p className="text-sm text-slate-300">No match results stored in the app yet.</p>
-            <p className="text-xs text-slate-500 mt-1">Scores submitted from tonight onwards will appear here.</p>
+            <p className="text-xs text-slate-500 mt-1">Import the score history to fill this in.</p>
           </div>
         ) : (
           <>
             <div className="flex items-center gap-2">
-              <Select value={data.date} onValueChange={(v) => load(v)}>
+              <Select value={String(data.round)} onValueChange={(v) => load(v)}>
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {data.dates.map((d) => (
-                    <SelectItem key={d} value={d}>{prettyDate(d)}</SelectItem>
+                  {rounds.map((r) => (
+                    <SelectItem key={r.round} value={String(r.round)}>
+                      Round {r.round} · {prettyDate(r.date)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -91,7 +95,7 @@ export default function AppRatings() {
             </div>
 
             <p className="text-[11px] text-slate-500 text-center pb-2 leading-snug">
-              Tap a player to see the maths for every match. Group is taken from the net played on.
+              Ratings as at Round {data.round}. Tap a player for their round-by-round history.
             </p>
           </>
         )}
