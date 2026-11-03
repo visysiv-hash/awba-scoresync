@@ -8,8 +8,11 @@ export default function AppRatingCard({ p, rank }) {
   return (
     <div className="rounded-xl bg-slate-800 border border-slate-700 overflow-hidden">
       <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-2 px-3 py-2 text-left">
-        <span className="text-[10px] text-slate-500 w-4">{rank}</span>
-        <span className="flex-1 text-sm font-semibold text-white truncate">{p.player}</span>
+        <span className="text-[10px] text-slate-500 w-4">{rank ?? ""}</span>
+        <span className="flex-1 text-sm font-semibold text-white truncate">
+          {p.player}
+          {p.provisional && <span className="ml-1.5 text-[9px] uppercase text-amber-400/80">prov</span>}
+        </span>
         <span className="text-[10px] text-slate-400">grp {p.currentGroup}</span>
         <span className="text-[10px] text-slate-400">gp {p.gp}</span>
         <span className="text-[11px] text-slate-300 w-14 text-right">

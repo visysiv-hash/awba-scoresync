@@ -183,6 +183,10 @@ export function computeAppRatings(
       rating: parseFloat(rolling.toFixed(2)),
       currentGroup: roundsSorted[roundsSorted.length - 1].group,
       baseGroup: startGroups[entry.player.trim().toLowerCase()] ?? roundsSorted[0].group,
+      roundsPlayed: roundsSorted.length,
+      // Under three rounds a rating is mostly their starting group, so it is kept
+      // but not ranked: it never feeds promotion/demotion or the ordering.
+      provisional: roundsSorted.length < 3,
       gp: matches.length,
       diff: totalDiff,
       firstRound: roundsSorted[0].round,
@@ -199,6 +203,7 @@ export function computeAppRatings(
     (p) => !PLACEHOLDERS.includes(String(p.player || "").trim().toLowerCase())
   );
 
-  rated.sort((a, b) => a.rating - b.rating);
-  return { players: rated };
+  const ranked = rated.filter((p) => !p.provisional).sort((a, b) => a.rating - b.rating);
+  const provisional = rated.filter((p) => p.provisional).sort((a, b) => a.rating - b.rating);
+  return { players: [...ranked, ...provisional] };
 }

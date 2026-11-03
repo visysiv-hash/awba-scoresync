@@ -21,8 +21,8 @@ export default function AppRatings() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const load = async (round) => {
-    setLoading(true);
+  const load = async (round, silent = false) => {
+    if (!silent) setLoading(true);
     const res = await base44.functions.invoke("getAppRatings", round ? { round } : {});
     setData(res.data);
     setLoading(false);
@@ -33,6 +33,8 @@ export default function AppRatings() {
   }, []);
 
   const rounds = data?.rounds || [];
+  const ranked = (data?.players || []).filter((p) => !p.provisional);
+  const provisional = (data?.players || []).filter((p) => p.provisional);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 pb-24">
@@ -90,15 +92,29 @@ export default function AppRatings() {
             </div>
 
             <div className="space-y-1.5">
-              {data.players.map((p, i) => (
+              {ranked.map((p, i) => (
                 <AppRatingCard key={p.player} p={p} rank={i + 1} />
               ))}
             </div>
 
+            {provisional.length > 0 && (
+              <div className="pt-2 space-y-1.5">
+                <p className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold px-3">
+                  Provisional · under 3 rounds ({provisional.length})
+                </p>
+                <p className="text-[10px] text-slate-500 px-3 leading-snug pb-1">
+                  Rating shown but not ranked, and not used for group moves, until they have played 3 rounds.
+                </p>
+                {provisional.map((p) => (
+                  <AppRatingCard key={p.player} p={p} />
+                ))}
+              </div>
+            )}
+
             <BaseGroupEditor
               players={data.players}
               baseGroups={data.baseGroups}
-              onSaved={() => load(data.round)}
+              onSaved={() => load(data.round, true)}
             />
 
             <p className="text-[11px] text-slate-500 text-center pb-2 leading-snug">
