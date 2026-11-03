@@ -114,7 +114,8 @@ export function computeAppRatings(
     for (const r of roundsSorted as any[]) {
       const base = parseFloat((r.baseSum / r.matchCount).toFixed(2));
       const divisor = divisorFor(rolling);
-      const sessionRating = parseFloat((rolling - r.totalAdjustedDiff / (r.matchCount * 2) / divisor).toFixed(2));
+      // Carry 3dp forward like the spreadsheet does, and only round for display.
+      const sessionRating = parseFloat((rolling - r.totalAdjustedDiff / (r.matchCount * 2) / divisor).toFixed(3));
       detail.push({
         round: r.round,
         group: r.group,

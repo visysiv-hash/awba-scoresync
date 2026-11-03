@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
       sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Players!A:G`, accessToken),
       sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Games!A:R`, accessToken),
       sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Raw_Responses!A:K`, accessToken),
-      sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/${encodeURIComponent("Group_Round_Standings!A1:Z2000")}`, accessToken),
+      sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/${encodeURIComponent("Group_Round_Standings!A1:Z10000")}`, accessToken),
     ]);
 
     const data = {

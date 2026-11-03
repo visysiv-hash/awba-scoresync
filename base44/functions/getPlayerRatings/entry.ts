@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
       fetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/Raw_Responses!A:K`, {
         headers: { Authorization: `Bearer ${accessToken}` }
       }),
-      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/${encodeURIComponent("Group_Round_Standings!A1:Z2000")}`, {
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${standingsId}/values/${encodeURIComponent("Group_Round_Standings!A1:Z10000")}`, {
         headers: { Authorization: `Bearer ${accessToken}` }
       }),
     ]);
