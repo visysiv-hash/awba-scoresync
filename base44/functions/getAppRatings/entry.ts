@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { computeAppRatings } from "../../shared/appRatings.ts";
+import { loadAppMatchResults } from "../../shared/appMatchResults.ts";
 
 // Ratings as at a round, calculated from app-stored results and round groups only.
 export default async function(req: Request): Promise<Response> {
@@ -7,17 +8,8 @@ export default async function(req: Request): Promise<Response> {
     const base44 = createClientFromRequest(req);
     const { round } = await req.json().catch(() => ({}));
 
-    // All stored match results (paged)
-    let rows: any[] = [];
-    let cursor: string | undefined;
-    for (let i = 0; i < 6; i++) {
-      const options: any = { sort: "round", limit: 1000 };
-      if (cursor) options.cursor = cursor;
-      const page = await base44.asServiceRole.entities.MatchResult.filter({}, options);
-      rows = rows.concat(page.items || []);
-      if (!page.has_more) break;
-      cursor = page.next_cursor;
-    }
+    // Stored results, with any sheet-only game for the current night picked up first
+    const rows: any[] = await loadAppMatchResults(base44);
     if (rows.length === 0) {
       return Response.json({ round: null, rounds: [], players: [] });
     }

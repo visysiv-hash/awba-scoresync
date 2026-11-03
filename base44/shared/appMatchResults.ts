@@ -36,8 +36,89 @@ export async function loadAppMatchResults(base44: any, maxPages = 6) {
     out.push(r);
   }
 
+  await syncSheetScores(base44, out);
   await assignRounds(base44, out);
   return out;
+}
+
+const splitNames = (s: any) =>
+  String(s || "")
+    .split(/\s*(?:&|\band\b|\/|,)\s*/i)
+    .map((n: string) => n.trim())
+    .filter(Boolean);
+
+const isoFromStamp = (stamp: any) => {
+  const m = String(stamp || "").match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+};
+
+// The draw spreadsheet's Scores tab holds the night's games. A score entered there
+// (or one saved before the app kept its own copy) would otherwise never reach the
+// app, so any of the last ten nights' games missing here are added before reading.
+async function syncSheetScores(base44: any, rows: any[]) {
+  try {
+    const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
+    const raw = Deno.env.get("SPREADSHEET_ID") || "";
+    const sheetId = raw.includes("/spreadsheets/d/")
+      ? raw.split("/spreadsheets/d/")[1].split("/")[0].split("?")[0]
+      : raw.split("/")[0].split("?")[0];
+    if (!sheetId) return;
+
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent("Scores!A:K")}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const values = (await res.json()).values || [];
+
+    const cutoff = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const seen = new Set(rows.map((r) => `${r.date}|${r.net}|${r.game}`));
+    const latest: Record<string, any> = {};
+    for (const s of values) {
+      const date = isoFromStamp(s[10]);
+      const net = String(s[0] || "").trim();
+      const game = String(s[1] || "").trim();
+      if (!date || date < cutoff || !net || !game) continue;
+      latest[`${date}|${net}|${game}`] = s;
+    }
+
+    const missing = Object.entries(latest)
+      .filter(([key]) => !seen.has(key))
+      .map(([key, s]: any) => {
+        // App-submitted rows hold the two rounds in E-H; manually entered ones
+        // start at F and put the totals in J-K.
+        const isManual = !String(s[4] || "").trim();
+        const rounds = isManual
+          ? [
+              { score1: Number(s[5]) || 0, score2: Number(s[6]) || 0 },
+              { score1: Number(s[7]) || 0, score2: Number(s[8]) || 0 },
+            ]
+          : [
+              { score1: Number(s[4]) || 0, score2: Number(s[5]) || 0 },
+              { score1: Number(s[6]) || 0, score2: Number(s[7]) || 0 },
+            ];
+        const [date, net, game] = key.split("|");
+        return {
+          date,
+          net: Number(net),
+          game: Number(game),
+          team1: String(s[2] || "").trim(),
+          team2: String(s[3] || "").trim(),
+          team1_players: splitNames(s[2]),
+          team2_players: splitNames(s[3]),
+          score1: rounds.reduce((t, r) => t + r.score1, 0),
+          score2: rounds.reduce((t, r) => t + r.score2, 0),
+          rounds,
+          source: "sheet",
+        };
+      })
+      .filter((r) => r.team1_players.length > 0 && r.team2_players.length > 0);
+
+    if (missing.length === 0) return;
+    const created: any = await base44.asServiceRole.entities.MatchResult.bulkCreate(missing);
+    for (const c of Array.isArray(created) ? created : []) rows.push(c);
+  } catch {
+    // Sheet unreachable: the app's own stored results are still used.
+  }
 }
 
 // Scores submitted in the app are stored without a round number. Give them the
