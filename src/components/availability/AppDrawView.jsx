@@ -9,12 +9,14 @@ const teamRating = (team) => {
   return parseFloat((rated.reduce((s, p) => s + p.rating, 0) / rated.length).toFixed(2));
 };
 
-function GameBlock({ game }) {
+function GameBlock({ game, complete }) {
   if (!game.matches.length) {
     return (
       <div className="space-y-1">
         <p className="text-[11px] font-semibold text-slate-400">{game.label}</p>
-        <p className="text-[11px] text-slate-500 italic">Needs a full group of 8.</p>
+        <p className="text-[11px] text-slate-500 italic">
+          {complete ? "Needs the group next to it to be full." : "No match scheduled."}
+        </p>
       </div>
     );
   }
@@ -69,14 +71,20 @@ export default function AppDrawView({ draw }) {
             <CardTitle className="text-sm flex items-center justify-between">
               <span className="font-bold text-yellow-400">Group {g.groupNum}</span>
               <span className="text-[11px] text-slate-400">
-                avg <span className="text-white font-bold">{g.average ?? "—"}</span>
+                Court {(g.courts || []).join(" & ")} · avg{" "}
+                <span className="text-white font-bold">{g.average ?? "—"}</span>
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="px-3 pb-3 space-y-3">
             <p className="text-[11px] text-slate-400">{g.players.map((p) => p.name).join(", ")}</p>
+            {!g.complete && (
+              <p className="text-[11px] text-amber-300">
+                Short group of {g.players.length} — singles and one-against-two fill the night.
+              </p>
+            )}
             {g.games.map((game, i) => (
-              <GameBlock key={i} game={game} />
+              <GameBlock key={i} game={game} complete={g.complete} />
             ))}
           </CardContent>
         </Card>

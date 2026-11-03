@@ -1,0 +1,112 @@
+{
+  "name": "DrawNight",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "title": "Date"
+    },
+    "variant": {
+      "type": "string",
+      "title": "Draw Type",
+      "enum": [
+        "normal",
+        "unique"
+      ],
+      "default": "normal"
+    },
+    "courts_per_group": {
+      "type": "number",
+      "title": "Courts Per Group",
+      "default": 2
+    },
+    "groups": {
+      "type": "array",
+      "title": "Groups",
+      "items": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "number",
+            "title": "Group"
+          },
+          "courts": {
+            "type": "array",
+            "title": "Courts",
+            "items": {
+              "type": "number"
+            }
+          },
+          "players": {
+            "type": "array",
+            "title": "Players",
+            "items": {
+              "type": "string"
+            }
+          },
+          "top4": {
+            "type": "array",
+            "title": "Top 4",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bottom4": {
+            "type": "array",
+            "title": "Bottom 4",
+            "items": {
+              "type": "string"
+            }
+          },
+          "average": {
+            "type": "number",
+            "title": "Group Average"
+          }
+        }
+      }
+    },
+    "matches": {
+      "type": "array",
+      "title": "Matches",
+      "items": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "number",
+            "title": "Group"
+          },
+          "game": {
+            "type": "number",
+            "title": "Game"
+          },
+          "net": {
+            "type": "number",
+            "title": "Court"
+          },
+          "team1": {
+            "type": "array",
+            "title": "Team 1",
+            "items": {
+              "type": "string"
+            }
+          },
+          "team2": {
+            "type": "array",
+            "title": "Team 2",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "published": {
+      "type": "boolean",
+      "title": "Published",
+      "default": true
+    }
+  },
+  "required": [
+    "date"
+  ]
+}

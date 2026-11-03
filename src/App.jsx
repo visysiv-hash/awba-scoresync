@@ -27,6 +27,7 @@ import AdminLateCancellations from './pages/AdminLateCancellations';
 import Home from './pages/Home';
 import MatchDetails from './pages/MatchDetails';
 import PlayerAvailability from './pages/PlayerAvailability';
+import Schedule from './pages/Schedule';
 import Leaderboard from './pages/Leaderboard';
 import Dashboard from './pages/Dashboard';
 import AppRatings from './pages/AppRatings';
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/ratings/app" element={<AppRatings />} />
           <Route path="/availability" element={<PlayerAvailability />} />
+          <Route path="/schedule" element={<Schedule />} />
           <Route path="/player" element={<PlayerProfile />} />
           <Route path="/manual" element={<UserManual />} />
           <Route path="/explainer" element={<ExplainerDownload />} />
