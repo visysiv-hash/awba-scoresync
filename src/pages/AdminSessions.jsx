@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil, Copy, UserPlus } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil, Copy, UserPlus, UserCheck } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { addWeeks } from "date-fns";
 import { getCurrentMember } from "../lib/currentMember";
@@ -277,6 +277,20 @@ export default function AdminSessions() {
     } catch (e) {
       toast.error("Failed to add guest player.");
       throw e;
+    }
+  };
+
+  // Move one waitlisted player onto the confirmed list and email them the confirmation
+  const handlePromote = async (b) => {
+    try {
+      const res = await base44.functions.invoke("promoteFromWaitlist", { bookingId: b.id });
+      const refreshed = await base44.entities.Booking.list("-created_date", 1000);
+      setBookings(refreshed);
+      toast.success(res.data?.emailed
+        ? `${b.user_name} confirmed — email sent.`
+        : `${b.user_name} confirmed. No email on file.`);
+    } catch (e) {
+      toast.error("Failed to confirm player.");
     }
   };
 
@@ -878,6 +892,13 @@ export default function AdminSessions() {
                                 <div key={i} className="flex items-center justify-between gap-2 pl-2">
                                   <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
                                   <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => handlePromote(b)}
+                                      className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold border bg-green-600 text-white border-green-700 hover:bg-green-700 inline-flex items-center gap-1"
+                                      title="Move to confirmed and email them"
+                                    >
+                                      <UserCheck className="w-3 h-3" /> Confirm
+                                    </button>
                                     <button
                                       onClick={async () => {
                                         try {
