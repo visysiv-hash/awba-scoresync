@@ -1,0 +1,17 @@
+{
+  "name": "AppSetting",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "title": "Setting Key"
+    },
+    "value": {
+      "type": "string",
+      "title": "Setting Value"
+    }
+  },
+  "required": [
+    "key"
+  ]
+}

@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Users, Send, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SuggestedGroups from "../components/SuggestedGroups";
+import SchedulingMethodSwitch from "../components/availability/SchedulingMethodSwitch";
+import AppDrawPanel from "../components/availability/AppDrawPanel";
 import PageBanner from "../components/PageBanner";
 import { getCurrentMember } from "../lib/currentMember";
 import { toast } from "sonner";
@@ -17,6 +19,8 @@ export default function PlayerAvailability() {
   const [showGroups, setShowGroups] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [excludedNames, setExcludedNames] = useState([]);
+  const [method, setMethod] = useState("sheet");
+  const [loadingApp, setLoadingApp] = useState(false);
   const isAdmin = getCurrentMember()?.is_admin === true;
 
   // The ratings call reads several sheets, so it can come back empty now and
@@ -54,6 +58,48 @@ export default function PlayerAvailability() {
       toast.error("Couldn't load today's players — please reload the page.");
     }).finally(() => setLoading(false));
   }, []);
+
+  // Which scheduling method is in use right now — stored in the app so every
+  // admin sees the same choice. Both methods stay available at all times.
+  useEffect(() => {
+    base44.entities.AppSetting
+      .filter({ key: "scheduling_method" })
+      .then((rows) => {
+        const saved = Array.isArray(rows) ? rows[0]?.value : rows?.items?.[0]?.value;
+        if (saved === "app" || saved === "sheet") setMethod(saved);
+      })
+      .catch(() => {});
+  }, []);
+
+  const saveMethod = async (next) => {
+    setMethod(next);
+    try {
+      const rows = await base44.entities.AppSetting.filter({ key: "scheduling_method" });
+      const existing = Array.isArray(rows) ? rows[0] : rows?.items?.[0];
+      if (existing) await base44.entities.AppSetting.update(existing.id, { value: next });
+      else await base44.entities.AppSetting.create({ key: "scheduling_method", value: next });
+    } catch {
+      toast.error("Couldn't save the scheduling method.");
+    }
+  };
+
+  const loadAppBookings = async () => {
+    setLoadingApp(true);
+    try {
+      const res = await base44.functions.invoke("getTodayAvailablePlayers", {});
+      const names = res.data?.players || [];
+      if (names.length === 0) {
+        toast.error("No players booked in the app for today.");
+        return;
+      }
+      setAvailablePlayers(names);
+      toast.success(`Loaded ${names.length} player${names.length === 1 ? "" : "s"} booked in the app today.`);
+    } catch {
+      toast.error("Couldn't load today's app bookings.");
+    } finally {
+      setLoadingApp(false);
+    }
+  };
 
   const ratingMap = useMemo(() => {
     const map = {};
@@ -207,14 +253,22 @@ export default function PlayerAvailability() {
           </Button>
 
           {isAdmin && (
-            <Button
-              onClick={handleExportToSheet}
-              disabled={exporting}
-              className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold"
-            >
-              {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-              {exporting ? "Refreshing & sending…" : "Refresh & send names to sheet"}
-            </Button>
+            <div className="space-y-3">
+              <SchedulingMethodSwitch method={method} onChange={saveMethod} />
+
+              {method === "sheet" ? (
+                <Button
+                  onClick={handleExportToSheet}
+                  disabled={exporting}
+                  className="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold"
+                >
+                  {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                  {exporting ? "Refreshing & sending…" : "Refresh & send names to sheet"}
+                </Button>
+              ) : (
+                <AppDrawPanel players={schedulePlayers} onLoadPlayers={loadAppBookings} loading={loadingApp} />
+              )}
+            </div>
           )}
 
           {showGroups && <SuggestedGroups players={schedulePlayers} />}
