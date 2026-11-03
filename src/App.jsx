@@ -29,6 +29,7 @@ import MatchDetails from './pages/MatchDetails';
 import PlayerAvailability from './pages/PlayerAvailability';
 import Leaderboard from './pages/Leaderboard';
 import Dashboard from './pages/Dashboard';
+import AppRatings from './pages/AppRatings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -82,6 +83,7 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/ratings/app" element={<AppRatings />} />
           <Route path="/availability" element={<PlayerAvailability />} />
           <Route path="/player" element={<PlayerProfile />} />
           <Route path="/manual" element={<UserManual />} />

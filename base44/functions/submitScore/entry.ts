@@ -49,5 +49,38 @@ Deno.serve(async (req) => {
     return Response.json({ error: err });
   }
 
+  // Also store the result in the app itself, so ratings can be calculated
+  // without the spreadsheet. The sheet write above is unchanged.
+  try {
+    const splitNames = (s) =>
+      String(s || "")
+        .split(/\s*(?:&|\band\b|\/|,)\s*/i)
+        .map((n) => n.trim())
+        .filter(Boolean);
+
+    const sydneyDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Australia/Sydney",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    await base44.asServiceRole.entities.MatchResult.create({
+      date: sydneyDate,
+      net: Number(netNumber),
+      game: Number(gameNumber),
+      team1,
+      team2,
+      team1_players: splitNames(team1),
+      team2_players: splitNames(team2),
+      score1: Number(total1) || 0,
+      score2: Number(total2) || 0,
+      rounds,
+      source: "app",
+    });
+  } catch (e) {
+    // The score is already saved to the sheet; the app copy is best-effort.
+  }
+
   return Response.json({ success: true });
 });

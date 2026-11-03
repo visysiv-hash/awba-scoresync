@@ -1,0 +1,81 @@
+{
+  "name": "MatchResult",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "title": "Date"
+    },
+    "net": {
+      "type": "number",
+      "title": "Net"
+    },
+    "game": {
+      "type": "number",
+      "title": "Game"
+    },
+    "team1": {
+      "type": "string",
+      "title": "Team 1"
+    },
+    "team2": {
+      "type": "string",
+      "title": "Team 2"
+    },
+    "team1_players": {
+      "type": "array",
+      "title": "Team 1 Players",
+      "items": {
+        "type": "string"
+      }
+    },
+    "team2_players": {
+      "type": "array",
+      "title": "Team 2 Players",
+      "items": {
+        "type": "string"
+      }
+    },
+    "score1": {
+      "type": "number",
+      "title": "Team 1 Score"
+    },
+    "score2": {
+      "type": "number",
+      "title": "Team 2 Score"
+    },
+    "rounds": {
+      "type": "array",
+      "title": "Rounds",
+      "items": {
+        "type": "object",
+        "properties": {
+          "score1": {
+            "type": "number",
+            "title": "Team 1"
+          },
+          "score2": {
+            "type": "number",
+            "title": "Team 2"
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "string",
+      "title": "Source",
+      "enum": [
+        "app",
+        "sheet"
+      ],
+      "default": "app"
+    }
+  },
+  "required": [
+    "date",
+    "net",
+    "game",
+    "score1",
+    "score2"
+  ]
+}

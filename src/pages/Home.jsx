@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getCurrentMember } from "../lib/currentMember";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban } from
+  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban, Calculator } from
   "lucide-react";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
@@ -133,7 +133,14 @@ gradient: "from-yellow-500 to-amber-600"
  icon: Ban,
  to: "/admin/late-cancellations",
  gradient: "from-red-500 to-rose-700"
-}];
+ },
+ {
+ label: "App Ratings",
+ description: "Trial ratings from app scores",
+ icon: Calculator,
+ to: "/ratings/app",
+ gradient: "from-slate-500 to-slate-700"
+ }];
 
 
 function Tile({ label, description, icon: Icon, to, gradient, onClick }) {
