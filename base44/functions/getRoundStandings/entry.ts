@@ -1,65 +1,35 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
-import { sheetFetch } from "../../shared/sheetCache.ts";
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.53';
+import { loadAppMatchResults, auDate } from "../../shared/appMatchResults.ts";
 
-Deno.serve(async (req) => {
-  const base44 = createClientFromRequest(req);
-  const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
-  const spreadsheetId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
-  const scoreSpreadsheetId = Deno.env.get("STANDINGS_SPREADSHEET_ID");
+// The week list comes from the results stored in the app, so the latest week
+// appears as soon as its scores are in — the spreadsheet tabs lag behind.
+export default async function(req: Request): Promise<Response> {
+  try {
+    const base44 = createClientFromRequest(req);
+    const rows = await loadAppMatchResults(base44);
 
-  // Fetch round-date mapping from Raw Responses sheet (col A = date, col K = round)
-  const rawRange = encodeURIComponent("Raw_Responses!A2:K5000");
-  const rawRes = await sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${scoreSpreadsheetId}/values/${rawRange}`, accessToken);
-  const roundDateMap = {};
-  const playedRounds = new Set();
-  if (rawRes.ok) {
-    const rawJson = await rawRes.json();
-    for (const row of (rawJson.values || [])) {
-      const date = (row[0] || "").trim().split(" ")[0]; // extract date only from timestamp
-      const round = (row[10] || "").trim(); // column K = index 10
-      if (round && date && !roundDateMap[round]) {
-        roundDateMap[round] = date;
+    const dateCounts: Record<number, Record<string, number>> = {};
+    for (const r of rows) {
+      const round = Number(r.round);
+      if (!(round > 0)) continue;
+      if (r.date) {
+        dateCounts[round] = dateCounts[round] || {};
+        dateCounts[round][r.date] = (dateCounts[round][r.date] || 0) + 1;
+      } else {
+        dateCounts[round] = dateCounts[round] || {};
       }
-      if (round) playedRounds.add(round);
     }
-  }
 
-  // Rounds come from the scored responses themselves, so a week shows up as soon
-  // as its results are in — waiting on the precomputed Group_Round_Standings tab
-  // (which the sheet's own formulas have to extend) left the latest week missing.
-  if (playedRounds.size > 0) {
-    const rounds = Array.from(playedRounds).sort((a, b) => parseInt(a) - parseInt(b));
+    const roundDateMap: Record<string, string> = {};
+    for (const [round, dates] of Object.entries(dateCounts)) {
+      const best = Object.entries(dates).sort((a, b) => b[1] - a[1])[0];
+      if (best) roundDateMap[round] = auDate(best[0]);
+    }
+
+    const rounds = Object.keys(dateCounts).sort((a, b) => Number(a) - Number(b));
+
     return Response.json({ rounds, roundDateMap });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
   }
-
-  const range = encodeURIComponent("Group_Round_Standings!A1:Z5000");
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
-
-  const res = await sheetFetch(url, accessToken);
-
-  if (!res.ok) {
-    const err = await res.text();
-    return Response.json({ error: err }, { status: 500 });
-  }
-
-  const json = await res.json();
-  const rows = json.values || [];
-
-  if (rows.length === 0) return Response.json({ rounds: [], roundDateMap });
-
-  // First row is headers
-  const headers = rows[0].map(h => h.trim().toLowerCase());
-  const dataRows = rows.slice(1);
-
-  // The caller only needs the round numbers here — the per-round rows are
-  // fetched per player by getPlayerHistory, so they are not shipped back.
-  const roundIndex = headers.indexOf("round");
-  const rounds = new Set();
-
-  for (const row of dataRows) {
-    const round = row[roundIndex] || "";
-    if (round) rounds.add(round);
-  }
-
-  return Response.json({ rounds: Array.from(rounds), roundDateMap });
-});
+}

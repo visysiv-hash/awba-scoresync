@@ -1,62 +1,50 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
-import { sheetFetch } from "../../shared/sheetCache.ts";
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.53';
+import { loadAppMatchResults } from "../../shared/appMatchResults.ts";
 
-Deno.serve(async (req) => {
+export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    const { player, opponent } = await req.json();
+    const { player, opponent } = await req.json().catch(() => ({}));
 
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
-    const sid = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
-    const range = encodeURIComponent("Raw_Responses!A2:K2000");
+    const rows = await loadAppMatchResults(base44);
+    const playerLower = (player || "").trim().toLowerCase();
 
-    const response = await sheetFetch(`https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${range}`, accessToken);
-    const data = await response.json();
-    const rows = data.values || [];
+    const playerGames: any[] = [];
+    for (const r of rows) {
+      const team1 = (Array.isArray(r.team1_players) ? r.team1_players : []).map((n: string) => String(n).trim());
+      const team2 = (Array.isArray(r.team2_players) ? r.team2_players : []).map((n: string) => String(n).trim());
+      const inTeam1 = team1.some((n: string) => n.toLowerCase() === playerLower);
+      const inTeam2 = team2.some((n: string) => n.toLowerCase() === playerLower);
+      if (!inTeam1 && !inTeam2) continue;
 
-    const playerLower = (player || "").toLowerCase();
-
-    const playerGames = [];
-    for (const row of rows) {
-      const gameChoice = (row[1] || "").trim(); // "netId | P1 & P2 & P3 & P4"
-      const parts = gameChoice.split("|");
-      const teamsStr = (parts[1]?.trim() || gameChoice);
-      // Split by both "Vs" and "&" to handle all name formats
-      const players = teamsStr.split(/\s*Vs\s*/i).flatMap(side => side.split("&")).map(p => p.trim());
-
-      // Exact name match (case-insensitive)
-      const myIdx = players.findIndex(p => p.toLowerCase() === playerLower);
-      if (myIdx === -1) continue;
-
-      const team1Score = Number(row[2] || 0);
-      const team2Score = Number(row[3] || 0);
-      const isTeam1 = myIdx < 2;
-      const myScore = isTeam1 ? team1Score : team2Score;
-      const oppScore = isTeam1 ? team2Score : team1Score;
-      const myTeam = isTeam1 ? players.slice(0, 2).join(" & ") : players.slice(2).join(" & ");
-      const oppTeam = isTeam1 ? players.slice(2).join(" & ") : players.slice(0, 2).join(" & ");
+      const team1Score = Number(r.score1) || 0;
+      const team2Score = Number(r.score2) || 0;
+      const myScore = inTeam1 ? team1Score : team2Score;
+      const oppScore = inTeam1 ? team2Score : team1Score;
+      const myTeam = (inTeam1 ? team1 : team2).join(" & ");
+      const oppTeam = (inTeam1 ? team2 : team1).join(" & ");
       const result = myScore > oppScore ? "W" : myScore < oppScore ? "L" : "D";
 
       playerGames.push({
-        net: parts[0]?.trim() || "",
+        net: r.net == null ? "" : String(r.net),
         myTeam,
         opponent: oppTeam,
         myScore,
         oppScore,
         result,
-        round: (row[10] || "").trim(),
-        timestamp: (row[0] || ""),
+        round: r.round == null ? "" : String(r.round),
+        timestamp: r.date ? `${r.date}T00:00:00` : "",
       });
     }
 
-    playerGames.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    playerGames.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     let h2h = null;
     if (opponent) {
-      const h2hGames = playerGames.filter(g => g.opponent.toLowerCase().includes(opponent.toLowerCase()));
-      const wins = h2hGames.filter(g => g.result === "W").length;
-      const losses = h2hGames.filter(g => g.result === "L").length;
-      const draws = h2hGames.filter(g => g.result === "D").length;
+      const h2hGames = playerGames.filter((g) => g.opponent.toLowerCase().includes(String(opponent).toLowerCase()));
+      const wins = h2hGames.filter((g) => g.result === "W").length;
+      const losses = h2hGames.filter((g) => g.result === "L").length;
+      const draws = h2hGames.filter((g) => g.result === "D").length;
       h2h = { games: h2hGames, wins, losses, draws, total: h2hGames.length };
     }
 
@@ -65,4 +53,4 @@ Deno.serve(async (req) => {
     // Keep the response shape stable — callers read `games` directly.
     return Response.json({ games: [], h2h: null, error: error.message });
   }
-});
+}
