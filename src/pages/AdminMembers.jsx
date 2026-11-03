@@ -105,10 +105,15 @@ export default function AdminMembers() {
                   <tr key={r.row_number} className={i % 2 ? "bg-slate-50" : "bg-white"}>
                     <td className="px-3 py-2 text-slate-400 border-b">{i + 1}</td>
                     {r.cells.map((c, ci) => {
-                      const isPaidCol = ci === r.cells.length - 1;
+                      const isPaidCol = ci === 8;
+                      const isAdminCol = ci === 9;
                       return (
                         <td key={ci} className="px-3 py-2 border-b whitespace-nowrap text-slate-700">
-                          {isPaidCol && c ? (
+                          {isAdminCol && c ? (
+                            <Badge className={["yes", "y", "true", "1"].includes(String(c).trim().toLowerCase())
+                              ? "bg-slate-800 text-white"
+                              : "bg-slate-100 text-slate-500 border border-slate-300"}>{c}</Badge>
+                          ) : isPaidCol && c ? (
                             <Badge className="bg-green-100 text-green-700 border border-green-300">{c}</Badge>
                           ) : (c || <span className="text-slate-300">—</span>)}
                         </td>

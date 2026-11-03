@@ -14,14 +14,18 @@ Deno.serve(async (req) => {
     const allRows = data.values || [];
 
     const headerRow = allRows[0] || [];
-    // Keep columns A–I (indices 0–8); exclude J (9) & K (10)
-    const headers = headerRow.slice(0, 9);
+    // Keep columns A–I (indices 0–8), skip J (9) & K (10), and add the Admin flag (L, 11)
+    const headers = [...headerRow.slice(0, 9), headerRow[11] || "Admin"];
 
+    // Google trims trailing empty cells, so pad every row to a fixed 10 columns
+    // (A–I plus Admin) or the Admin value would slide into the wrong column.
     const rows = allRows.slice(1).map((r, i) => {
-      const cells = r.slice(0, 9);
+      const cells = Array.from({ length: 10 }, (_, ci) =>
+        String((ci === 9 ? r[11] : r[ci]) ?? "").trim()
+      );
       return {
         row_number: i + 2, // sheet row number (header is row 1)
-        paid: String(r[8] || "").trim(),
+        paid: cells[8],
         cells,
       };
     }).filter(r => r.cells.some(c => String(c || "").trim() !== ""));
