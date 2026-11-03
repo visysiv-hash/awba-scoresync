@@ -61,6 +61,25 @@ Deno.serve(async (req) => {
       return Response.json({ error: err.error?.message || 'Failed to update' }, { status: 500 });
     }
 
+    // Keep the app's own copy of the result in step so the correction shows up in
+    // the app ratings immediately instead of after the next import.
+    try {
+      const appRows = await base44.asServiceRole.entities.MatchResult.filter(
+        { net: Number(net), game: Number(game) },
+        { limit: 5, sort: "-created_date" }
+      );
+      const latest = (appRows.items || [])[0];
+      if (latest) {
+        await base44.asServiceRole.entities.MatchResult.update(latest.id, {
+          score1: total1,
+          score2: total2,
+          rounds,
+        });
+      }
+    } catch (e) {
+      // The sheet row is already updated; the app copy is best effort.
+    }
+
     return Response.json({ success: true });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

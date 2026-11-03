@@ -1,6 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { computeAppRatings } from "../../shared/appRatings.ts";
 
+const MAIN_SHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
+
 // Ratings as at a round, calculated from app-stored results and round groups only.
 export default async function(req: Request): Promise<Response> {
   try {
@@ -18,8 +20,6 @@ export default async function(req: Request): Promise<Response> {
       if (!page.has_more) break;
       cursor = page.next_cursor;
     }
-    rows = rows.filter((r) => Number(r.round) > 0);
-
     if (rows.length === 0) {
       return Response.json({ round: null, rounds: [], players: [] });
     }
@@ -39,6 +39,50 @@ export default async function(req: Request): Promise<Response> {
         if (rd === 0) startGroups[key] = Number(e.group);
         else roundGroups[`${key}|${rd}`] = Number(e.group);
       }
+    }
+
+    // The Players tab's "Rating Base Group" re-bases a player's whole rating, which
+    // is how a wrong starting group gets corrected. Read it live so an edit applies
+    // straight away instead of waiting for the next import.
+    try {
+      const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
+      const sheetId = Deno.env.get("STANDINGS_SPREADSHEET_ID") || MAIN_SHEET_ID;
+      const res = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent("Players!A:G")}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      const json = await res.json();
+      for (const row of (json.values || []).slice(1)) {
+        const name = String(row[0] || "").trim().toLowerCase();
+        const active = String(row[1] || "").trim().toLowerCase();
+        const group = parseInt(row[6]);
+        if (!name || active === "no" || !group) continue;
+        startGroups[name] = group;
+      }
+    } catch (_) {
+      // Sheet unavailable: fall back to the base groups from the last import.
+    }
+
+    // Scores entered in the app are stored without a round number, so give them one
+    // here: the round played on that date, otherwise the next round after the last
+    // known one. That makes tonight's results count immediately.
+    const dateToRound: Record<string, number> = {};
+    for (const [rd, date] of Object.entries(roundDates)) {
+      if (date) dateToRound[date] = Number(rd);
+    }
+    const maxKnown = Math.max(
+      0,
+      ...groupRows.map((g: any) => Number(g.round) || 0),
+      ...rows.map((r: any) => Number(r.round) || 0)
+    );
+    const pendingDates = [...new Set(rows.filter((r: any) => !(Number(r.round) > 0)).map((r: any) => r.date).filter(Boolean))].sort();
+    const pendingRound: Record<string, number> = {};
+    pendingDates.forEach((d: any, i) => {
+      pendingRound[d] = dateToRound[d] ?? maxKnown + 1 + i;
+    });
+    for (const r of rows) {
+      if (Number(r.round) > 0) continue;
+      r.round = (r.date && pendingRound[r.date]) || maxKnown + 1;
     }
 
     const summary: Record<number, any> = {};

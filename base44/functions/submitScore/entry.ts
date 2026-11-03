@@ -24,25 +24,44 @@ Deno.serve(async (req) => {
     timestamp
   ]];
 
-  // Find the first empty row by reading column A only
-  const colARes = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!A:A`,
+  // Read the Scores tab once. A net and match number can only be played once a
+  // night, so if tonight already has a row for this game it is the same game
+  // entered again: correct that row instead of adding a duplicate.
+  const scoresRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!A:K`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
-  const colAData = await colARes.json();
-  const colAValues = colAData.values || [];
-  const nextRow = colAValues.length + 1; // 1-indexed, next empty row
+  const scoresData = await scoresRes.json();
+  const scoreRows = scoresData.values || [];
 
-  // Write directly to that row in columns A:K
-  const writeUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!A${nextRow}:K${nextRow}?valueInputOption=USER_ENTERED`;
-  const response = await fetch(writeUrl, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ values }),
-  });
+  const todayStamp = timestamp.slice(0, 10);
+  let existingRow = -1;
+  for (let i = 1; i < scoreRows.length; i++) {
+    const row = scoreRows[i];
+    if (String(row[0] || "").trim() !== String(netNumber).trim()) continue;
+    if (String(row[1] || "").trim() !== String(gameNumber).trim()) continue;
+    if (!String(row[10] || "").startsWith(todayStamp)) continue;
+    existingRow = i + 1;
+    break;
+  }
+
+  const response = existingRow > 0
+    ? await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!E${existingRow}:K${existingRow}?valueInputOption=USER_ENTERED`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ values: [values[0].slice(4)] }),
+        }
+      )
+    : await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Scores!A${scoreRows.length + 1}:K${scoreRows.length + 1}?valueInputOption=USER_ENTERED`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ values }),
+        }
+      );
 
   if (!response.ok) {
     const err = await response.text();
@@ -65,7 +84,7 @@ Deno.serve(async (req) => {
       day: "2-digit",
     }).format(new Date());
 
-    await base44.asServiceRole.entities.MatchResult.create({
+    const record: any = {
       date: sydneyDate,
       net: Number(netNumber),
       game: Number(gameNumber),
@@ -77,10 +96,22 @@ Deno.serve(async (req) => {
       score2: Number(total2) || 0,
       rounds,
       source: "app",
-    });
+    };
+
+    // One result per game per night: a second submission corrects the first.
+    const existing = await base44.asServiceRole.entities.MatchResult.filter(
+      { date: sydneyDate, net: Number(netNumber), game: Number(gameNumber) },
+      { limit: 5 }
+    );
+    const previous = (existing.items || [])[0];
+    if (previous) {
+      await base44.asServiceRole.entities.MatchResult.update(previous.id, record);
+    } else {
+      await base44.asServiceRole.entities.MatchResult.create(record);
+    }
   } catch (e) {
     // The score is already saved to the sheet; the app copy is best-effort.
   }
 
-  return Response.json({ success: true });
+  return Response.json({ success: true, updated: existingRow > 0 });
 });

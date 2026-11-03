@@ -15,24 +15,68 @@ const divisorFor = (base: number) => {
 
 const avg = (values: number[]) => (values.length ? values.reduce((s, v) => s + v, 0) / values.length : null);
 
+const teamsKey = (r: any) =>
+  [r.team1_players, r.team2_players]
+    .map((t: string[]) => (Array.isArray(t) ? t : []).map((n: string) => String(n).trim().toLowerCase()).sort().join("+"))
+    .sort()
+    .join("|");
+
+// The same game can land in the database twice: once as the app's own submission
+// and again when the sheet is imported. Count it once - the sheet row wins, since
+// that is the verified copy. Identical repeats on the same net and match number
+// are double entries too.
+const dedupe = (rows: any[]) => {
+  const fromSheet = new Set(rows.filter((r) => r.source === "sheet").map((r) => `${r.date || ""}|${teamsKey(r)}`));
+  const seen = new Set<string>();
+  const out: any[] = [];
+  for (const r of rows) {
+    const exact = `${r.date || ""}|${r.net ?? ""}|${r.game ?? ""}|${teamsKey(r)}`;
+    if (seen.has(exact)) continue;
+    seen.add(exact);
+    if (r.source !== "sheet" && fromSheet.has(`${r.date || ""}|${teamsKey(r)}`)) continue;
+    out.push(r);
+  }
+  return out;
+};
+
 export function computeAppRatings(
   results: any[],
   roundGroups: Record<string, number>,
   upToRound?: number | null,
   startGroups: Record<string, number> = {}
 ) {
-  const rows = (results || [])
+  const rows = dedupe(results || [])
     .filter((r) => (upToRound == null ? true : Number(r.round) <= Number(upToRound)))
     .sort((a, b) => Number(a.round) - Number(b.round));
 
   const perPlayer: Record<string, { player: string; matches: any[] }> = {};
 
-  const groupOf = (name: string, round: number, fallbackNet?: number | null) => {
-    const key = `${String(name || "").trim().toLowerCase()}|${round}`;
-    const found = roundGroups[key];
-    if (found) return Number(found);
-    // Rounds not yet in the group sheet (e.g. tonight) fall back to the net played on.
-    return fallbackNet ? Number(fallbackNet) : null;
+  // The group a player was in that round, read the same way the spreadsheet does:
+  // their own group row, else the average of the other players in the game, else
+  // the group they were last placed in. The net they played on says nothing about
+  // their group, so it is never used.
+  const grouped: Record<string, { round: number; group: number }[]> = {};
+  for (const [key, group] of Object.entries(roundGroups)) {
+    const [name, rd] = key.split("|");
+    if (!name || !rd) continue;
+    (grouped[name] = grouped[name] || []).push({ round: Number(rd), group: Number(group) });
+  }
+  for (const list of Object.values(grouped)) list.sort((a, b) => a.round - b.round);
+
+  const lastGroupBefore = (name: string, round: number) => {
+    const list = grouped[String(name || "").trim().toLowerCase()];
+    if (!list) return null;
+    let found: number | null = null;
+    for (const item of list) {
+      if (item.round > round) break;
+      found = item.group;
+    }
+    return found;
+  };
+
+  const groupOf = (name: string, round: number) => {
+    const found = roundGroups[`${String(name || "").trim().toLowerCase()}|${round}`];
+    return found ? Number(found) : null;
   };
 
   for (const r of rows) {
@@ -43,9 +87,8 @@ export function computeAppRatings(
 
     const s1 = Number(r.score1) || 0;
     const s2 = Number(r.score2) || 0;
-    const fallbackNet = Number(r.net) || null;
 
-    const groups = (names: string[]) => names.map((n) => groupOf(n, round, fallbackNet)).filter((g) => g != null) as number[];
+    const groups = (names: string[]) => names.map((n) => groupOf(n, round)).filter((g) => g != null) as number[];
     const t1Avg = avg(groups(t1));
     const t2Avg = avg(groups(t2));
 
@@ -59,14 +102,17 @@ export function computeAppRatings(
 
     for (const side of sides) {
       for (const name of side.team) {
-        let ownGroup = groupOf(name, round, fallbackNet);
+        let ownGroup = groupOf(name, round);
         if (!ownGroup) {
           const known = [t1, t2]
             .flat()
             .filter((n) => n !== name)
-            .map((n) => roundGroups[`${String(n).trim().toLowerCase()}|${round}`])
-            .filter(Boolean) as number[];
+            .map((n) => groupOf(n, round))
+            .filter((g) => g != null) as number[];
           ownGroup = known.length ? Math.round(avg(known) as number) : null;
+        }
+        if (!ownGroup) {
+          ownGroup = lastGroupBefore(name, round) ?? startGroups[String(name).trim().toLowerCase()] ?? null;
         }
         if (!ownGroup) continue;
 

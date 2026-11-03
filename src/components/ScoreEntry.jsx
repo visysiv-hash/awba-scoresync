@@ -100,6 +100,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
     });
     setSubmitting(false);
     if (res.data?.success) {
+      if (res.data?.updated) toast.info("This match was already scored tonight — the result has been updated.");
       const t1 = rounds.reduce((s, r) => s + Number(r.score1), 0);
       const t2 = rounds.reduce((s, r) => s + Number(r.score2), 0);
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ["#16a34a", "#2563eb", "#f59e0b", "#dc2626"] });
