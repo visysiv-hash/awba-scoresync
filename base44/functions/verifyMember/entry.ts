@@ -1,15 +1,7 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { sheetFetch } from "../../shared/sheetCache.ts";
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 
-const MEMBER_SPREADSHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
-const SHEET = "MemberData";
-
-// In-memory cache — survives across warm invocations of the function.
-// Avoids re-fetching the entire sheet on every single login attempt.
-let cachedMembers: any[] | null = null;
-let cachedById: Map<string, any> | null = null;
-let cacheTime = 0;
-const CACHE_TTL = 300_000; // 5 minutes — reduces slow Google Sheet fetches on login
+// Member identity now lives in the app's own Member records (copied once from the
+// MemberData sheet), so login no longer depends on the spreadsheet being reachable.
 
 function normalizeDate(s: string): string {
   if (!s) return "";
@@ -24,33 +16,21 @@ function normalizePhone(s: string): string {
   return String(s || "").replace(/\s+/g, "").replace(/^0+/, "");
 }
 
-async function loadMembers(base44): Promise<{ members: any[]; byId: Map<string, any> }> {
-  if (cachedMembers && cachedById && Date.now() - cacheTime < CACHE_TTL) {
-    return { members: cachedMembers, byId: cachedById };
-  }
-  const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${MEMBER_SPREADSHEET_ID}/values/${SHEET}!A:L`;
-  const data = await (await sheetFetch(url, accessToken, CACHE_TTL)).json();
-  const rows = (data.values || []).slice(1);
+async function loadMembers(base44) {
+  const page = await base44.asServiceRole.entities.Member.filter({}, { limit: 500 });
+  const members = (page.items || []).map((m) => ({
+    display_name: m.display_name || "",
+    email: String(m.email || "").trim().toLowerCase(),
+    phone: String(m.phone || "").trim(),
+    mobile: String(m.mobile || "").trim(),
+    full_name: m.full_name || "",
+    dob: m.dob || "",
+    bv_member: String(m.bv_member || "").trim(),
+    is_admin: m.is_admin === true,
+  }));
 
-  const members = rows.map(r => ({
-    display_name: String(r[0] || "").trim(),
-    email: String(r[1] || "").trim().toLowerCase(),
-    phone: String(r[2] || "").trim(),
-    full_name: String(r[3] || "").trim(),
-    dob: String(r[4] || "").trim(),
-    gender: String(r[5] || "").trim(),
-    mobile: String(r[6] || "").trim(),
-    bv_member: String(r[7] || "").trim(),
-    is_admin: ["yes", "y", "true", "1"].includes(String(r[11] || "").trim().toLowerCase()),
-  })).filter(m => m.bv_member);
-
-  const byId = new Map<string, any>();
-  for (const m of members) byId.set(m.bv_member, m);
-
-  cachedMembers = members;
-  cachedById = byId;
-  cacheTime = Date.now();
+  const byId = new Map();
+  for (const m of members) if (m.bv_member) byId.set(m.bv_member, m);
   return { members, byId };
 }
 
@@ -58,13 +38,13 @@ export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    const { members, byId } = await loadMembers(base44);
 
-    // Mode 0: Warm-up — the login screen calls this so the member list is
-    // already loaded before anyone types their ID.
+    // Mode 0: Warm-up — the login screen calls this so nothing is cold on first keypress.
     if (body.warmup) return Response.json({ ok: true });
 
-    // Mode 1: Verify by BV member ID (O(1) lookup) — ignore leading "BV" prefix
+    const { members, byId } = await loadMembers(base44);
+
+    // Mode 1: Verify by BV member ID — ignore a leading "BV" prefix
     if (body.memberId) {
       const id = String(body.memberId).trim().replace(/^BV/i, "");
       const member = byId.get(id);
@@ -90,7 +70,7 @@ export default async function(req: Request): Promise<Response> {
     const dob = normalizeDate(body.dob || "");
 
     if (email || phone || dob) {
-      const member = members.find(m => {
+      const member = members.find((m) => {
         const emailMatch = email && m.email === email;
         const phoneMatch = phone && (normalizePhone(m.phone) === phone || normalizePhone(m.mobile) === phone);
         const dobMatch = dob && normalizeDate(m.dob) === dob;

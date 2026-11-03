@@ -1,37 +1,29 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 
-const MEMBER_SPREADSHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
-
-Deno.serve(async (req) => {
+// Member list for the admin screen, straight from the app's own records.
+export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
+    const page = await base44.asServiceRole.entities.Member.filter({}, { limit: 500 });
 
-    // Fetch columns A through K; we display A–I and skip J & K.
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${MEMBER_SPREADSHEET_ID}/values/MemberData!A:K`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-    const data = await res.json();
-    const allRows = data.values || [];
+    const members = (page.items || [])
+      .map((m) => ({
+        id: m.id,
+        display_name: m.display_name || "",
+        full_name: m.full_name || "",
+        email: String(m.email || "").trim(),
+        phone: String(m.phone || "").trim(),
+        mobile: String(m.mobile || "").trim(),
+        bv_member: String(m.bv_member || "").trim(),
+        dob: m.dob || "",
+        gender: m.gender || "",
+        paid: m.paid === true,
+        is_admin: m.is_admin === true,
+      }))
+      .sort((a, b) => a.display_name.localeCompare(b.display_name));
 
-    const headerRow = allRows[0] || [];
-    // Keep columns A–I (indices 0–8), skip J (9) & K (10), and add the Admin flag (L, 11)
-    const headers = [...headerRow.slice(0, 9), headerRow[11] || "Admin"];
-
-    // Google trims trailing empty cells, so pad every row to a fixed 10 columns
-    // (A–I plus Admin) or the Admin value would slide into the wrong column.
-    const rows = allRows.slice(1).map((r, i) => {
-      const cells = Array.from({ length: 10 }, (_, ci) =>
-        String((ci === 9 ? r[11] : r[ci]) ?? "").trim()
-      );
-      return {
-        row_number: i + 2, // sheet row number (header is row 1)
-        paid: cells[8],
-        cells,
-      };
-    }).filter(r => r.cells.some(c => String(c || "").trim() !== ""));
-
-    return Response.json({ headers, rows });
+    return Response.json({ members });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}

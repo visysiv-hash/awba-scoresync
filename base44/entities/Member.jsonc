@@ -1,0 +1,57 @@
+{
+  "name": "Member",
+  "type": "object",
+  "properties": {
+    "display_name": {
+      "type": "string",
+      "title": "Display Name"
+    },
+    "email": {
+      "type": "string",
+      "title": "Email",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "full_name": {
+      "type": "string",
+      "title": "Full Name"
+    },
+    "dob": {
+      "type": "string",
+      "title": "Date of Birth"
+    },
+    "gender": {
+      "type": "string",
+      "title": "Gender"
+    },
+    "mobile": {
+      "type": "string",
+      "title": "Mobile"
+    },
+    "bv_member": {
+      "type": "string",
+      "title": "BV Member ID"
+    },
+    "paid": {
+      "type": "boolean",
+      "title": "Paid",
+      "default": false
+    },
+    "is_admin": {
+      "type": "boolean",
+      "title": "Admin",
+      "default": false
+    },
+    "active": {
+      "type": "boolean",
+      "title": "Active",
+      "default": true
+    }
+  },
+  "required": [
+    "display_name"
+  ]
+}

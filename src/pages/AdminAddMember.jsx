@@ -102,12 +102,12 @@ export default function AdminAddMember() {
           <CardContent className="pt-4 flex items-start gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
             <div className="text-sm">
-              <p className="font-semibold text-green-800">Member added to the sheet</p>
+              <p className="font-semibold text-green-800">Member added</p>
               <p className="text-green-700">
-                {lastAdded.display_name} · {lastAdded.email}
+                {lastAdded.display_name} · {lastAdded.email} · BV {lastAdded.bv_member}
               </p>
               <p className="text-green-700">
-                Mobile (Col G): <span className="font-mono">{lastAdded.mobile}</span> · Phone (Col C): <span className="font-mono">{lastAdded.phone}</span>
+                Mobile: <span className="font-mono">{lastAdded.mobile}</span> · Phone: <span className="font-mono">{lastAdded.phone}</span>
               </p>
             </div>
           </CardContent>
@@ -143,7 +143,7 @@ export default function AdminAddMember() {
               )}
               {phonePreview && (
                 <p className="text-xs text-green-600">
-                  Saved as — Mobile (Col G): <span className="font-mono">{phonePreview.mobile}</span> · Phone (Col C): <span className="font-mono">{phonePreview.phone}</span>
+                  Saved as — Mobile: <span className="font-mono">{phonePreview.mobile}</span> · Phone: <span className="font-mono">{phonePreview.phone}</span>
                 </p>
               )}
             </div>

@@ -5,30 +5,33 @@ import PageBanner from "../components/PageBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Loader2, RefreshCw, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export default function AdminMembers() {
   const [pinUnlocked, setPinUnlocked] = useState(false);
-  const [headers, setHeaders] = useState([]);
-  const [rows, setRows] = useState([]);
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [payingRow, setPayingRow] = useState(null);
+  const [busyId, setBusyId] = useState(null);
   const [query, setQuery] = useState("");
 
-  const filteredRows = query.trim()
-    ? rows.filter(r => r.cells.some(c => String(c || "").toLowerCase().includes(query.trim().toLowerCase())))
-    : rows;
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? members.filter(m =>
+        [m.display_name, m.full_name, m.email, m.phone, m.mobile, m.bv_member]
+          .some(v => String(v || "").toLowerCase().includes(q))
+      )
+    : members;
 
   const loadData = async () => {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("getMemberData", {});
-      setHeaders(res.data?.headers || []);
-      setRows(res.data?.rows || []);
+      setMembers(res.data?.members || []);
     } catch (e) {
-      toast.error("Failed to load member data.");
+      toast.error("Failed to load members.");
     } finally {
       setLoading(false);
     }
@@ -36,16 +39,21 @@ export default function AdminMembers() {
 
   useEffect(() => { if (pinUnlocked) loadData(); }, [pinUnlocked]);
 
-  const handleMarkPaid = async (rowNumber, idx) => {
-    setPayingRow(rowNumber);
+  const updateMember = async (m, changes) => {
+    setBusyId(m.id);
     try {
-      await base44.functions.invoke("markMemberPaid", { row_number: rowNumber });
-      setRows(prev => prev.map((r, i) => i === idx ? { ...r, paid: "Paid", cells: r.cells.map((c, ci) => ci === r.cells.length - 1 ? "Paid" : c) } : r));
-      toast.success("Marked as paid.");
+      if ("is_admin" in changes) {
+        await base44.functions.invoke("setMemberAdmin", { member_id: m.id, is_admin: changes.is_admin });
+        toast.success(`${m.display_name} ${changes.is_admin ? "is now an admin" : "is no longer an admin"}.`);
+      } else {
+        await base44.functions.invoke("markMemberPaid", { member_id: m.id, paid: changes.paid });
+        toast.success(changes.paid ? "Marked as paid." : "Marked as unpaid.");
+      }
+      setMembers(prev => prev.map(x => x.id === m.id ? { ...x, ...changes } : x));
     } catch (e) {
-      toast.error("Failed to mark paid.");
+      toast.error("Failed to update member.");
     } finally {
-      setPayingRow(null);
+      setBusyId(null);
     }
   };
 
@@ -66,8 +74,11 @@ export default function AdminMembers() {
           <h1 className="text-2xl font-bold text-white">Member List</h1>
         </div>
 
-        <div className="flex justify-between items-center mb-4 gap-2">
-          <Badge variant="outline" className="text-white border-white/30 bg-white/10 shrink-0">{filteredRows.length} of {rows.length}</Badge>
+        <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-white border-white/30 bg-white/10 shrink-0">{filtered.length} of {members.length}</Badge>
+            <Badge variant="outline" className="text-white border-white/30 bg-white/10 shrink-0">{members.filter(m => m.is_admin).length} admins</Badge>
+          </div>
           <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
@@ -84,9 +95,9 @@ export default function AdminMembers() {
 
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>
-        ) : rows.length === 0 ? (
+        ) : members.length === 0 ? (
           <Card><CardContent className="pt-6 text-center text-muted-foreground">No members found.</CardContent></Card>
-        ) : filteredRows.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <Card><CardContent className="pt-6 text-center text-muted-foreground">No members match "{query}".</CardContent></Card>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-white/20 bg-white shadow-lg">
@@ -94,40 +105,47 @@ export default function AdminMembers() {
               <thead className="bg-slate-100">
                 <tr>
                   <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">#</th>
-                  {headers.map((h, i) => (
-                    <th key={i} className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">{h || `Col ${i + 1}`}</th>
-                  ))}
-                  <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">Action</th>
+                  <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">Display name</th>
+                  <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">Full name</th>
+                  <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">Email</th>
+                  <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">Phone</th>
+                  <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">BV Member</th>
+                  <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">Paid</th>
+                  <th className="px-3 py-2 text-center font-semibold text-slate-700 border-b whitespace-nowrap">Admin</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredRows.map((r, i) => (
-                  <tr key={r.row_number} className={i % 2 ? "bg-slate-50" : "bg-white"}>
+                {filtered.map((m, i) => (
+                  <tr key={m.id} className={i % 2 ? "bg-slate-50" : "bg-white"}>
                     <td className="px-3 py-2 text-slate-400 border-b">{i + 1}</td>
-                    {r.cells.map((c, ci) => {
-                      const isPaidCol = ci === 8;
-                      const isAdminCol = ci === 9;
-                      return (
-                        <td key={ci} className="px-3 py-2 border-b whitespace-nowrap text-slate-700">
-                          {isAdminCol && c ? (
-                            <Badge className={["yes", "y", "true", "1"].includes(String(c).trim().toLowerCase())
-                              ? "bg-slate-800 text-white"
-                              : "bg-slate-100 text-slate-500 border border-slate-300"}>{c}</Badge>
-                          ) : isPaidCol && c ? (
-                            <Badge className="bg-green-100 text-green-700 border border-green-300">{c}</Badge>
-                          ) : (c || <span className="text-slate-300">—</span>)}
-                        </td>
-                      );
-                    })}
+                    <td className="px-3 py-2 border-b whitespace-nowrap font-medium text-slate-800">{m.display_name}</td>
+                    <td className="px-3 py-2 border-b whitespace-nowrap text-slate-700">{m.full_name || <span className="text-slate-300">—</span>}</td>
+                    <td className="px-3 py-2 border-b whitespace-nowrap text-slate-700">{m.email || <span className="text-slate-300">—</span>}</td>
+                    <td className="px-3 py-2 border-b whitespace-nowrap text-slate-700">{m.phone || m.mobile || <span className="text-slate-300">—</span>}</td>
+                    <td className="px-3 py-2 border-b whitespace-nowrap text-slate-700">{m.bv_member || <span className="text-slate-300">—</span>}</td>
                     <td className="px-3 py-2 border-b whitespace-nowrap">
-                      {r.paid ? (
-                        <Badge className="bg-green-600 text-white">✓ Paid</Badge>
+                      {m.paid ? (
+                        <button onClick={() => updateMember(m, { paid: false })} disabled={busyId === m.id}>
+                          <Badge className="bg-green-600 text-white">✓ Paid</Badge>
+                        </button>
                       ) : (
-                        <Button size="sm" disabled={payingRow === r.row_number} onClick={() => handleMarkPaid(r.row_number, i)}>
-                          {payingRow === r.row_number ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                        <Button size="sm" variant="outline" disabled={busyId === m.id} onClick={() => updateMember(m, { paid: true })}>
+                          {busyId === m.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
                           Mark paid
                         </Button>
                       )}
+                    </td>
+                    <td className="px-3 py-2 border-b whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-2">
+                        <Switch
+                          checked={m.is_admin}
+                          disabled={busyId === m.id}
+                          onCheckedChange={(checked) => updateMember(m, { is_admin: checked })}
+                        />
+                        <span className={`text-xs ${m.is_admin ? "text-slate-800 font-semibold" : "text-slate-400"}`}>
+                          {m.is_admin ? "Admin" : "Member"}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 ))}
