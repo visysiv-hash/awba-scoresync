@@ -182,6 +182,7 @@ export function computeAppRatings(
       player: entry.player,
       rating: parseFloat(rolling.toFixed(2)),
       currentGroup: roundsSorted[roundsSorted.length - 1].group,
+      baseGroup: startGroups[entry.player.trim().toLowerCase()] ?? roundsSorted[0].group,
       gp: matches.length,
       diff: totalDiff,
       firstRound: roundsSorted[0].round,

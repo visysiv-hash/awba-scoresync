@@ -1,8 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { computeAppRatings } from "../../shared/appRatings.ts";
 
-const MAIN_SHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
-
 // Ratings as at a round, calculated from app-stored results and round groups only.
 export default async function(req: Request): Promise<Response> {
   try {
@@ -41,26 +39,18 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // The Players tab's "Rating Base Group" re-bases a player's whole rating, which
-    // is how a wrong starting group gets corrected. Read it live so an edit applies
-    // straight away instead of waiting for the next import.
-    try {
-      const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
-      const sheetId = Deno.env.get("STANDINGS_SPREADSHEET_ID") || MAIN_SHEET_ID;
-      const res = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent("Players!A:G")}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-      const json = await res.json();
-      for (const row of (json.values || []).slice(1)) {
-        const name = String(row[0] || "").trim().toLowerCase();
-        const active = String(row[1] || "").trim().toLowerCase();
-        const group = parseInt(row[6]);
-        if (!name || active === "no" || !group) continue;
-        startGroups[name] = group;
-      }
-    } catch (_) {
-      // Sheet unavailable: fall back to the base groups from the last import.
+    // Base groups live in the app itself (key "base_group:<player>"), so a player's
+    // starting group can be corrected without the spreadsheet, and ratings never
+    // depend on the sheet being reachable. They win over imported round-0 entries.
+    const baseGroups: Record<string, number> = {};
+    const settingPage = await base44.asServiceRole.entities.AppSetting.filter({}, { limit: 500 });
+    for (const s of settingPage.items || []) {
+      const m = String(s.key || "").match(/^base_group:(.+)$/);
+      const group = parseInt(s.value);
+      if (!m || !group) continue;
+      const name = m[1].trim().toLowerCase();
+      baseGroups[name] = group;
+      startGroups[name] = group;
     }
 
     // Scores entered in the app are stored without a round number, so give them one
@@ -102,6 +92,7 @@ export default async function(req: Request): Promise<Response> {
       round: wanted,
       roundDate: summary[wanted]?.date || null,
       matchCount: summary[wanted]?.matches || 0,
+      baseGroups,
       rounds,
       players,
     });

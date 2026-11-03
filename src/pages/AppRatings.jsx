@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import PageBanner from "../components/PageBanner";
 import AppRatingCard from "../components/ratings/AppRatingCard";
+import BaseGroupEditor from "../components/ratings/BaseGroupEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Calculator, ArrowLeft } from "lucide-react";
 
@@ -93,6 +94,12 @@ export default function AppRatings() {
                 <AppRatingCard key={p.player} p={p} rank={i + 1} />
               ))}
             </div>
+
+            <BaseGroupEditor
+              players={data.players}
+              baseGroups={data.baseGroups}
+              onSaved={() => load(data.round)}
+            />
 
             <p className="text-[11px] text-slate-500 text-center pb-2 leading-snug">
               Ratings as at Round {data.round}. Tap a player for their round-by-round history.
