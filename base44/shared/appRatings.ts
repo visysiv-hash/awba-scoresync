@@ -143,6 +143,14 @@ export function computeAppRatings(
     };
   });
 
-  players.sort((a, b) => a.rating - b.rating);
-  return { players };
+  // Filler names used to pad a group up to eight are not players: their matches
+  // still count for everyone else, but they get no rating row of their own.
+  const PLACEHOLDERS = ["na", "n/a", "n.a.", "-", "tbc", "tba", "vacant", "blank"];
+
+  const rated = players.filter(
+    (p) => !PLACEHOLDERS.includes(String(p.player || "").trim().toLowerCase())
+  );
+
+  rated.sort((a, b) => a.rating - b.rating);
+  return { players: rated };
 }
