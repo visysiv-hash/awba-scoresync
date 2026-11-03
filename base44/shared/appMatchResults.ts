@@ -35,7 +35,39 @@ export async function loadAppMatchResults(base44: any, maxPages = 6) {
     seen.add(key);
     out.push(r);
   }
+
+  await assignRounds(base44, out);
   return out;
+}
+
+// Scores submitted in the app are stored without a round number. Give them the
+// round played that night (the round another result of the same date holds, else
+// the next round after the latest known one) so they count in their own week.
+async function assignRounds(base44: any, rows: any[]) {
+  const pending = rows.filter((r) => !(Number(r.round) > 0));
+  if (!pending.length) return;
+
+  const dateToRound: Record<string, number> = {};
+  for (const r of rows) {
+    if (Number(r.round) > 0 && r.date) dateToRound[r.date] = Number(r.round);
+  }
+
+  const groupPage = await base44.asServiceRole.entities.RoundGroup.filter({}, { limit: 200 });
+  for (const g of groupPage.items || []) {
+    if (!g.date || !(Number(g.round) > 0) || dateToRound[g.date]) continue;
+    dateToRound[g.date] = Number(g.round);
+  }
+
+  const maxKnown = Math.max(0, ...rows.map((r) => Number(r.round) || 0));
+  const dates = [...new Set(pending.map((r) => r.date).filter(Boolean))].sort();
+  const pendingRound: Record<string, number> = {};
+  dates.forEach((d: any, i) => {
+    pendingRound[d] = dateToRound[d] ?? maxKnown + 1 + i;
+  });
+
+  for (const r of pending) {
+    r.round = (r.date && pendingRound[r.date]) || maxKnown + 1;
+  }
 }
 
 // "2026-11-03" -> "03/11/2026", to match how the dates are shown elsewhere.

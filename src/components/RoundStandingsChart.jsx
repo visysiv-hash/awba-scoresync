@@ -43,15 +43,11 @@ export default function RoundStandingsChart({ playerName }) {
     return () => { cancelled = true; };
   }, [playerName]);
 
-  // Auto-select round ONCE when both rounds + games are loaded and user hasn't picked manually.
-  // This is the ONLY place that auto-sets selectedRound — no race with load().
+  // Default to the latest week until the user picks another one.
   useEffect(() => {
-    if (userSelected || selectedRound || rounds.length === 0 || allGames.length === 0) return;
-    const playerRounds = new Set(allGames.map(g => String(g.round)));
-    // Pick the most recent round the player actually played in (descending order)
-    const bestRound = [...rounds].reverse().find(r => playerRounds.has(r));
-    if (bestRound) setSelectedRound(bestRound);
-  }, [rounds, allGames, userSelected, selectedRound]);
+    if (userSelected || selectedRound || rounds.length === 0) return;
+    setSelectedRound(rounds[rounds.length - 1]);
+  }, [rounds, userSelected, selectedRound]);
 
   const onSelectRound = (r) => { setUserSelected(true); setSelectedRound(r); };
 
