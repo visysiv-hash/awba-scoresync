@@ -25,6 +25,8 @@ export async function loadAppMatchResults(base44: any, maxPages = 6) {
     cursor = page.next_cursor;
   }
 
+  await removeDuplicates(base44, rows);
+
   // The same game can be stored twice (an app submission plus the sheet import):
   // keep one copy so a week's totals are not double counted.
   const seen = new Set<string>();
@@ -39,6 +41,34 @@ export async function loadAppMatchResults(base44: any, maxPages = 6) {
   await syncSheetScores(base44, out);
   await assignRounds(base44, out);
   return out;
+}
+
+// A night's game can be stored more than once: two page loads can both pick up the
+// same new score from the sheet, or a sheet import can repeat a game the app already
+// had. One stored copy per game per night keeps totals and ratings honest.
+async function removeDuplicates(base44: any, rows: any[]) {
+  const bySlot: Record<string, any[]> = {};
+  for (const r of rows) {
+    if (!r.date || r.net == null || r.game == null) continue;
+    const k = `${r.date}|${r.net}|${r.game}`;
+    (bySlot[k] = bySlot[k] || []).push(r);
+  }
+
+  const extra: any[] = [];
+  for (const list of Object.values(bySlot)) {
+    if (list.length < 2) continue;
+    const keeper =
+      list.find((r) => r.source === "app") ||
+      [...list].sort((a, b) => String(a.created_date).localeCompare(String(b.created_date)))[0];
+    for (const r of list) if (r !== keeper) extra.push(r);
+  }
+  if (!extra.length) return;
+
+  for (const r of extra) {
+    await base44.asServiceRole.entities.MatchResult.delete(r.id);
+    const i = rows.indexOf(r);
+    if (i >= 0) rows.splice(i, 1);
+  }
 }
 
 const splitNames = (s: any) =>
