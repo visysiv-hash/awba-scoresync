@@ -198,7 +198,7 @@ export default function Schedule() {
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 pb-20 print:p-0 print:pb-0 print:min-h-0">
       <style>{PRINT_CSS}</style>
-      <div className="max-w-6xl mx-auto space-y-4">
+      <div className="max-w-6xl mx-auto space-y-4 print:max-w-none print:mx-0 print:w-full">
         <PageBanner className="h-14 mb-2 print:h-8 print:mb-1" />
 
         <div className="flex items-center justify-between gap-3 no-print">
@@ -305,7 +305,7 @@ export default function Schedule() {
                   onPick={isAdmin ? pick : null}
                 />
               </div>
-              <div className="flex flex-col lg:flex-row gap-3 items-start print:flex-col print:gap-1.5">
+              <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-start print:flex-col print:gap-1.5">
                 <div className="flex-1 min-w-0">
                   <NetScheduleTable
                     matches={record.matches || []}
