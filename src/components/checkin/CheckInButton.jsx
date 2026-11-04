@@ -16,6 +16,7 @@ const localIso = () => {
 export default function CheckInButton() {
   const member = getCurrentMember();
   const [found, setFound] = useState(null);
+  const [waitlisted, setWaitlisted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
 
@@ -32,13 +33,22 @@ export default function CheckInButton() {
         const page = await base44.entities.Session.filter({ date: localIso() }, { limit: 10 });
         for (const session of page.items || []) {
           const bookings = await base44.entities.Booking.filter({ session_id: session.id }, { limit: 300 });
-          const mine = (bookings.items || []).find(
+          const mine = (bookings.items || []).filter(
             (b) =>
               b.status !== "cancelled" &&
               ((email && String(b.user_email || "").toLowerCase() === email) || (name && b.user_name === name))
           );
-          if (mine) {
-            if (alive) setFound({ booking: mine, session });
+          const confirmed = mine.find((b) => b.status === "confirmed");
+          if (confirmed) {
+            if (alive) setFound({ booking: confirmed, session });
+            return;
+          }
+          // Only a spot on the waitlist — no check-in until they're moved into the session.
+          if (mine.some((b) => b.status === "waitlisted")) {
+            if (alive) {
+              setWaitlisted(true);
+              setFound(null);
+            }
             return;
           }
         }
@@ -86,6 +96,20 @@ export default function CheckInButton() {
   };
 
   if (loading || !member) return null;
+
+  if (waitlisted && !found) {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-3 opacity-70">
+        <div className="w-9 h-9 shrink-0 rounded-full bg-white/15 flex items-center justify-center">
+          <MapPin className="w-4 h-4 text-slate-400" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-white">You're on the waitlist</p>
+          <p className="text-[11px] text-slate-400">Check-in opens only once you're confirmed in the session</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!found) {
     return (
