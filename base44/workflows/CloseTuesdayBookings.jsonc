@@ -1,0 +1,45 @@
+{
+  "name": "Close Tuesday Bookings",
+  "description": "Every Tuesday at 11:01am (Sydney) closes booking for that night's session, so the draw is built from a settled player list. Admins can still close or reopen a session by hand.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "1 11 * * 2",
+      "one_time_date": null,
+      "timezone": "Australia/Sydney",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "close_tuesday_bookings",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "close_tuesday_bookings": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "closeTuesdayBookings",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Close Tuesday bookings",
+            "description": "11:01am Tuesday cutoff"
+          }
+        }
+      }
+    ]
+  }
+}
