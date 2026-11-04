@@ -1,9 +1,10 @@
 // Builds a whole night's draw in the app: rating-sorted groups, two courts each and
-// three matches per player. Full groups of eight use the same three games as the
-// sheet script (internal, cross group, internal). Shorter groups are filled with
-// mixed formats — American doubles (one player against two) and singles — so a group
-// of five, six or seven still gets a night's play instead of nothing.
-import { buildGroups, generateDraw, groupAverage } from "./drawGenerator";
+// three matches per player. Every round of a full group of eight is paired by the
+// app itself (rating closeness, mixed-pair gender balance, no repeated partners), so
+// the gender adjustment shapes all three games. Shorter groups are filled with mixed
+// formats — American doubles (one player against two) and singles — so a group of
+// five, six or seven still gets a night's play instead of nothing.
+import { buildGroups, groupAverage } from "./drawGenerator";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -112,20 +113,14 @@ const remember = (seen, teams) => {
   }
 };
 
-// A full group takes its games from the script logic, but when it has no group
-// next to it (or the neighbour is short) the cross games cannot be made — those
-// rounds are played inside the group instead, so nobody is left with one game.
-function completeGroupGames(players, scripted) {
+// All three rounds of a full group are paired by the app, using the same engine as
+// the short groups: closest team ratings, mixed pairs weighed with the gender
+// handicap, and the fewest repeated partners and opponents across the night.
+function fullGroupGames(players) {
   const seen = { partners: new Set(), opponents: new Set() };
   const games = [];
 
   for (let gi = 0; gi < 3; gi++) {
-    const candidate = scripted[gi];
-    if (candidate && candidate.matches.length) {
-      games.push({ game: gi + 1, label: candidate.label, matches: candidate.matches });
-      remember(seen, candidate.matches.map((m) => ({ A: m.teamA, B: m.teamB })));
-      continue;
-    }
     const teams = bestAssignment(players, [[2, 2], [2, 2]], seen);
     if (!teams) {
       games.push({ game: gi + 1, label: `Game ${gi + 1} · within group`, matches: [] });
@@ -168,17 +163,14 @@ function shortGroupGames(players) {
   return games;
 }
 
-export function buildNightDraw(players, variant = "normal") {
+export function buildNightDraw(players) {
   const list = players || [];
   const groups = buildGroups(list);
-  // Full groups take their games from the existing script logic, including the
-  // cross-group games, so the draw stays identical to what the sheet produced.
-  const full = generateDraw(list, variant);
 
   const out = groups.map((g, i) => {
     const complete = g.players.length === 8;
     const games = complete
-      ? completeGroupGames(g.players, full.groups[i]?.games || [])
+      ? fullGroupGames(g.players)
       : shortGroupGames(g.players).map((matches, gi) => ({
           game: gi + 1,
           label: `Game ${gi + 1} · mixed formats`,
@@ -197,7 +189,7 @@ export function buildNightDraw(players, variant = "normal") {
     };
   });
 
-  return { variant, totalPlayers: list.length, groups: out };
+  return { totalPlayers: list.length, groups: out };
 }
 
 export function flattenMatches(draw) {
@@ -222,7 +214,6 @@ export function toRecord(draw, date, meta = {}) {
   return {
     ...meta,
     date,
-    variant: draw.variant,
     courts_per_group: 2,
     published: true,
     groups: draw.groups.map((g) => ({

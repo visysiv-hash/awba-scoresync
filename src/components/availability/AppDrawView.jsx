@@ -57,8 +57,7 @@ export default function AppDrawView({ draw }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] text-slate-400">
-          {draw.totalPlayers} players · {draw.groups.length} groups ·{" "}
-          {draw.variant === "unique" ? "unique games draw" : "standard draw"}
+          {draw.totalPlayers} players · {draw.groups.length} groups · gender-balanced draw
         </p>
         <Button size="sm" variant="secondary" onClick={() => window.print()}>
           <Printer className="w-3.5 h-3.5 mr-1" /> Print

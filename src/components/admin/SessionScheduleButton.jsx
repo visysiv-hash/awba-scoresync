@@ -32,7 +32,7 @@ export default function SessionScheduleButton({ session, players }) {
         rating: ratings[String(name).toLowerCase()] ?? null,
         gender: genders[String(name).toLowerCase()] || null,
       }));
-      const payload = toRecord(buildNightDraw(list, "normal"), session.date, {
+      const payload = toRecord(buildNightDraw(list), session.date, {
         title: session.title,
         time_label: [session.start_time, session.end_time].filter(Boolean).join(" – "),
       });

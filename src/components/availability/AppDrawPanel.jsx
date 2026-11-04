@@ -13,7 +13,7 @@ import { toast } from "sonner";
 // is generated and saved here. The spreadsheet option is left exactly as it is.
 export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
   const [showDraw, setShowDraw] = useState(false);
-  const [variant, setVariant] = useState("normal");
+
   const [appRatings, setAppRatings] = useState(null);
   const [genders, setGenders] = useState({});
   const [saving, setSaving] = useState(false);
@@ -43,7 +43,7 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
     });
   }, [players, appRatings, genders]);
 
-  const draw = useMemo(() => (showDraw ? buildNightDraw(merged, variant) : null), [showDraw, merged, variant]);
+  const draw = useMemo(() => (showDraw ? buildNightDraw(merged) : null), [showDraw, merged]);
 
   const missing = merged.filter((p) => p.rating === null).length;
   const shortGroups = draw ? draw.groups.filter((g) => !g.complete).length : 0;
@@ -87,23 +87,6 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
 
       {showDraw && (
         <>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              size="sm"
-              onClick={() => setVariant("normal")}
-              className={variant === "normal" ? "bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold" : "bg-slate-700 hover:bg-slate-600 text-white"}
-            >
-              Standard
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setVariant("unique")}
-              className={variant === "unique" ? "bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold" : "bg-slate-700 hover:bg-slate-600 text-white"}
-            >
-              Unique games
-            </Button>
-          </div>
-
           {appRatings === null ? (
             <p className="text-[11px] text-slate-400 text-center">Loading app ratings…</p>
           ) : (
