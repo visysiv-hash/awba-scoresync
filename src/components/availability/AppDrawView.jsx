@@ -89,7 +89,7 @@ export default function AppDrawView({ draw }) {
             <p className="text-[11px] text-slate-400">{g.players.map((p) => p.name).join(", ")}</p>
             {!g.complete && (
               <p className="text-[11px] text-amber-300">
-                Short group of {g.players.length} — singles and one-against-two fill the night.
+                Short group of {g.players.length} — American doubles and singles give everyone three games.
               </p>
             )}
             {g.games.map((game, i) => (

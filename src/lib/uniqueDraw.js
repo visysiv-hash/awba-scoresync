@@ -3,28 +3,67 @@ import { uniqueCandidates } from "@/lib/uniqueCandidates";
 import { searchUniqueRounds, balanceUniqueRounds } from "@/lib/uniqueSearch";
 import { scheduleUniqueness } from "@/lib/scheduleUniqueness";
 
-function matchSizes(count) {
-  if (count < 2) return [];
-  if (count === 3) return [2];
-  const sizes = Array(Math.floor(count / 4)).fill(4);
-  const extra = count % 4;
-  if (extra === 1) { sizes.pop(); sizes.push(3, 2); }
-  else if (extra) sizes.push(extra);
-  return sizes;
+// Match formats that give every player in the group three games. A full group of
+// eight plays two doubles games a round; a short group mixes American doubles
+// (one player against two) and singles so nobody sits a round out.
+const PLANS = {
+  8: [4, 4],
+  7: [4, 3],
+  6: [3, 3],
+  5: [3, 2],
+  4: [4],
+  3: [2],
+  2: [2],
+  1: [],
+};
+
+// Spread each round back over the nets it belongs to: a group always hosts the
+// number of matches its own players need, preferring its own players, so a short
+// group's American doubles and singles land on its own nets.
+function assignToGroups(matches, plans, players, courts) {
+  const need = plans.map((sizes) => ({ sizes: [...sizes].sort((a, b) => b - a), picked: [] }));
+  const taken = new Array(matches.length).fill(false);
+  const options = [];
+  matches.forEach((match, mi) => {
+    need.forEach((group, gi) => {
+      if (!group.sizes.includes(match.ids.length)) return;
+      const own = match.ids.filter((id) => players[id].home === gi).length;
+      options.push({ gi, mi, own, cost: match.cost });
+    });
+  });
+  options.sort((a, b) => b.own - a.own || a.cost - b.cost);
+  for (const option of options) {
+    if (taken[option.mi]) continue;
+    const group = need[option.gi];
+    const at = group.sizes.indexOf(matches[option.mi].ids.length);
+    if (at < 0) continue;
+    group.sizes.splice(at, 1);
+    group.picked.push(matches[option.mi]);
+    taken[option.mi] = true;
+  }
+  return need.map((group, gi) =>
+    group.picked.map((match, i) => ({ ...match, net: courts[gi][i % courts[gi].length] }))
+  );
 }
 
 export function buildUniqueDraw(groups) {
-  const players = groups.flatMap((g, home) => g.players.map((p, i) => ({ ...p, home, bottom: i >= 4 })));
-  const sizes = matchSizes(players.length);
+  const plans = groups.map((g) => PLANS[g.players.length] || []);
+  const courts = groups.map((_, i) => [i * 2 + 1, i * 2 + 2]);
+  const players = groups.flatMap((g, home) =>
+    g.players.map((p, i) => ({ ...p, home, bottom: i >= 4 }))
+  );
+  const sizes = plans.flat();
+  const slots = sizes.reduce((sum, size) => sum + size, 0);
   const cache = new Map();
   const candidatesAt = (distance) => {
     if (!cache.has(distance)) cache.set(distance, uniqueCandidates(players, sizes, distance));
     return cache.get(distance);
   };
+
   let rounds = null;
   let policy = "meetings";
-  // A quartet cannot meet four fresh people in a later round when the entire
-  // pool has fewer than four matches (pigeonhole principle).
+  // A quartet cannot meet four fresh people in a later round when the whole pool
+  // has fewer than four matches (pigeonhole principle).
   const impossibleEncounters = sizes.includes(4) && sizes.length < 4;
   for (const rule of ["meetings", "roles", "relaxed"]) {
     if (rule === "meetings" && impossibleEncounters) continue;
@@ -43,28 +82,49 @@ export function buildUniqueDraw(groups) {
   if (!rounds) throw new Error("No legal draw was found for this player list.");
 
   const out = groups.map((g, i) => ({
-    group: g.groupNum, label: `Group ${g.groupNum}`, courts: [i * 2 + 1, i * 2 + 2],
-    complete: g.players.length === 8, players: g.players, average: groupAverage(g.players),
-    top4: g.players.slice(0, 4).map((p) => p.name), bottom4: g.players.slice(4).map((p) => p.name),
-    games: [1, 2, 3].map((game) => ({ game, label: `Game ${game} · ${policy === "relaxed" ? "fallback draw" : "unique games"}`, matches: [] })),
+    group: g.groupNum,
+    label: `Group ${g.groupNum}`,
+    courts: courts[i],
+    complete: g.players.length === 8,
+    players: g.players,
+    average: groupAverage(g.players),
+    top4: g.players.slice(0, 4).map((p) => p.name),
+    bottom4: g.players.slice(4).map((p) => p.name),
+    games: [1, 2, 3].map((game) => ({
+      game,
+      label: `Game ${game} · ${policy === "relaxed" ? "fallback draw" : "unique games"}`,
+      matches: [],
+    })),
   }));
+
   const flat = [];
   rounds.forEach((matches, gi) => {
     const used = new Set();
-    const ordered = [...matches].sort((a, b) => Math.min(...a.ids) - Math.min(...b.ids));
-    ordered.forEach((match, mi) => {
-      match.ids.forEach((id) => {
-        if (used.has(id)) throw new Error("A player has two slots in one game.");
-        used.add(id);
-      });
-      const teams = match.teams.map((team) => team.map((id) => players[id]));
-      const host = Math.floor(mi / 2);
-      out[host].games[gi].matches.push({ teamA: teams[0], teamB: teams[1], net: mi + 1 });
-      flat.push({ game: gi + 1, net: mi + 1, team1: teams[0].map((p) => p.name), team2: teams[1].map((p) => p.name) });
+    assignToGroups(matches, plans, players, courts).forEach((groupMatches, g) => {
+      for (const match of groupMatches) {
+        for (const id of match.ids) {
+          if (used.has(id)) throw new Error("A player has two slots in one game.");
+          used.add(id);
+        }
+        const teams = match.teams.map((team) => team.map((id) => players[id]));
+        out[g].games[gi].matches.push({ teamA: teams[0], teamB: teams[1], net: match.net });
+        flat.push({
+          game: gi + 1,
+          net: match.net,
+          team1: teams[0].map((p) => p.name),
+          team2: teams[1].map((p) => p.name),
+        });
+      }
     });
-    if (used.size !== sizes.reduce((sum, size) => sum + size, 0)) throw new Error("The draw is missing a player slot.");
+    if (used.size !== slots) throw new Error("The draw is missing a player slot.");
   });
-  const info = scheduleUniqueness({ groups: out.map((g) => ({ players: g.players.map((p) => p.name) })), matches: flat });
-  if ((policy === "meetings" && info.meetings) || (policy === "roles" && (info.partners || info.opponents))) throw new Error("The draw failed its uniqueness check.");
+
+  const info = scheduleUniqueness({
+    groups: out.map((g) => ({ players: g.players.map((p) => p.name) })),
+    matches: flat,
+  });
+  if ((policy === "meetings" && info.meetings) || (policy === "roles" && (info.partners || info.opponents))) {
+    throw new Error("The draw failed its uniqueness check.");
+  }
   return { totalPlayers: players.length, poolGroups: -2, groups: out, uniqueInfo: info };
 }

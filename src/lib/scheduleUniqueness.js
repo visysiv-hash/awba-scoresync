@@ -21,12 +21,30 @@ export function scheduleUniqueness(record) {
     for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) add("meetings", names[i], names[j]);
   }
   const repeats = (type) => [...counts[type].values()].reduce((sum, n) => sum + Math.max(0, n - 1), 0);
-  return { partners: repeats("partners"), opponents: repeats("opponents"), meetings: repeats("meetings"), distance };
+
+  // Everyone booked should get three games; American doubles and singles fill the
+  // short groups so no one loses a round.
+  const played = new Map();
+  for (const g of record?.groups || []) for (const name of g.players || []) played.set(low(name), 0);
+  for (const match of record?.matches || []) {
+    const names = new Set([...(match.team1 || []), ...(match.team2 || [])].map(low));
+    for (const name of names) played.set(name, (played.get(name) || 0) + 1);
+  }
+  const short = [...played.entries()].filter(([, games]) => games < 3).length;
+
+  return {
+    partners: repeats("partners"),
+    opponents: repeats("opponents"),
+    meetings: repeats("meetings"),
+    distance,
+    short,
+  };
 }
 
 export function uniquenessMessage(info) {
   const reach = info.distance ? `maximum ${info.distance} level${info.distance === 1 ? "" : "s"} apart` : "within each group";
-  if (info.partners || info.opponents) return `Fallback draw: ${info.partners} repeated partner pairing${info.partners === 1 ? "" : "s"}, ${info.opponents} repeated opponent matchup${info.opponents === 1 ? "" : "s"} · ${reach}. A fully unique draw was not found for this player list.`;
-  if (info.meetings) return `Unique partners and opponents · ${reach}. ${info.meetings} encounter${info.meetings === 1 ? " switches" : "s switch"} between partner and opponent; a no-repeat-encounter draw was not found.`;
-  return `Unique games: no repeated partners, opponents or encounters · ${reach}.`;
+  const games = info.short ? ` ${info.short} player${info.short === 1 ? " plays" : "s play"} fewer than three games.` : "";
+  if (info.partners || info.opponents) return `Fallback draw: ${info.partners} repeated partner pairing${info.partners === 1 ? "" : "s"}, ${info.opponents} repeated opponent matchup${info.opponents === 1 ? "" : "s"} · ${reach}. A fully unique draw was not found for this player list.${games}`;
+  if (info.meetings) return `Unique partners and opponents · ${reach}. ${info.meetings} encounter${info.meetings === 1 ? " switches" : "s switch"} between partner and opponent; a no-repeat-encounter draw was not found.${games}`;
+  return `Unique games: no repeated partners, opponents or encounters · ${reach}.${games || " Everyone plays three games."}`;
 }
