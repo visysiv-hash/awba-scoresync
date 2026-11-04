@@ -4,9 +4,9 @@ import CourtBackdrop from "@/components/splash/CourtBackdrop";
 import Shuttlecock from "@/components/splash/Shuttlecock";
 
 const AWBA_LOGO = "https://media.base44.com/images/public/69c519111fbf9fefe3d69538/83f77bd4f_image.png";
-const LOGO_MS = 1300;
-const SPONSOR_MS = 2400;
-const MAX_SPONSORS = 4;
+const LOGO_MS = 2300;
+const SPONSOR_MS = 2800;
+const MAX_SPONSORS = 2;
 
 export default function SplashScreen({ onDone }) {
   const [sponsors, setSponsors] = useState([]);
