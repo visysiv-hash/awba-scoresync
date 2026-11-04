@@ -106,7 +106,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/news" element={<AdminRoute><AdminNews /></AdminRoute>} />
           <Route path="/admin/sponsors" element={<AdminRoute><AdminSponsors /></AdminRoute>} />
           <Route path="/admin/add-member" element={<AdminRoute><AdminAddMember /></AdminRoute>} />
-          <Route path="/admin/members" element={<AdminRoute><AdminMembers /></AdminRoute>} />
+          <Route path="/admin/members" element={<AdminRoute pinOnly><AdminMembers /></AdminRoute>} />
           <Route path="/admin/late-cancellations" element={<AdminRoute><AdminLateCancellations /></AdminRoute>} />
           <Route path="/admin/check-in" element={<AdminRoute><AdminCheckIn /></AdminRoute>} />
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import AdminPinGate from "../components/AdminPinGate";
 import { isAdminUnlocked } from "@/lib/adminUnlock";
+import { getCurrentMember } from "@/lib/currentMember";
 import PageBanner from "../components/PageBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,20 @@ export default function AdminMembers() {
     try {
       if ("is_admin" in changes) {
         await base44.functions.invoke("setMemberAdmin", { member_id: m.id, is_admin: changes.is_admin });
+        // Keep this device's signed-in member in step when you change your own access.
+        if (getCurrentMember()?.id === m.id) {
+          try {
+            const saved = JSON.parse(localStorage.getItem("awba_member") || "null");
+            if (saved) {
+              localStorage.setItem("awba_member", JSON.stringify({ ...saved, is_admin: changes.is_admin }));
+              toast.success(`Your admin access was ${changes.is_admin ? "restored" : "turned off"} — reloading…`);
+              setTimeout(() => window.location.reload(), 900);
+              return;
+            }
+          } catch {
+            // Storage unavailable — reload pulls the new access from the member record.
+          }
+        }
         toast.success(`${m.display_name} ${changes.is_admin ? "is now an admin" : "is no longer an admin"}.`);
       } else {
         await base44.functions.invoke("markMemberPaid", { member_id: m.id, paid: changes.paid });

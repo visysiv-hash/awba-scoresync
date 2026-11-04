@@ -11,12 +11,12 @@ import { isAdminUnlocked } from "@/lib/adminUnlock";
  * Wraps an admin page so nothing inside it is fetched or drawn until the member is
  * an admin and the PIN has been entered on this device.
  */
-export default function AdminRoute({ children }) {
+export default function AdminRoute({ children, pinOnly = false }) {
   const navigate = useNavigate();
   const isAdmin = getCurrentMember()?.is_admin === true;
   const [unlocked, setUnlocked] = useState(isAdminUnlocked);
 
-  if (!isAdmin) {
+  if (!isAdmin && !pinOnly) {
     return (
       <div className="min-h-screen bg-slate-900 p-4 flex items-center justify-center">
         <Card className="max-w-sm w-full">
