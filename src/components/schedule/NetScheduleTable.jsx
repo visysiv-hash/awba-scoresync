@@ -60,16 +60,22 @@ export default function NetScheduleTable({ matches = [], picked, pickedGame, onP
             <p className="text-[8px] font-bold tracking-[0.2em] text-black/70">NET NUMBER</p>
             <p className="text-xl font-black leading-none print:text-[11px]">{net}</p>
           </div>
-          <table className="w-full border-collapse text-[11px] print:text-[9px]">
+          <table className="w-full table-fixed border-collapse text-[11px] print:text-[9px]">
+            <colgroup>
+              <col className="w-5" />
+              <col />
+              <col className="w-7 print:w-6" />
+              <col />
+            </colgroup>
             <tbody>
               {[1, 2, 3].map((game) => {
                 const m = matches.find((x) => Number(x.net) === net && Number(x.game) === game);
                 const selected = !pickedGame || (pickedGame.net === net && pickedGame.game === game) ? picked : null;
                 return (
                   <tr key={game} className="border-t border-black/30 first:border-t-0 print:border-black">
-                    <td className="w-5 text-center font-bold border-r border-black/30 print:border-black">{game}</td>
-                    <td className="px-1.5 py-1 leading-snug align-middle print:py-0.5 print:px-1.5 print:leading-tight">{pair(m?.team1, selected, onPick, m, ratings)}</td>
-                    <td className="w-6 text-center align-middle border-x border-black/30 print:border-black">
+                    <td className="text-center font-bold border-r border-black/30 print:border-black">{game}</td>
+                    <td className="px-1.5 py-1 leading-snug align-middle text-right print:py-0.5 print:px-1.5 print:leading-tight">{pair(m?.team1, selected, onPick, m, ratings)}</td>
+                    <td className="px-0.5 text-center align-middle border-x border-black/30 print:border-black">
                       <span className="inline-block bg-white text-red-600 font-bold px-0.5 rounded-sm">vs</span>
                     </td>
                     <td className="px-1.5 py-1 leading-snug align-middle print:py-0.5 print:px-1.5 print:leading-tight">{pair(m?.team2, selected, onPick, m, ratings)}</td>
