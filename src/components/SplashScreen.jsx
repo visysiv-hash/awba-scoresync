@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
+import CourtBackdrop from "@/components/splash/CourtBackdrop";
+import Shuttlecock from "@/components/splash/Shuttlecock";
 
 const AWBA_LOGO = "https://media.base44.com/images/public/69c519111fbf9fefe3d69538/83f77bd4f_image.png";
 const LOGO_MS = 1300;
@@ -72,15 +74,19 @@ export default function SplashScreen({ onDone }) {
           )}
         </div>
       ) : (
-        // AWBA lockup
-        <div className="splash-fade flex h-full w-full flex-col items-center justify-center px-8">
-          <img src={AWBA_LOGO} alt="AWBA" className="h-24 max-w-[80vw] object-contain" />
-          <p className="mt-5 text-center text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-            Albury Wodonga
-          </p>
-          <p className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-            Badminton Association
-          </p>
+        // AWBA lockup over a drawing court
+        <div className="relative flex h-full w-full flex-col items-center justify-center px-8">
+          <CourtBackdrop />
+          <div className="relative splash-logo flex flex-col items-center">
+            <Shuttlecock className="absolute -right-10 -top-8 h-9 w-9" />
+            <img src={AWBA_LOGO} alt="AWBA" className="h-24 max-w-[80vw] object-contain" />
+            <p className="mt-5 text-center text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Albury Wodonga
+            </p>
+            <p className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Badminton Association
+            </p>
+          </div>
         </div>
       )}
 
@@ -97,6 +103,12 @@ export default function SplashScreen({ onDone }) {
           to { opacity: 1; transform: scale(1); }
         }
         .splash-fade { animation: splashFade 0.5s ease-out both; }
+        @keyframes logoLand {
+          0% { opacity: 0; transform: scale(1.18); filter: blur(6px); }
+          70% { opacity: 1; transform: scale(0.98); filter: blur(0); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .splash-logo { animation: logoLand 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both; }
       `}</style>
     </div>
   );
