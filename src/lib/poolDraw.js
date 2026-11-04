@@ -6,6 +6,7 @@
 // gender handicap and no repeated partners while it can be avoided.
 import { teamAvg } from "./teamRating";
 import { bannedTogether } from "./neverPair";
+import { juniorPreferenceCost } from "@/lib/juniorPreference";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -55,6 +56,7 @@ function matchCost(match, seen, blocked) {
   const a = teamAvg(match.A);
   const b = teamAvg(match.B);
   if (a !== null && b !== null) c += (a - b) * (a - b) * 100;
+  c += juniorPreferenceCost(match.A, match.B) * 100;
   return c;
 }
 

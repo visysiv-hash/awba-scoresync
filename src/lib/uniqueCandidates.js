@@ -1,6 +1,7 @@
 import { teamAvg } from "@/lib/teamRating";
 import { bannedTogether } from "@/lib/neverPair";
 import { juniorMatchAllowed } from "@/lib/juniorSafety";
+import { juniorPreferenceCost } from "@/lib/juniorPreference";
 
 const pairIds = (ids, n) => ids.flatMap((a, i) => ids.slice(i + 1).map((b) => Math.min(a, b) * n + Math.max(a, b)));
 
@@ -26,12 +27,14 @@ export function uniqueCandidates(players, sizes, distance) {
     for (const teams of splits(ids)) {
       if (!juniorMatchAllowed(...teams.map((team) => team.map((id) => players[id])))) continue;
       if (span && teams.some((team) => team.length === 2 && players[team[0]].bottom && players[team[1]].bottom && players[team[0]].home === players[team[1]].home)) continue;
-      const [a, b] = teams.map((team) => teamAvg(team.map((id) => players[id])));
+      const playerTeams = teams.map((team) => team.map((id) => players[id]));
+      const [a, b] = playerTeams.map(teamAvg);
       const gap = a !== null && b !== null ? Math.abs(a - b) : 0;
+      const juniorCost = juniorPreferenceCost(...playerTeams) * 10;
       matches.push({ ids, teams, span, meetings: pairIds(ids, n),
         partners: teams.flatMap((team) => pairIds(team, n)),
         opponents: teams[0].flatMap((x) => teams[1].map((y) => Math.min(x, y) * n + Math.max(x, y))),
-        cost: gap * gap * 10 + spread * spread * 0.01 + span * 0.0001 });
+        cost: gap * gap * 10 + spread * spread * 0.01 + span * 0.0001 + juniorCost });
     }
     matches.sort((a, b) => a.cost - b.cost);
     matches.forEach((match, index) => candidates.push({ ...match, primary: index === 0 }));

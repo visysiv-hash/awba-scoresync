@@ -5,6 +5,7 @@
 // pairs nobody in the group has met yet.
 import { teamAvg } from "./teamRating";
 import { bannedTogether } from "./neverPair";
+import { juniorPreferenceCost } from "@/lib/juniorPreference";
 
 const keyOf = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -65,7 +66,7 @@ const roundGap = (round) =>
   round.reduce((sum, m) => {
     const a = teamAvg(m.A);
     const b = teamAvg(m.B);
-    return sum + (a !== null && b !== null ? (a - b) * (a - b) : 0);
+    return sum + (a !== null && b !== null ? (a - b) * (a - b) : 0) + juniorPreferenceCost(m.A, m.B);
   }, 0);
 
 // The two inside games: as few repeated faces as the group allows, then as few
@@ -132,6 +133,7 @@ const bestCross = (aMatchings, bMatchings) => {
       if (b.some((v) => v === null)) continue;
       let gap = 0;
       for (let i = 0; i < 4; i++) gap += (a[i] - b[i]) * (a[i] - b[i]);
+      gap += ma.reduce((sum, pair, i) => sum + juniorPreferenceCost(pair, mb[i]), 0);
       if (!best || gap < best.gap) best = { gap, ma, mb };
     }
   }

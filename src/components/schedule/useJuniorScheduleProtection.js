@@ -14,7 +14,7 @@ export default function useJuniorScheduleProtection(record) {
   const assertSafe = (candidate) => {
     if (!query.data) throw new Error(query.error?.message || "Wait for the junior check to finish.");
     if (unsafeJuniorMatches(candidate, query.data).length) {
-      throw new Error("This would mix juniors and adults. Use Re-pair and save to separate them.");
+      throw new Error("A junior cannot play alone against a pair containing adults. Choose a different swap or re-pair the draw.");
     }
   };
   return { loading: query.isPending, error: query.error, invalid, assertSafe };

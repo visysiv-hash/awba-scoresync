@@ -134,9 +134,9 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
                   {missing} player{missing === 1 ? " has" : "s have"} no app rating yet and are placed at the end.
                 </p>
               )}
-              {juniors >= 2 && (
+              {juniors > 0 && (
                 <p className="text-[11px] text-emerald-200 bg-emerald-900/30 border border-emerald-600/40 rounded-lg px-2 py-1.5">
-                  {juniors} players are under 16 and are drawn together, away from the adults.
+                  {juniors} under-16 player{juniors === 1 ? "" : "s"}. Junior matchups are preferred where the existing draw rules allow; mixing with adults is allowed rather than forcing repeats. A junior never plays alone against a pair containing adults.
                 </p>
               )}
               {shortGroups > 0 && (

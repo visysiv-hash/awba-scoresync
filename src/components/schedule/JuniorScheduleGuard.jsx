@@ -13,7 +13,7 @@ export default function JuniorScheduleGuard({ record, safety, onRepaired }) {
       safety.assertSafe({ ...record, ...next });
       await base44.entities.DrawNight.update(record.id, next);
       onRepaired(next);
-      toast.success("Draw saved with juniors separated from adults.");
+      toast.success("Draw saved with safe junior matchups; mixed matches are allowed.");
     } catch (error) {
       toast.error(error.message || "Couldn't correct the junior matchups.");
     } finally {
@@ -25,7 +25,7 @@ export default function JuniorScheduleGuard({ record, safety, onRepaired }) {
   if (!safety.invalid.length) return null;
   return (
     <div role="alert" className="rounded-lg border border-border bg-secondary text-secondary-foreground p-3 space-y-2 no-print">
-      <p className="text-xs">This saved draw mixes juniors and adults. Re-pairing will regenerate the pairings and save a separated junior group.</p>
+      <p className="text-xs">A junior is playing alone against a pair containing adults. Re-pairing will correct this while allowing mixed matches and preferring fresh junior matchups.</p>
       <Button size="sm" onClick={fix} disabled={busy}>{busy ? "Correcting draw…" : "Re-pair and save"}</Button>
     </div>
   );
