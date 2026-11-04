@@ -305,7 +305,7 @@ export default function Schedule() {
                   onPick={isAdmin ? pick : null}
                 />
               </div>
-              <div className="flex gap-3 items-start print:gap-1.5">
+              <div className="flex flex-col lg:flex-row gap-3 items-start print:flex-col print:gap-1.5">
                 <div className="flex-1 min-w-0">
                   <NetScheduleTable
                     matches={record.matches || []}
@@ -317,7 +317,7 @@ export default function Schedule() {
                 </div>
                 <PlayerCourts
                   matches={record.matches || []}
-                  className="hidden lg:block print:block w-52 shrink-0"
+                  className="hidden lg:block print:block w-full lg:w-52 shrink-0"
                 />
               </div>
             </div>
