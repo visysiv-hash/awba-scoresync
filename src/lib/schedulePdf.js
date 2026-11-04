@@ -62,16 +62,19 @@ const drawNet = (doc, x, y, w, net, matches, ratings) => {
     doc.text(String(g), x + gameW / 2, base, { align: "center" });
 
     const match = matches.find((m) => Number(m.net) === net && Number(m.game) === g);
-    const x1 = x + gameW + 1.5;
-    const x2 = x + gameW + teamW + vsW + 1.5;
+    // Both pairs start at the left edge of their cell, so neither can reach the "vs" rule.
+    const pad = 1.5;
+    const maxW = teamW - pad * 2;
+    const x1 = x + gameW + pad;
+    const x2 = x + gameW + teamW + vsW + pad;
     const t1 = pairLabel(teamsOf(match, "team1"), ratings);
     const t2 = pairLabel(teamsOf(match, "team2"), ratings);
 
     doc.setFont("helvetica", "normal");
-    fit(doc, t1, teamW - 1.5, 7);
-    doc.text(t1, x1 + teamW - 1.5, base, { align: "right" });
-    fit(doc, t2, teamW - 1.5, 7);
-    doc.text(t2, x2, base);
+    fit(doc, t1, maxW, 7);
+    doc.text(t1, x1, base, { align: "left" });
+    fit(doc, t2, maxW, 7);
+    doc.text(t2, x2, base, { align: "left" });
 
     doc.setFont("helvetica", "bold");
     doc.setTextColor(190, 25, 25);
