@@ -7,7 +7,7 @@
 import { buildGroups, groupAverage } from "./drawGenerator";
 import { teamAvg } from "./teamRating";
 import { poolGames, poolRound } from "./poolDraw";
-import { keepApartDraw } from "./neverPair";
+import { keepApartDraw, bannedTogether } from "./neverPair";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -60,6 +60,13 @@ function bestAssignment(playing, plan, seen) {
           else if (seen.opponents.has(key(x.name, y.name))) c += 30;
         }
       }
+      const all = [...t.A, ...t.B];
+      for (let i = 0; i < all.length; i++) {
+        for (let j = i + 1; j < all.length; j++) {
+          if (bannedTogether(all[i].name, all[j].name)) c += NEVER_PAIR;
+          if (meetCount(seen, all[i].name, all[j].name) >= 2) c += 400;
+        }
+      }
       const a = teamAvg(t.A);
       const b = teamAvg(t.B);
       if (a !== null && b !== null) c += Math.abs(a - b) * 4;
@@ -95,6 +102,14 @@ const remember = (seen, teams) => {
     if (t.A.length === 2) seen.partners.add(key(t.A[0].name, t.A[1].name));
     if (t.B.length === 2) seen.partners.add(key(t.B[0].name, t.B[1].name));
     for (const x of t.A) for (const y of t.B) seen.opponents.add(key(x.name, y.name));
+    if (!seen.meets) seen.meets = new Map();
+    const all = [...t.A, ...t.B];
+    for (let i = 0; i < all.length; i++) {
+      for (let j = i + 1; j < all.length; j++) {
+        const k = key(all[i].name, all[j].name);
+        seen.meets.set(k, (seen.meets.get(k) || 0) + 1);
+      }
+    }
   }
 };
 
@@ -105,9 +120,26 @@ const REPEATED_PARTNER = 0.5;
 const PARTNER_AS_OPPONENT = 0.3;
 const REPEATED_OPPONENT = 0.08;
 
+// Three games of 2v2 is nine opponents a night from only seven group-mates, so meeting
+// someone twice cannot be avoided — but meeting the same person in all three games can,
+// so a third meeting is priced above a one-point rating gap.
+const THIRD_MEETING = 1.2;
+
+const meetCount = (seen, a, b) => (seen.meets ? seen.meets.get(key(a, b)) || 0 : 0);
+
+// A pairing the night must never make, priced out of reach instead of special-cased.
+const NEVER_PAIR = 1e6;
+
 function roundCost(matches, seen) {
   let c = 0;
   for (const m of matches) {
+    const all = [...m.A, ...m.B];
+    for (let i = 0; i < all.length; i++) {
+      for (let j = i + 1; j < all.length; j++) {
+        if (bannedTogether(all[i].name, all[j].name)) c += NEVER_PAIR;
+        if (meetCount(seen, all[i].name, all[j].name) >= 2) c += THIRD_MEETING;
+      }
+    }
     for (const team of [m.A, m.B]) {
       if (team.length === 2 && seen.partners.has(key(team[0].name, team[1].name))) c += REPEATED_PARTNER;
     }
@@ -125,7 +157,11 @@ function roundCost(matches, seen) {
 }
 
 const nextSeen = (seen, matches) => {
-  const out = { partners: new Set(seen.partners), opponents: new Set(seen.opponents) };
+  const out = {
+    partners: new Set(seen.partners),
+    opponents: new Set(seen.opponents),
+    meets: new Map(seen.meets || []),
+  };
   remember(out, matches.map((m) => ({ A: m.A, B: m.B })));
   return out;
 };
@@ -158,7 +194,7 @@ function nightLineUps(players) {
 // round two never eats the options round three needs to stay balanced.
 function fullGroupGames(players) {
   const lineUps = nightLineUps(players);
-  const none = { partners: new Set(), opponents: new Set() };
+  const none = { partners: new Set(), opponents: new Set(), meets: new Map() };
   const ranked = (seen) =>
     lineUps
       .map((matches) => ({ matches, cost: roundCost(matches, seen) }))
@@ -183,7 +219,7 @@ function fullGroupGames(players) {
 
 function shortGroupGames(players) {
   const plan = PLANS[players.length] || [];
-  const seen = { partners: new Set(), opponents: new Set() };
+  const seen = { partners: new Set(), opponents: new Set(), meets: new Map() };
   const rests = {};
   const games = [];
 
@@ -290,8 +326,9 @@ function mixDraw(groups, list, crossGame, distance) {
   const hostOf = new Map(pairs);
   const guestOf = new Map(pairs.map(([i, j]) => [j, i]));
 
-  // Partners already used in the inside games, so the cross game never repeats them.
-  const seen = { partners: new Set(), opponents: new Set() };
+  // Partners and opponents already used in the inside games, so the cross game never
+  // repeats them or plays anyone a third time.
+  const seen = { partners: new Set(), opponents: new Set(), meets: new Map() };
   for (const rounds of inside) {
     for (const matches of rounds.slice(0, 2)) {
       remember(seen, matches.map((m) => ({ A: m.teamA, B: m.teamB })));

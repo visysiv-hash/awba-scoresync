@@ -5,6 +5,7 @@
 // balanced. The rules are the group engine's: rating closeness, the mixed-pair
 // gender handicap and no repeated partners while it can be avoided.
 import { teamAvg } from "./teamRating";
+import { bannedTogether } from "./neverPair";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -19,6 +20,12 @@ const PARTNER_REPEAT = 60;
 const PARTNER_AS_OPPONENT = 15;
 const OPPONENT_REPEAT = 5;
 
+// Meeting the same player in every game of the night: a second meeting is a fact of
+// life in a group of eight, a third one is what this prices out.
+const THIRD_MEETING = 120;
+
+const meetCount = (seen, a, b) => (seen.meets ? seen.meets.get(key(a, b)) || 0 : 0);
+
 const slotRef = (match, idx) => (idx < 2 ? [match.A, idx] : [match.B, idx - 2]);
 
 // A pairing the night must never make — two of the bottom four together — is priced
@@ -27,6 +34,13 @@ const FORBIDDEN_PAIR = 1e6;
 
 function matchCost(match, seen, blocked) {
   let c = 0;
+  const all = [...match.A, ...match.B];
+  for (let i = 0; i < all.length; i++) {
+    for (let j = i + 1; j < all.length; j++) {
+      if (bannedTogether(all[i].name, all[j].name)) c += FORBIDDEN_PAIR;
+      if (meetCount(seen, all[i].name, all[j].name) >= 2) c += THIRD_MEETING;
+    }
+  }
   for (const team of [match.A, match.B]) {
     if (team.length !== 2) continue;
     if (seen.partners.has(key(team[0].name, team[1].name))) c += PARTNER_REPEAT;
@@ -132,6 +146,14 @@ const rememberRound = (seen, matches) => {
       if (team.length === 2) seen.partners.add(key(team[0].name, team[1].name));
     }
     for (const x of m.A) for (const y of m.B) seen.opponents.add(key(x.name, y.name));
+    if (!seen.meets) seen.meets = new Map();
+    const all = [...m.A, ...m.B];
+    for (let i = 0; i < all.length; i++) {
+      for (let j = i + 1; j < all.length; j++) {
+        const k = key(all[i].name, all[j].name);
+        seen.meets.set(k, (seen.meets.get(k) || 0) + 1);
+      }
+    }
   }
 };
 
@@ -142,7 +164,7 @@ export function poolGames(players) {
   const perRound = Math.floor(pool.length / 4) * 4;
   if (perRound < 4) return [];
 
-  const seen = { partners: new Set(), opponents: new Set() };
+  const seen = { partners: new Set(), opponents: new Set(), meets: new Map() };
   const rests = new Map(pool.map((p) => [p.name, 0]));
   const games = [];
 

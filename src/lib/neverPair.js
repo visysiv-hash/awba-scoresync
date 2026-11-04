@@ -15,6 +15,12 @@ const partnerOf = (name) => {
 
 const namesOf = (match) => [...(match.teamA || []), ...(match.teamB || [])].map((p) => low(p.name));
 
+// True when these two must never be in the same match. Used by the pairing engines,
+// which price it out of reach rather than fixing it after the fact.
+export function bannedTogether(a, b) {
+  return !!partnerOf(a) && partnerOf(a) === low(b);
+}
+
 // If a banned pair lands in the same match, trade one of them with a player from
 // another match of the same round (same group first). Adjusts the draw in place.
 export function keepApartDraw(draw) {
