@@ -1,4 +1,4 @@
-// Scores are due by the end of Thursday (Sydney) after a session. A game still
+// Scores are due by the end of Wednesday (Sydney) after a session. A game still
 // unscored after that is held as "no result": the ladder gives it no game played
 // and no points either way, while the ratings still take the 21-point hit, which
 // is the penalty for not submitting. Either pair could have entered the scores,
@@ -6,9 +6,9 @@
 
 import { SYDNEY_TIME_ZONE, tzOffsetMs } from "./penalties.ts";
 
-const DEADLINE_WEEKDAY = 4; // Thursday
+const DEADLINE_WEEKDAY = 3; // Wednesday
 
-// Epoch ms of the Thursday 11:59pm Sydney deadline that follows a session date.
+// Epoch ms of the Wednesday 11:59pm Sydney deadline that follows a session date.
 export function noResultDeadline(dateStr: string): number {
   const [y, m, d] = String(dateStr || "").split("-").map(Number);
   if (!y || !m || !d) return 0;

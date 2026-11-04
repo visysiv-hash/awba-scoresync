@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
   // no-submission penalty, and the committee enters any late correction instead.
   if (deadlinePassed(scoreDate)) {
     return Response.json({
-      error: `Scores for ${scoreDate} closed at 11:59pm Thursday. Please ask the committee to enter them.`,
+      error: `Scores for ${scoreDate} closed at 11:59pm Wednesday. Please ask the committee to enter them.`,
     });
   }
 

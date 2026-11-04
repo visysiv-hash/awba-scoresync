@@ -86,7 +86,7 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
                       <div className="flex-1">
                         <div className="flex justify-between text-xs text-muted-foreground mb-1">
                           <span>Net {g.net} · Match {g.game}</span>
-                          {noResult && <span className="text-amber-600 font-medium">No score by Thursday</span>}
+                          {noResult && <span className="text-amber-600 font-medium">No score by Wednesday</span>}
                           {isScored && <span className="text-green-600 font-medium">✓ Scored</span>}
                         </div>
                         <div className="flex items-center gap-2 font-semibold">
@@ -107,15 +107,15 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
                     </div>
                     {noResult && (
                       <p className="text-xs text-amber-700 font-medium">
-                        No score was entered by the Thursday deadline, so both pairs take the rating penalty.
+                        No score was entered by the Wednesday deadline, so both pairs take the rating penalty.
                         Ask the committee if the score was missed.
                       </p>
                     )}
                     {!isScored && !noResult && (
                       <p className="text-xs text-blue-600 font-medium">
                         {g.closed
-                          ? "Thursday deadline passed — entry closed."
-                          : "Click to enter scores (due by 11:59pm Thursday) →"}
+                          ? "Wednesday deadline passed — entry closed."
+                          : "Click to enter scores (due by 11:59pm Wednesday) →"}
                       </p>
                     )}
                   </div>

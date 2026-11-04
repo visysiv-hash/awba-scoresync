@@ -5,7 +5,7 @@
       "trigger_type": "scheduled",
       "events": [],
       "schedule_mode": "recurring",
-      "cron_expression": "0 7 * * 5",
+      "cron_expression": "0 7 * * 4",
       "one_time_date": null,
       "timezone": "Australia/Sydney",
       "interval_value": null,
@@ -16,7 +16,7 @@
       "ends_after_count": null
     }
   },
-  "description": "Every Friday morning, any game from the week's session still without a score after the Thursday 11:59pm deadline is recorded as no result, which applies the rating penalty to both pairs.",
+  "description": "Every Thursday morning, any game from the week's session still without a score after the Wednesday 11:59pm deadline is recorded as no result, which applies the rating penalty to both pairs.",
   "name": "Close Unscored Games",
   "definition": {
     "document": {
@@ -36,7 +36,7 @@
           "then": "end",
           "x-base44": {
             "title": "Close unscored games",
-            "description": "Thursday deadline penalty"
+            "description": "Wednesday deadline penalty"
           }
         }
       }

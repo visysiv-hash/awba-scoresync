@@ -34,7 +34,7 @@ export default async function (req: Request): Promise<Response> {
     const date = String(night.date);
 
     if (!deadlinePassed(date)) {
-      return Response.json({ date, closed: false, created: 0, message: "Scores can still be entered until 11:59pm Thursday." });
+      return Response.json({ date, closed: false, created: 0, message: "Scores can still be entered until 11:59pm Wednesday." });
     }
 
     const matches = (night.matches || []).filter((m: any) =>
