@@ -15,8 +15,14 @@ export default function SplashScreen({ onDone }) {
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    base44.entities.Sponsor.filter({ active: true }, "display_order", 50)
-      .then((list) => setSponsors((list || []).filter((s) => s.logo_url).slice(0, MAX_SPONSORS)))
+    base44.entities.Sponsor.list({ sort: "display_order", limit: 50 })
+      .then((list) => {
+        const all = (Array.isArray(list) ? list : list?.items || []).filter((s) => s.logo_url);
+        // "Splash screen only" sponsors lead the splash, regardless of the Active flag
+        const flagged = all.filter((s) => s.splash_only === true);
+        const pool = flagged.length ? flagged : all.filter((s) => s.active === true);
+        setSponsors(pool.slice(0, MAX_SPONSORS));
+      })
       .catch(() => {})
       .finally(() => setReady(true));
   }, []);
