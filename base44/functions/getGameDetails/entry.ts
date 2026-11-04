@@ -1,9 +1,23 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
+import { appGamesFor } from "../../shared/appNight.ts";
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { netNumber, gameNumber } = await req.json();
+    const { netNumber, gameNumber, date: wantedDate } = await req.json();
+
+    // Sheet switched off: the teams come from the saved draw in the app.
+    if (!(await sheetsEnabled(base44))) {
+      const { games } = await appGamesFor(base44, wantedDate);
+      const game = games.find(
+        (g: any) => g.net === String(netNumber).trim() && g.game === String(gameNumber).trim()
+      );
+      if (!game) {
+        return Response.json({ error: `No game found for Net ${netNumber}, Game ${gameNumber}.` });
+      }
+      return Response.json({ net: game.net, game: game.game, team1: game.team1, team2: game.team2 });
+    }
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     // Strip any extra URL parts if user pasted full URL

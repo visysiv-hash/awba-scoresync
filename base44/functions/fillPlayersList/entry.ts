@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { sheetsRequest } from "../../shared/sheetWrite.ts";
 import { unpaidPenaltyNames } from "../../shared/penalties.ts";
+import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
 
 const SHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
 const AVAILABILITY_TAB = "PlayerAvailability";
@@ -8,9 +9,51 @@ const AVAIL_START_ROW = 17;
 const AVAIL_COL = "B";
 const CLEAR_END_ROW = 1000;
 
+// The roster the sheet is filled from: today's bookings, less anyone who still
+// owes a late-cancellation fee.
+async function todayRoster(base44: any, today: string) {
+  const page = await base44.asServiceRole.entities.Booking.filter(
+    { session_date: today, status: { $ne: "cancelled" } },
+    { limit: 500, fields: ["user_name"] }
+  );
+  const unpaidNames = await unpaidPenaltyNames(base44);
+  const seen = new Set();
+  const players: string[] = [];
+  const excluded: string[] = [];
+  for (const b of page.items || []) {
+    const playerName = String(b.user_name || "").trim();
+    if (!playerName) continue;
+    const key = playerName.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (unpaidNames.has(key)) {
+      excluded.push(playerName);
+      continue;
+    }
+    players.push(playerName);
+  }
+  return { players, excluded };
+}
+
+const sydneyToday = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Australia/Sydney",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Sheet switched off: the roster stays in the app and no sheet is written.
+    if (!(await sheetsEnabled(base44))) {
+      const today = sydneyToday();
+      const { players, excluded } = await todayRoster(base44, today);
+      return Response.json({ success: true, today, players, count: players.length, excluded });
+    }
+
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
 
     // 1. Determine "today" in the spreadsheet's timezone so it matches session dates
@@ -28,31 +71,8 @@ export default async function(req: Request): Promise<Response> {
       day: "2-digit",
     }).format(new Date());
 
-    // 2. Read today's active bookings from the Booking entity (source of truth).
-    //    This avoids drift that can happen when the BookingData sheet write fails.
-    const page = await base44.asServiceRole.entities.Booking.filter(
-      { session_date: today, status: { $ne: "cancelled" } },
-      { limit: 500, fields: ["user_name"] }
-    );
-
-    // Players still owing a late-cancellation fee are not considered for scheduling
-    const unpaidNames = await unpaidPenaltyNames(base44);
-
-    const seen = new Set();
-    const players: string[] = [];
-    const excluded: string[] = [];
-    for (const b of (page.items || [])) {
-      const playerName = String(b.user_name || "").trim();
-      if (!playerName) continue;
-      const key = playerName.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      if (unpaidNames.has(key)) {
-        excluded.push(playerName);
-        continue;
-      }
-      players.push(playerName);
-    }
+    // 2. Today's active bookings are the source of truth for the list.
+    const { players, excluded } = await todayRoster(base44, today);
 
     // 3. Clear the existing player list from B17 downward
     const clearRes = await sheetsRequest(

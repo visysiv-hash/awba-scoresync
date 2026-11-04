@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -9,6 +10,26 @@ Deno.serve(async (req) => {
     }
 
     const { net, game, rounds } = await req.json();
+
+    // Sheet switched off: correct the app's own copy of the result.
+    if (!(await sheetsEnabled(base44))) {
+      const total1 = rounds.reduce((s, r) => s + Number(r.score1), 0);
+      const total2 = rounds.reduce((s, r) => s + Number(r.score2), 0);
+      const existing = await base44.asServiceRole.entities.MatchResult.filter(
+        { net: Number(net), game: Number(game) },
+        { limit: 5, sort: "-created_date" }
+      );
+      const latest = (existing.items || [])[0];
+      if (!latest) {
+        return Response.json({ error: 'Score entry not found' }, { status: 404 });
+      }
+      await base44.asServiceRole.entities.MatchResult.update(latest.id, {
+        score1: total1,
+        score2: total2,
+        rounds,
+      });
+      return Response.json({ success: true });
+    }
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const rawId = Deno.env.get("SPREADSHEET_ID") || "";

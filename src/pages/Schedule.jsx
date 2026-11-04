@@ -7,6 +7,7 @@ import PageBanner from "@/components/PageBanner";
 import NightGroupsTable from "@/components/schedule/NightGroupsTable";
 import NetScheduleTable from "@/components/schedule/NetScheduleTable";
 import ScheduleAdminControls from "@/components/schedule/ScheduleAdminControls";
+import SpreadsheetModeCard from "@/components/admin/SpreadsheetModeCard";
 import PlayerCourts from "@/components/schedule/PlayerCourts";
 import GameSwapSelector from "@/components/schedule/GameSwapSelector";
 import UniqueGamesStatus from "@/components/schedule/UniqueGamesStatus";
@@ -299,6 +300,7 @@ export default function Schedule() {
                 onSwapMode={changeSwapMode}
               />
             )}
+            {isAdmin && <SpreadsheetModeCard />}
             {(record.variant === "unique" || scope === -2) && <UniqueGamesStatus record={record} />}
             {isAdmin && swapMode === "game" && (
               <GameSwapSelector game={swapGame} onChange={changeSwapGame} />

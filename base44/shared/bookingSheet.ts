@@ -4,6 +4,8 @@
 // Google occasionally answers with a transient failure (rate limit, brief 5xx),
 // so an attempt is retried a couple of times before giving up.
 
+import { sheetsEnabled } from "./sheetSwitch.ts";
+
 const BOOKING_SPREADSHEET_ID = Deno.env.get("STANDINGS_SPREADSHEET_ID") ?? "";
 const BOOKING_SHEET = "BookingData";
 
@@ -18,6 +20,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 //
 // Returns true on success, false if all attempts failed.
 export async function appendBookingToSheet(base44: any, name: string, date: string): Promise<boolean> {
+  // With the spreadsheet switched off the booking stays in the app's own records.
+  if (!(await sheetsEnabled(base44))) return true;
+
   const MAX_ATTEMPTS = 3;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {

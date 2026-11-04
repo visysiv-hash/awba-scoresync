@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { sheetsRequest } from "../../shared/sheetWrite.ts";
+import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
 
 // Columns where each group of 8 names is written, starting at row 3.
 const GROUP_COLUMNS = ["D", "G", "J", "M", "P", "S"];
@@ -17,6 +18,17 @@ export default async function(req: Request): Promise<Response> {
 
     if (players.length === 0) {
       return Response.json({ error: "No players provided" }, { status: 400 });
+    }
+
+    // Sheet switched off: the draw lives in the app, so nothing is written.
+    if (!(await sheetsEnabled(base44))) {
+      return Response.json({
+        success: true,
+        totalPlayers: players.length,
+        groupsWritten: 0,
+        columns: [],
+        updatedCells: 0,
+      });
     }
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");

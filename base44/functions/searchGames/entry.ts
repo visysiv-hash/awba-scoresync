@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -61,6 +62,9 @@ Deno.serve(async (req) => {
 
       return Response.json({ results, date });
     }
+
+    // Sheet switched off: with no saved draw for that night there is nothing to show.
+    if (!(await sheetsEnabled(base44))) return Response.json({ results: [], date });
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const rawId = Deno.env.get("SPREADSHEET_ID") || "";

@@ -1,10 +1,25 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
 
 const SPREADSHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Sheet switched off: the bank details saved on a session are used instead.
+    if (!(await sheetsEnabled(base44))) {
+      const page = await base44.asServiceRole.entities.Session.filter({}, { sort: "-date", limit: 20 });
+      const withBank = (page.items || []).find(
+        (s: any) =>
+          s.bank_details &&
+          (s.bank_details.account_name || s.bank_details.bsb || s.bank_details.account_number)
+      );
+      return Response.json({
+        bank_details: withBank?.bank_details || { account_name: "", bsb: "", account_number: "" },
+      });
+    }
+
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
 
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/'Bank Account Details'!A:B`;

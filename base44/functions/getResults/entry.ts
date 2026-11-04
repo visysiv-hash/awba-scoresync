@@ -1,9 +1,32 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import { sheetFetch, LIVE_TTL_MS } from "../../shared/sheetCache.ts";
+import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
+import { appGamesFor } from "../../shared/appNight.ts";
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Sheet switched off: today's results come from the app's own saved scores.
+    if (!(await sheetsEnabled(base44))) {
+      const today = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Australia/Sydney", year: "numeric", month: "2-digit", day: "2-digit",
+      }).format(new Date());
+      const { games } = await appGamesFor(base44, today);
+      const results = games
+        .filter((g: any) => g.scored)
+        .map((g: any) => ({
+          net: g.net,
+          game: g.game,
+          team1: g.team1,
+          team2: g.team2,
+          rounds: g.rounds,
+          total1: g.total1,
+          total2: g.total2,
+          timestamp: g.timestamp,
+        }));
+      return Response.json({ results });
+    }
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const rawId = Deno.env.get("SPREADSHEET_ID") || "";

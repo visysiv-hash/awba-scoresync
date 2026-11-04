@@ -1,8 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
+import { appGamesFor } from "../../shared/appNight.ts";
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Sheet switched off: the night's games come from the saved draw in the app.
+    if (!(await sheetsEnabled(base44))) {
+      const { date: wantedDate } = await req.json().catch(() => ({} as any));
+      const { games } = await appGamesFor(base44, wantedDate);
+      return Response.json({ games });
+    }
+
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const rawId = Deno.env.get("SPREADSHEET_ID") || "";
     const spreadsheetId = rawId.includes("/spreadsheets/d/")
