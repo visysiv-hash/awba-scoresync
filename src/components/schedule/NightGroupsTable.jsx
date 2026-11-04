@@ -78,7 +78,7 @@ export default function NightGroupsTable({ groups = [], picked, onPick }) {
             </tr>
           ))}
           <tr className="border-t border-slate-700">
-            <td className="bg-slate-700 text-slate-200 font-bold px-2 py-1.5 sticky left-0 z-10">Courts</td>
+            <td className="bg-slate-700 text-slate-200 font-bold px-2 py-1.5 sticky left-0 z-10">Nets</td>
             {columns.map((c) => (
               <td
                 key={c.group.group}

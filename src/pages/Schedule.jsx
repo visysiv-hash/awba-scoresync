@@ -206,7 +206,7 @@ export default function Schedule() {
             <Swords className="w-6 h-6 text-yellow-400" />
             <div>
               <h1 className="text-xl font-bold tracking-tight">Schedule</h1>
-              <p className="text-xs text-slate-400">Groups, courts and pairings for the night</p>
+              <p className="text-xs text-slate-400">Groups, net numbers and pairings for the night</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

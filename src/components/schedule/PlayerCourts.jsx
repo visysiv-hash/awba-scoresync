@@ -13,7 +13,7 @@ export default function PlayerCourts({ matches = [], className = "" }) {
     <div className={`rounded-xl border border-slate-700 bg-slate-800 p-2 print:p-1 print:border-black/60 ${className}`}>
       <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1 gap-3 print:hidden">
         <span>Player</span>
-        <span>Court numbers</span>
+        <span>Net numbers</span>
       </div>
       <div className="print:max-h-none max-h-[520px] overflow-y-auto print:overflow-visible print:grid print:grid-cols-2 print:gap-x-4">
         {[0, 1].map((i) => (
@@ -22,7 +22,7 @@ export default function PlayerCourts({ matches = [], className = "" }) {
             className="hidden print:flex justify-between gap-3 text-[9px] font-bold uppercase tracking-widest mb-0.5"
           >
             <span>Player</span>
-            <span>Court numbers</span>
+            <span>Net numbers</span>
           </div>
         ))}
         {rows.map((n) => (
