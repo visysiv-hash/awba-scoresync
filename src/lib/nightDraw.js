@@ -32,7 +32,7 @@ const PLANS = {
 
 // Tries every line-up for the round and keeps the one with the fewest repeated
 // partners and opponents, then the closest team ratings.
-function bestAssignment(playing, plan, seen) {
+function bestAssignment(playing, plan, seen, forbidLoneJunior = true) {
   const slots = [];
   plan.forEach(([a, b], mi) => {
     for (let i = 0; i < a; i++) slots.push([mi, "A"]);
@@ -76,9 +76,20 @@ function bestAssignment(playing, plan, seen) {
     return c;
   };
 
+  // American doubles is one player against two: a junior is never left on their own
+  // against an adult pair, only against two juniors.
+  const loneJunior = (teams) =>
+    teams.some((t) => {
+      const alone = t.A.length === 1 && t.B.length === 2 ? t.A[0] : t.B.length === 1 && t.A.length === 2 ? t.B[0] : null;
+      if (!alone || alone.junior !== true) return false;
+      const pair = t.A.length === 2 ? t.A : t.B;
+      return pair.some((p) => p.junior !== true);
+    });
+
   const walk = (depth) => {
     if (depth === slots.length) {
       const teams = teamsFrom();
+      if (forbidLoneJunior && loneJunior(teams)) return;
       const c = cost(teams);
       if (c < bestCost) {
         bestCost = c;
@@ -235,7 +246,8 @@ function shortGroupGames(players) {
     const playing = byRest.slice(0, slots);
     for (const p of players) if (!playing.includes(p)) rests[p.name] = (rests[p.name] || 0) + 1;
 
-    const teams = bestAssignment(playing, plan, seen);
+    const teams =
+      bestAssignment(playing, plan, seen) || bestAssignment(playing, plan, seen, false);
     if (!teams) {
       games.push([]);
       continue;
