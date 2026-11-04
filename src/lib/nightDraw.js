@@ -253,19 +253,16 @@ function pooledDraw(groups, list, poolGroups) {
   return { totalPlayers: list.length, poolGroups, groups: out };
 }
 
-// Distance pairing: every group plays games 1 and 3 inside itself and meets the
-// group two levels away for game 2, so the middle round mixes the night while each
-// game is still chosen on pair averages alone. Two of a group's bottom four are
-// never partnered in that middle game, and a group with nobody to meet plays it
-// inside instead.
-function levelPartners(count) {
+// Distance pairing: the rounds that stay in the group are played there, and the
+// chosen round meets the group `distance` places away, so every match is still
+// chosen on pair averages alone. Two of a group's bottom four are never partnered
+// in that round, and a group left without a partner plays it inside instead.
+function levelPartners(count, distance) {
   const taken = new Set();
   const pairs = [];
   for (let i = 0; i < count; i++) {
-    if (taken.has(i)) continue;
-    const far =
-      i + 2 < count && !taken.has(i + 2) ? i + 2 : i + 1 < count && !taken.has(i + 1) ? i + 1 : -1;
-    if (far < 0) continue;
+    const far = i + distance;
+    if (taken.has(i) || far >= count || taken.has(far)) continue;
     taken.add(i);
     taken.add(far);
     pairs.push([i, far]);
@@ -281,14 +278,18 @@ const insideNight = (players) => {
   return games.map((game) => game.matches || []);
 };
 
-function levelsDraw(groups, list) {
+// Cross-group night: one round meets another group, the rest are played inside the
+// group. Game 2 meets the group two levels away (a crossover); Game 3 meets the
+// group four levels away, so the strongest group plays the newest players and every
+// beginner gets a stronger partner.
+function mixDraw(groups, list, crossGame, distance) {
   const courts = groups.map((_, i) => [i * 2 + 1, i * 2 + 2]);
   const inside = groups.map((g) => insideNight(g.players));
-  const pairs = levelPartners(groups.length);
+  const pairs = levelPartners(groups.length, distance);
   const hostOf = new Map(pairs);
   const guestOf = new Map(pairs.map(([i, j]) => [j, i]));
 
-  // Partners already used in the two inside games, so the middle game never repeats them.
+  // Partners already used in the inside games, so the cross game never repeats them.
   const seen = { partners: new Set(), opponents: new Set() };
   for (const rounds of inside) {
     for (const matches of rounds.slice(0, 2)) {
@@ -310,20 +311,21 @@ function levelsDraw(groups, list) {
 
   const out = groups.map((g, i) => {
     const rounds = inside[i];
-    const games = [{ game: 1, label: "Game 1 · within group", matches: rounds[0] || [] }];
+    const games = [];
+    let used = 0;
 
-    if (hostOf.has(i)) {
-      games.push({
-        game: 2,
-        label: `Game 2 · vs Group ${groups[hostOf.get(i)].groupNum}`,
-        matches: cross.get(i) || [],
-      });
-      games.push({ game: 3, label: "Game 3 · within group", matches: rounds[1] || [] });
-    } else if (guestOf.has(i)) {
-      games.push({ game: 3, label: "Game 3 · within group", matches: rounds[1] || [] });
-    } else {
-      games.push({ game: 2, label: "Game 2 · within group", matches: rounds[1] || [] });
-      games.push({ game: 3, label: "Game 3 · within group", matches: rounds[2] || [] });
+    for (let n = 1; n <= 3; n++) {
+      if (n === crossGame && hostOf.has(i)) {
+        games.push({
+          game: n,
+          label: `Game ${n} · vs Group ${groups[hostOf.get(i)].groupNum}`,
+          matches: cross.get(i) || [],
+        });
+      } else if (n === crossGame && guestOf.has(i)) {
+        // Played against the host group, so those matches are listed there.
+      } else {
+        games.push({ game: n, label: `Game ${n} · within group`, matches: rounds[used++] || [] });
+      }
     }
 
     return {
@@ -339,17 +341,27 @@ function levelsDraw(groups, list) {
     };
   });
 
-  return { totalPlayers: list.length, poolGroups: 1, levels: true, groups: out };
+  return {
+    totalPlayers: list.length,
+    poolGroups: crossGame === 2 ? 0 : -1,
+    levels: true,
+    groups: out,
+  };
 }
 
 export function buildNightDraw(players, options = {}) {
   const list = players || [];
   const groups = buildGroups(list);
-  const requested = options.poolGroups === undefined ? 1 : Number(options.poolGroups);
-  const poolGroups = Math.max(0, Math.min(3, Number.isFinite(requested) ? requested : 1));
+  const requested = options.poolGroups === undefined ? 0 : Number(options.poolGroups);
+  const poolGroups = Number.isFinite(requested) ? requested : 0;
 
-  if (poolGroups === 0 && groups.length > 1) return levelsDraw(groups, list);
-  if (poolGroups > 1 && groups.length > 1) return pooledDraw(groups, list, poolGroups);
+  // 0 = crossover (Game 2 two levels apart), -1 = help beginners (Game 3 four levels
+  // apart), 1 = each group on its own.
+  if (groups.length > 1) {
+    if (poolGroups === 0) return mixDraw(groups, list, 2, 2);
+    if (poolGroups === -1) return mixDraw(groups, list, 3, 4);
+    if (poolGroups > 1) return pooledDraw(groups, list, Math.min(3, poolGroups));
+  }
 
   const out = groups.map((g, i) => {
     const complete = g.players.length === 8;

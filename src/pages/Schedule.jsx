@@ -37,7 +37,7 @@ export default function Schedule() {
   const [dirty, setDirty] = useState(false);
   const [picked, setPicked] = useState(null);
   const [pickedGame, setPickedGame] = useState(null);
-  const [scope, setScope] = useState(1);
+  const [scope, setScope] = useState(0);
   const [swapMode, setSwapMode] = useState("night");
   const [swapGame, setSwapGame] = useState(1);
   const [scopeBusy, setScopeBusy] = useState(false);
@@ -66,7 +66,7 @@ export default function Schedule() {
         setPicked(null);
         setPickedGame(null);
         setSwapGame(1);
-        setScope(1);
+        setScope(0);
       })
       .catch(() => alive && setRecord(null))
       .finally(() => alive && setLoading(false));
@@ -129,9 +129,9 @@ export default function Schedule() {
       toast.success(
         value === 0
           ? "Re-paired: Games 1 and 3 in group, Game 2 two levels apart."
-          : value === 1
-          ? "Re-paired within each group."
-          : `Re-paired across ${value} groups.`
+          : value === -1
+          ? "Re-paired: Game 3 four levels apart to help beginners."
+          : "Re-paired within each group."
       );
     } catch {
       toast.error("Couldn't re-pair the schedule.");

@@ -86,8 +86,8 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
 
       <div className="space-y-1">
         <p className="text-[10px] text-slate-500">
-          Every group of eight is paired on its own here. To pair across 16 or 24 players, open the
-          Schedule and change "Pair across".
+          Games 1 and 3 stay inside each group and Game 2 meets the group two levels away. Change
+          "Pair across" on the Schedule to pair each group on its own or to help beginners.
         </p>
       </div>
 

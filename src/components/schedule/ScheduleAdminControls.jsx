@@ -1,8 +1,9 @@
 import { Loader2 } from "lucide-react";
 
 const SCOPES = [
-  { value: 1, label: "Each group" },
   { value: 0, label: "Crossover" },
+  { value: -1, label: "Help beginners" },
+  { value: 1, label: "Each group" },
 ];
 
 const MODES = [

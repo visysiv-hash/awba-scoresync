@@ -58,7 +58,11 @@ export default function AppDrawView({ draw }) {
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] text-slate-400">
           {draw.totalPlayers} players · {draw.groups.length} {draw.groups.length === 1 ? "pool" : "pools"} ·
-          {draw.poolGroups > 1 ? ` paired across ${draw.poolGroups} groups` : " paired within each group"}
+          {draw.poolGroups === 0
+            ? " Game 2 two levels apart"
+            : draw.poolGroups === -1
+            ? " Game 3 four levels apart"
+            : " paired within each group"}
         </p>
         <Button size="sm" variant="secondary" onClick={() => window.print()}>
           <Printer className="w-3.5 h-3.5 mr-1" /> Print
