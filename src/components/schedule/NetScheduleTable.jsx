@@ -36,7 +36,7 @@ const pair = (team, picked, onPick, match, ratings) => {
         ))}
       </span>
       {total !== null && (
-        <span className="block text-[9px] font-bold text-black/55 leading-none mt-0.5">{total.toFixed(2)}</span>
+        <span className="block text-[9px] font-bold text-black/55 leading-none mt-0.5 print:hidden">{total.toFixed(2)}</span>
       )}
     </>
   );
@@ -50,7 +50,7 @@ export default function NetScheduleTable({ matches = [], picked, pickedGame, onP
     .sort((a, b) => a - b);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-3">
       {nets.map((net) => (
         <div
           key={net}

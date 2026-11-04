@@ -7,6 +7,7 @@ import PageBanner from "@/components/PageBanner";
 import NightGroupsTable from "@/components/schedule/NightGroupsTable";
 import NetScheduleTable from "@/components/schedule/NetScheduleTable";
 import ScheduleAdminControls from "@/components/schedule/ScheduleAdminControls";
+import PlayerCourts from "@/components/schedule/PlayerCourts";
 import GameSwapSelector from "@/components/schedule/GameSwapSelector";
 import { swapPlayer, swapInGame, todayIso } from "@/lib/nightDraw";
 import { repairSchedule } from "@/lib/repairSchedule";
@@ -267,11 +268,17 @@ export default function Schedule() {
             )}
 
             <div className="print-plain space-y-4">
-              <NightGroupsTable
-                groups={record.groups || []}
-                picked={picked}
-                onPick={isAdmin ? pick : null}
-              />
+              <h2 className="hidden print:flex justify-between text-xl font-black">
+                <span>SCHEDULE - {[record.title, record.time_label ? `(${record.time_label})` : ""].filter(Boolean).join(" ")}</span>
+                <span>{auDate(date)}</span>
+              </h2>
+              <div className="no-print">
+                <NightGroupsTable
+                  groups={record.groups || []}
+                  picked={picked}
+                  onPick={isAdmin ? pick : null}
+                />
+              </div>
               <div className="flex gap-3 items-start">
                 <div className="flex-1 min-w-0">
                   <NetScheduleTable
@@ -282,16 +289,10 @@ export default function Schedule() {
                     ratings={ratings}
                   />
                 </div>
-                <div className="hidden lg:block w-36 shrink-0 rounded-xl border border-slate-700 bg-slate-800 p-2">
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1">Players</p>
-                  <div className="max-h-[520px] overflow-y-auto">
-                    {[...new Set((record.groups || []).flatMap((g) => g.players || []))]
-                      .sort((a, b) => String(a).localeCompare(String(b)))
-                      .map((n) => (
-                        <p key={n} className="text-[11px] leading-snug text-slate-200">{n}</p>
-                      ))}
-                  </div>
-                </div>
+                <PlayerCourts
+                  matches={record.matches || []}
+                  className="hidden lg:block print:block w-52 shrink-0"
+                />
               </div>
             </div>
           </>
