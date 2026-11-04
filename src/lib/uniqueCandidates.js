@@ -1,11 +1,12 @@
 import { teamAvg } from "@/lib/teamRating";
 import { bannedTogether } from "@/lib/neverPair";
+import { juniorMatchAllowed } from "@/lib/juniorSafety";
 
 const pairIds = (ids, n) => ids.flatMap((a, i) => ids.slice(i + 1).map((b) => Math.min(a, b) * n + Math.max(a, b)));
 
 // Enumerate actual legal matches, not penalties for illegal ones. The three
 // splits of a quartet share its encounter constraints but have different ratings.
-export function uniqueCandidates(players, sizes, distance, forbidLoneJunior = true) {
+export function uniqueCandidates(players, sizes, distance) {
   const n = players.length;
   const candidates = [];
   const splits = (ids) => {
@@ -23,13 +24,7 @@ export function uniqueCandidates(players, sizes, distance, forbidLoneJunior = tr
     const spread = ratings.length ? Math.max(...ratings) - Math.min(...ratings) : 0;
     const matches = [];
     for (const teams of splits(ids)) {
-      // American doubles: a junior never faces a pair on their own unless both of
-      // them are juniors too.
-      const alone = teams[0].length === 1 && teams[1].length === 2 ? teams[0] : teams[1].length === 1 && teams[0].length === 2 ? teams[1] : null;
-      if (forbidLoneJunior && alone && players[alone[0]].junior === true) {
-        const pair = teams[0] === alone ? teams[1] : teams[0];
-        if (pair.some((id) => players[id].junior !== true)) continue;
-      }
+      if (!juniorMatchAllowed(...teams.map((team) => team.map((id) => players[id])))) continue;
       if (span && teams.some((team) => team.length === 2 && players[team[0]].bottom && players[team[1]].bottom && players[team[0]].home === players[team[1]].home)) continue;
       const [a, b] = teams.map((team) => teamAvg(team.map((id) => players[id])));
       const gap = a !== null && b !== null ? Math.abs(a - b) : 0;

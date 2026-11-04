@@ -19,7 +19,8 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
   const [appRatings, setAppRatings] = useState(null);
   const [baseGroups, setBaseGroups] = useState({});
   const [genders, setGenders] = useState({});
-  const [dobs, setDobs] = useState({});
+  const [dobs, setDobs] = useState(null);
+  const [dobError, setDobError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -34,10 +35,17 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
     memberGenders()
       .then(setGenders)
       .catch(() => setGenders({}));
-    memberDobs()
-      .then(setDobs)
-      .catch(() => setDobs({}));
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    setDobs(null);
+    setDobError("");
+    memberDobs(todayIso(), (players || []).map((p) => p.name))
+      .then((value) => { if (alive) setDobs(value); })
+      .catch((error) => { if (alive) setDobError(error.message || "Couldn't check player ages. Reload before generating the draw."); });
+    return () => { alive = false; };
+  }, [players]);
 
   const merged = useMemo(() => {
     const ratings = {};
@@ -56,7 +64,14 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
     });
   }, [players, appRatings, baseGroups, genders, dobs]);
 
-  const draw = useMemo(() => (showDraw && appRatings !== null ? buildNightDraw(merged) : null), [showDraw, merged, appRatings]);
+  const { draw, drawError } = useMemo(() => {
+    if (!showDraw || appRatings === null || dobs === null) return { draw: null, drawError: "" };
+    try {
+      return { draw: buildNightDraw(merged), drawError: "" };
+    } catch (error) {
+      return { draw: null, drawError: error.message || "Couldn't generate a safe draw." };
+    }
+  }, [showDraw, merged, appRatings, dobs]);
 
   const missing = merged.filter((p) => p.rating === null).length;
   const juniors = merged.filter((p) => p.junior).length;
@@ -108,8 +123,10 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
 
       {showDraw && (
         <>
-          {appRatings === null ? (
-            <p className="text-[11px] text-slate-400 text-center">Loading app ratings…</p>
+          {dobError || drawError ? (
+            <p role="alert" className="text-xs text-destructive">{dobError || drawError}</p>
+          ) : appRatings === null || dobs === null ? (
+            <p className="text-[11px] text-slate-400 text-center">Loading app ratings and checking player ages…</p>
           ) : (
             <>
               {missing > 0 && (
@@ -132,7 +149,7 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
 
               <Button
                 onClick={saveNight}
-                disabled={saving}
+                disabled={saving || !draw || dobs === null}
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
               >
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}

@@ -24,7 +24,7 @@ export default function SessionScheduleButton({ session, players }) {
       const [res, genders, dobs] = await Promise.all([
         base44.functions.invoke("getAppRatings", {}),
         memberGenders().catch(() => ({})),
-        memberDobs().catch(() => ({})),
+        memberDobs(session.date, players),
       ]);
       const ratings = {};
       for (const p of res.data?.players || []) ratings[String(p.player).toLowerCase()] = p.rating;
@@ -33,7 +33,7 @@ export default function SessionScheduleButton({ session, players }) {
         name,
         rating: ratings[String(name).toLowerCase()] ?? null,
         gender: genders[String(name).toLowerCase()] || null,
-        junior: isJunior(dobs[String(name).trim().toLowerCase()]),
+        junior: isJunior(dobs[String(name).trim().toLowerCase()], new Date(`${session.date}T12:00:00`)),
       }));
       const payload = toRecord(buildNightDraw(list), session.date, {
         title: session.title,
@@ -48,7 +48,7 @@ export default function SessionScheduleButton({ session, players }) {
       toast.success("Draw created — opening the Schedule.");
       navigate(`/schedule?date=${session.date}`);
     } catch (e) {
-      toast.error("Couldn't create the draw.");
+      toast.error(e.message || "Couldn't create the draw.");
     } finally {
       setBusy(false);
     }

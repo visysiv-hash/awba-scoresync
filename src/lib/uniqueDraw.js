@@ -55,10 +55,9 @@ export function buildUniqueDraw(groups) {
   const sizes = plans.flat();
   const slots = sizes.reduce((sum, size) => sum + size, 0);
   const cache = new Map();
-  const candidatesAt = (distance, forbidLoneJunior) => {
-    const cacheKey = `${distance}:${forbidLoneJunior}`;
-    if (!cache.has(cacheKey)) cache.set(cacheKey, uniqueCandidates(players, sizes, distance, forbidLoneJunior));
-    return cache.get(cacheKey);
+  const candidatesAt = (distance) => {
+    if (!cache.has(distance)) cache.set(distance, uniqueCandidates(players, sizes, distance));
+    return cache.get(distance);
   };
 
   let rounds = null;
@@ -66,22 +65,17 @@ export function buildUniqueDraw(groups) {
   // A quartet cannot meet four fresh people in a later round when the whole pool
   // has fewer than four matches (pigeonhole principle).
   const impossibleEncounters = sizes.includes(4) && sizes.length < 4;
-  // A junior is kept out of American doubles against an adult pair; that rule is
-  // only relaxed if the group cannot be drawn any other way.
-  for (const forbidLoneJunior of [true, false]) {
-    for (const rule of ["meetings", "roles", "relaxed"]) {
-      if (rule === "meetings" && impossibleEncounters) continue;
-      for (let distance = 0; distance < Math.max(1, groups.length); distance++) {
-        // An isolated eight-player group cannot provide nine distinct encounters.
-        if (rule === "meetings" && distance === 0 && groups.some((g) => g.players.length === 8)) continue;
-        const candidates = candidatesAt(distance, forbidLoneJunior);
-        rounds = searchUniqueRounds(players.length, candidates, sizes, rule);
-        if (!rounds) continue;
-        policy = rule;
-        rounds = balanceUniqueRounds(rounds, candidates, rule);
-        break;
-      }
-      if (rounds) break;
+  // Only encounter preferences can relax. Junior safety is never relaxed.
+  for (const rule of ["meetings", "roles", "relaxed"]) {
+    if (rule === "meetings" && impossibleEncounters) continue;
+    for (let distance = 0; distance < Math.max(1, groups.length); distance++) {
+      if (rule === "meetings" && distance === 0 && groups.some((g) => g.players.length === 8)) continue;
+      const candidates = candidatesAt(distance);
+      rounds = searchUniqueRounds(players.length, candidates, sizes, rule);
+      if (!rounds) continue;
+      policy = rule;
+      rounds = balanceUniqueRounds(rounds, candidates, rule);
+      break;
     }
     if (rounds) break;
   }

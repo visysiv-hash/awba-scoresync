@@ -8,6 +8,8 @@ import NightGroupsTable from "@/components/schedule/NightGroupsTable";
 import NetScheduleTable from "@/components/schedule/NetScheduleTable";
 import ScheduleAdminControls from "@/components/schedule/ScheduleAdminControls";
 import NetAssignmentRow from "@/components/schedule/NetAssignmentRow";
+import JuniorScheduleGuard from "@/components/schedule/JuniorScheduleGuard";
+import useJuniorScheduleProtection from "@/components/schedule/useJuniorScheduleProtection";
 import { shuffleNets, swapNets } from "@/lib/netAssign";
 import SpreadsheetModeCard from "@/components/admin/SpreadsheetModeCard";
 import PlayerCourts from "@/components/schedule/PlayerCourts";
@@ -67,6 +69,7 @@ export default function Schedule() {
   const [deleting, setDeleting] = useState(false);
   const [ratings, setRatings] = useState({});
   const isAdmin = getCurrentMember()?.is_admin === true;
+  const juniorSafety = useJuniorScheduleProtection(record);
 
   // Pair totals shown beside every pair, so the balance of each game is visible.
   useEffect(() => {
@@ -143,12 +146,16 @@ export default function Schedule() {
   // Nothing moves until the admin confirms, so a stray second tap can't change the night.
   const confirmSwap = () => {
     if (!pending) return;
-    setRecord((r) =>
-      pending.game
-        ? swapInGame(r, pending.a, pending.b, pending.game.net, pending.game.game)
-        : swapPlayer(r, pending.a, pending.b)
-    );
-    setDirty(true);
+    try {
+      const next = pending.game
+        ? swapInGame(record, pending.a, pending.b, pending.game.net, pending.game.game)
+        : swapPlayer(record, pending.a, pending.b);
+      juniorSafety.assertSafe(next);
+      setRecord(next);
+      setDirty(true);
+    } catch (error) {
+      toast.error(error.message);
+    }
     setPending(null);
   };
 
@@ -173,8 +180,8 @@ export default function Schedule() {
           ? "Re-paired: Game 3 four levels apart to help beginners."
           : "Re-paired within each group."
       );
-    } catch {
-      toast.error("Couldn't re-pair the schedule.");
+    } catch (error) {
+      toast.error(error.message || "Couldn't re-pair the schedule.");
     } finally {
       setScopeBusy(false);
     }
@@ -209,14 +216,15 @@ export default function Schedule() {
     if (!record) return;
     setSaving(true);
     try {
+      juniorSafety.assertSafe(record);
       await base44.entities.DrawNight.update(record.id, {
         groups: record.groups, matches: record.matches,
         variant: record.variant, pairing_scope: record.pairing_scope,
       });
       setDirty(false);
       toast.success("Schedule saved.");
-    } catch {
-      toast.error("Couldn't save the schedule.");
+    } catch (error) {
+      toast.error(error.message || "Couldn't save the schedule.");
     } finally {
       setSaving(false);
     }
@@ -335,6 +343,15 @@ export default function Schedule() {
               )}
             </p>
 
+            {isAdmin && (
+              <JuniorScheduleGuard record={record} safety={juniorSafety} onRepaired={(next) => {
+                setRecord((r) => ({ ...r, ...next }));
+                setScope(next.pairing_scope);
+                setDirty(false);
+                setPicked(null);
+                setPickedGame(null);
+              }} />
+            )}
             {isAdmin && (
               <ScheduleAdminControls
                 scope={scope}

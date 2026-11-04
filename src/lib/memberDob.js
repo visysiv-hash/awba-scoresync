@@ -1,14 +1,32 @@
 import { base44 } from "@/api/base44Client";
 
-// Member records hold each player's date of birth, so the draw can tell which
-// players are juniors. Names come from bookings, so the map is keyed by
-// lower-cased display name.
-export async function memberDobs() {
+const nameKey = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+// Resolve duplicate display names against the actual booking, not record order.
+export async function memberDobs(date, names = []) {
   const page = await base44.entities.Member.filter({}, { sort: "display_name", limit: 500 });
+  const byName = new Map();
+  for (const member of page.items || []) {
+    const key = nameKey(member.display_name);
+    if (!key) continue;
+    if (!byName.has(key)) byName.set(key, []);
+    byName.get(key).push(member);
+  }
+  const needed = new Set(names.map(nameKey));
+  const duplicates = [...byName].filter(([key, rows]) => rows.length > 1 && needed.has(key));
+  const bookings = duplicates.length && date
+    ? await base44.entities.Booking.filter({ session_date: date, status: { $in: ["confirmed", "waitlisted"] } })
+    : [];
   const map = {};
-  for (const m of page.items || []) {
-    const name = String(m.display_name || "").trim().toLowerCase();
-    if (name) map[name] = m.dob || "";
+  for (const [key, rows] of byName) {
+    let member = rows.length === 1 ? rows[0] : null;
+    if (!member && needed.has(key)) {
+      const emails = new Set(bookings.filter((b) => nameKey(b.user_name) === key).map((b) => nameKey(b.user_email)));
+      const booked = rows.filter((m) => emails.has(nameKey(m.email)));
+      if (booked.length !== 1) throw new Error(`Cannot identify which ${rows[0].display_name} is playing. Check their booking before re-pairing.`);
+      member = booked[0];
+    }
+    if (member) map[key] = member.dob || "";
   }
   return map;
 }

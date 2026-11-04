@@ -10,6 +10,7 @@ import { poolGames, poolRound } from "./poolDraw";
 import { keepApartDraw, bannedTogether } from "./neverPair";
 import { buildCrossoverPair } from "./crossover";
 import { buildUniqueDraw } from "@/lib/uniqueDraw";
+import { juniorMatchAllowed, assertJuniorDraw } from "@/lib/juniorSafety";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -32,7 +33,7 @@ const PLANS = {
 
 // Tries every line-up for the round and keeps the one with the fewest repeated
 // partners and opponents, then the closest team ratings.
-function bestAssignment(playing, plan, seen, forbidLoneJunior = true) {
+function bestAssignment(playing, plan, seen) {
   const slots = [];
   plan.forEach(([a, b], mi) => {
     for (let i = 0; i < a; i++) slots.push([mi, "A"]);
@@ -76,20 +77,10 @@ function bestAssignment(playing, plan, seen, forbidLoneJunior = true) {
     return c;
   };
 
-  // American doubles is one player against two: a junior is never left on their own
-  // against an adult pair, only against two juniors.
-  const loneJunior = (teams) =>
-    teams.some((t) => {
-      const alone = t.A.length === 1 && t.B.length === 2 ? t.A[0] : t.B.length === 1 && t.A.length === 2 ? t.B[0] : null;
-      if (!alone || alone.junior !== true) return false;
-      const pair = t.A.length === 2 ? t.A : t.B;
-      return pair.some((p) => p.junior !== true);
-    });
-
   const walk = (depth) => {
     if (depth === slots.length) {
       const teams = teamsFrom();
-      if (forbidLoneJunior && loneJunior(teams)) return;
+      if (teams.some((t) => !juniorMatchAllowed(t.A, t.B))) return;
       const c = cost(teams);
       if (c < bestCost) {
         bestCost = c;
@@ -246,8 +237,7 @@ function shortGroupGames(players) {
     const playing = byRest.slice(0, slots);
     for (const p of players) if (!playing.includes(p)) rests[p.name] = (rests[p.name] || 0) + 1;
 
-    const teams =
-      bestAssignment(playing, plan, seen) || bestAssignment(playing, plan, seen, false);
+    const teams = bestAssignment(playing, plan, seen);
     if (!teams) {
       games.push([]);
       continue;
@@ -499,9 +489,13 @@ const placeDraw = (draw, startNet, groupOffset, juniors) => {
     juniors
       ? String(label || "").replace(/vs Group (\d+)/, (_, n) => `vs Group ${Number(n) + groupOffset}`)
       : label;
+  const usedNets = new Set(draw.groups.flatMap((g) => (g.games || []).flatMap((game) =>
+    (game.matches || []).map((m, i) => Number(m.net ?? g.courts[i % g.courts.length]))
+  )));
   const blocks = draw.groups.map((g) => {
-    const block = (g.courts || []).map(() => next++);
-    (g.courts || []).forEach((n, i) => netMap.set(Number(n), block[i]));
+    const active = (g.courts || []).filter((net) => usedNets.has(Number(net)));
+    const block = active.map(() => next++);
+    active.forEach((n, i) => netMap.set(Number(n), block[i]));
     return block;
   });
   const mapNet = (net) =>
@@ -538,16 +532,10 @@ const mergeDraws = (senior, junior) => {
 // A finished draw always keeps the banned pairs apart before it is shown or saved.
 export function buildNightDraw(players, options = {}) {
   const split = juniorSplit(players);
-  if (!split) return drawFor(players || [], options);
-
-  let juniorDraw;
-  try {
-    juniorDraw = drawFor(split.juniors, options);
-  } catch {
-    // A junior night that cannot be built falls back to the night as a whole.
-    return drawFor(players || [], options);
-  }
-  return mergeDraws(drawFor(split.seniors, options), juniorDraw);
+  const draw = split
+    ? mergeDraws(drawFor(split.seniors, options), drawFor(split.juniors, options))
+    : drawFor(players || [], options);
+  return assertJuniorDraw(draw);
 }
 
 export function flattenMatches(draw) {
@@ -569,6 +557,7 @@ export function flattenMatches(draw) {
 }
 
 export function toRecord(draw, date, meta = {}) {
+  assertJuniorDraw(draw);
   return {
     ...meta,
     date,

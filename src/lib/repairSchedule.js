@@ -2,6 +2,7 @@ import { buildNightDraw, toRecord } from "./nightDraw";
 import { memberGenders } from "./memberGenders";
 import { appRatingMap } from "./appRatingMap";
 import { memberDobs, isJunior } from "./memberDob";
+import { lookupName } from "@/lib/nameMatch";
 
 // Re-pairs a saved night using a new pairing scope. The players are the ones already
 // on the schedule; ratings, genders and junior status come from the app, so a re-pair
@@ -12,7 +13,7 @@ export async function repairSchedule(record, poolGroups) {
   const [ratingMap, genders, dobs] = await Promise.all([
     appRatingMap().catch(() => ({})),
     memberGenders().catch(() => ({})),
-    memberDobs().catch(() => ({})),
+    memberDobs(record.date, names),
   ]);
 
   const players = names.map((name) => {
@@ -21,7 +22,7 @@ export async function repairSchedule(record, poolGroups) {
       name,
       rating: ratingMap[key] ?? null,
       gender: genders[key] || null,
-      junior: isJunior(dobs[key]),
+      junior: isJunior(lookupName(dobs, name), new Date(`${record.date}T12:00:00`)),
     };
   });
 
