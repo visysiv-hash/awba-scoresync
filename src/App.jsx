@@ -31,6 +31,7 @@ import Schedule from './pages/Schedule';
 import Leaderboard from './pages/Leaderboard';
 import Dashboard from './pages/Dashboard';
 import AppRatings from './pages/AppRatings';
+import BaseGroups from './pages/BaseGroups';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/ratings/app" element={<AppRatings />} />
+          <Route path="/ratings/base-groups" element={<BaseGroups />} />
           <Route path="/availability" element={<PlayerAvailability />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/player" element={<PlayerProfile />} />

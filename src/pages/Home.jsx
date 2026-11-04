@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getCurrentMember } from "../lib/currentMember";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban, Calculator, Swords } from
+  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban, Calculator, Swords, Layers } from
   "lucide-react";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
@@ -147,6 +147,13 @@ gradient: "from-yellow-500 to-amber-600"
  icon: Calculator,
  to: "/ratings/app",
  gradient: "from-slate-500 to-slate-700"
+ },
+ {
+ label: "Base Groups",
+ description: "Set where each rating starts",
+ icon: Layers,
+ to: "/ratings/base-groups",
+ gradient: "from-amber-500 to-orange-700"
  }];
 
 
