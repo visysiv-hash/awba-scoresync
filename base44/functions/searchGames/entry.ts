@@ -5,6 +5,56 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const { query } = await req.json();
 
+    // Tonight's games come from the app's own saved schedule (the Schedule page) and
+    // the app's stored scores, so the search no longer depends on the spreadsheet.
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney" }).format(new Date());
+    const nightRows: any = await base44.asServiceRole.entities.DrawNight.filter({});
+    const nights: any[] = Array.isArray(nightRows) ? nightRows : nightRows.items || [];
+
+    // The saved draw closest to today: tonight's own schedule, or the next/previous
+    // session when tonight has no draw yet.
+    const days = (iso: string) =>
+      Math.abs(new Date(`${iso}T00:00:00Z`).getTime() - new Date(`${today}T00:00:00Z`).getTime()) / 86400000;
+    const night = [...nights].sort((a: any, b: any) => days(a.date) - days(b.date))[0];
+    const date = night?.date || today;
+
+    if (night) {
+      const q = String(query || "").trim().toLowerCase();
+      const results = (night.matches || [])
+        .filter((m: any) =>
+          [...(m.team1 || []), ...(m.team2 || [])].some((n: string) =>
+            String(n || "").toLowerCase().includes(q)
+          )
+        )
+        .map((m: any): any => {
+          const game = {
+            net: String(m.net),
+            game: String(m.game),
+            team1: (m.team1 || []).join(" & "),
+            team2: (m.team2 || []).join(" & "),
+          };
+          return { ...game, submitted: false };
+        })
+        .sort((a: any, b: any) => Number(a.game) - Number(b.game));
+
+      const scoreRows: any = await base44.asServiceRole.entities.MatchResult.filter({ date });
+      const scored: any[] = Array.isArray(scoreRows) ? scoreRows : scoreRows.items || [];
+      const bySlot = new Map<string, any>();
+      for (const r of scored) bySlot.set(`${Number(r.net)}|${Number(r.game)}`, r);
+
+      for (const result of results) {
+        const stored = bySlot.get(`${Number(result.net)}|${Number(result.game)}`);
+        if (!stored) continue;
+        const rounds = Array.isArray(stored.rounds) ? stored.rounds : [];
+        result.submitted = true;
+        result.rounds = rounds;
+        result.total1 = stored.score1 ?? rounds.reduce((t, r) => t + (Number(r.score1) || 0), 0);
+        result.total2 = stored.score2 ?? rounds.reduce((t, r) => t + (Number(r.score2) || 0), 0);
+      }
+
+      return Response.json({ results, date });
+    }
+
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const rawId = Deno.env.get("SPREADSHEET_ID") || "";
     const spreadsheetId = rawId.includes("/spreadsheets/d/")
