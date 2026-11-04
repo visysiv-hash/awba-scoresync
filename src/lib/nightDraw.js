@@ -338,9 +338,13 @@ function mixDraw(groups, list, crossGame, distance) {
     const bottom = new Set([...a.slice(-4), ...b.slice(-4)].map((p) => String(p.name).toLowerCase()));
     const plan = buildCrossoverPair(a, b, bottom);
     if (!plan) continue;
-    planned.set(i, { ...plan, guest: j });
-    inside[i] = plan.aRounds;
-    inside[j] = plan.bRounds;
+    // The planner works in {A, B} teams; the night uses {teamA, teamB}.
+    const norm = (round) => round.map((m) => ({ teamA: m.A, teamB: m.B }));
+    const aRounds = plan.aRounds.map(norm);
+    const bRounds = plan.bRounds.map(norm);
+    planned.set(i, { guest: j, aRounds, bRounds, cross: norm(plan.cross) });
+    inside[i] = aRounds;
+    inside[j] = bRounds;
   }
 
   // Partners and opponents already used in the inside games, so the cross game never
