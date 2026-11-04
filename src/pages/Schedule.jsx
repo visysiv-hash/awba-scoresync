@@ -9,6 +9,16 @@ import NetScheduleTable from "@/components/schedule/NetScheduleTable";
 import ScheduleAdminControls from "@/components/schedule/ScheduleAdminControls";
 import PlayerCourts from "@/components/schedule/PlayerCourts";
 import GameSwapSelector from "@/components/schedule/GameSwapSelector";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { swapPlayer, swapInGame, todayIso } from "@/lib/nightDraw";
 import { repairSchedule } from "@/lib/repairSchedule";
 import { appRatingMap } from "@/lib/appRatingMap";
@@ -42,6 +52,7 @@ export default function Schedule() {
   const [dirty, setDirty] = useState(false);
   const [picked, setPicked] = useState(null);
   const [pickedGame, setPickedGame] = useState(null);
+  const [pending, setPending] = useState(null);
   const [scope, setScope] = useState(0);
   const [swapMode, setSwapMode] = useState("night");
   const [swapGame, setSwapGame] = useState(1);
@@ -112,13 +123,24 @@ export default function Schedule() {
         toast.error(`Choose a player in Game ${pickedGame.game}, or tap their name in any group above.`);
         return;
       }
-      setRecord((r) => swapInGame(r, picked, name, pickedGame.net, pickedGame.game));
+      setPending({ a: picked, b: name, game: pickedGame });
     } else {
-      setRecord((r) => swapPlayer(r, picked, name));
+      setPending({ a: picked, b: name, game: null });
     }
-    setDirty(true);
     setPicked(null);
     setPickedGame(null);
+  };
+
+  // Nothing moves until the admin confirms, so a stray second tap can't change the night.
+  const confirmSwap = () => {
+    if (!pending) return;
+    setRecord((r) =>
+      pending.game
+        ? swapInGame(r, pending.a, pending.b, pending.game.net, pending.game.game)
+        : swapPlayer(r, pending.a, pending.b)
+    );
+    setDirty(true);
+    setPending(null);
   };
 
   // Re-pair the night with a different reach: each group of eight on its own, or any
@@ -302,6 +324,25 @@ export default function Schedule() {
           </>
         )}
       </div>
+
+      <AlertDialog open={!!pending} onOpenChange={(open) => !open && setPending(null)}>
+        <AlertDialogContent className="no-print">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Swap these two players?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pending
+                ? `${pending.a} and ${pending.b} will trade places${
+                    pending.game ? ` in Game ${pending.game.game} on Net ${pending.game.net}` : " for the whole night"
+                  }. Nothing is saved until you press Save.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPending(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSwap}>Swap</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
