@@ -39,6 +39,15 @@
       "type": "boolean",
       "title": "Paid",
       "default": false
+    },
+    "checked_in": {
+      "type": "boolean",
+      "title": "Checked In",
+      "default": false
+    },
+    "checked_in_at": {
+      "type": "string",
+      "title": "Checked In At"
     }
   },
   "required": [

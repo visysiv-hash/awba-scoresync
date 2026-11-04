@@ -32,6 +32,8 @@ import Leaderboard from './pages/Leaderboard';
 import Dashboard from './pages/Dashboard';
 import AppRatings from './pages/AppRatings';
 import BaseGroups from './pages/BaseGroups';
+import SeasonWrapped from './pages/SeasonWrapped';
+import AdminCheckIn from './pages/AdminCheckIn';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -90,6 +92,7 @@ const AuthenticatedApp = () => {
           <Route path="/availability" element={<PlayerAvailability />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/player" element={<PlayerProfile />} />
+          <Route path="/wrapped" element={<SeasonWrapped />} />
           <Route path="/manual" element={<UserManual />} />
           <Route path="/explainer" element={<ExplainerDownload />} />
           <Route path="/admin/scores" element={<AdminScoreEdit />} />
@@ -104,6 +107,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/add-member" element={<AdminAddMember />} />
           <Route path="/admin/members" element={<AdminMembers />} />
           <Route path="/admin/late-cancellations" element={<AdminLateCancellations />} />
+          <Route path="/admin/check-in" element={<AdminCheckIn />} />
 
           <Route path="*" element={<PageNotFound />} />
         </Routes>

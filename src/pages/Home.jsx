@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getCurrentMember } from "../lib/currentMember";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban, Calculator, Swords, Layers } from
+  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban, Calculator, Swords, Layers, Sparkles, ClipboardCheck } from
   "lucide-react";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
@@ -39,6 +39,13 @@ const tiles = [
   icon: User,
   to: "/leaderboard?tab=search",
   gradient: "from-pink-500 to-rose-600"
+},
+{
+  label: "Wrapped",
+  description: "Your season, rating trend & badges",
+  icon: Sparkles,
+  to: "/wrapped",
+  gradient: "from-fuchsia-500 to-violet-700"
 },
 {
   label: "News",
@@ -98,6 +105,13 @@ const adminTiles = [
   icon: CalendarCheck,
   to: "/admin/sessions",
   gradient: "from-rose-500 to-pink-700"
+},
+{
+  label: "Check In",
+  description: "Tonight's arrivals board",
+  icon: ClipboardCheck,
+  to: "/admin/check-in",
+  gradient: "from-lime-500 to-emerald-700"
 },
 {
   label: "Schedule",
