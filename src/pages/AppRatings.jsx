@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import PageBanner from "../components/PageBanner";
 import AppRatingCard from "../components/ratings/AppRatingCard";
 import BaseGroupEditor from "../components/ratings/BaseGroupEditor";
+import { lookupName } from "@/lib/nameMatch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Calculator, ArrowLeft } from "lucide-react";
 
@@ -19,6 +20,7 @@ const prettyDate = (d) => {
 
 export default function AppRatings() {
   const [data, setData] = useState(null);
+  const [roster, setRoster] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = async (round, silent = false) => {
@@ -30,11 +32,31 @@ export default function AppRatings() {
 
   useEffect(() => {
     load();
+    base44.functions
+      .invoke("getMemberRoster", {})
+      .then((res) => setRoster(res.data?.roster || []))
+      .catch(() => {});
   }, []);
 
   const rounds = data?.rounds || [];
   const ranked = (data?.players || []).filter((p) => !p.provisional);
   const provisional = (data?.players || []).filter((p) => p.provisional);
+
+  // Everyone who can be given a base group: rated players plus any member who has
+  // no app results yet, so a new player can start from the right group.
+  const ratedMap = {};
+  for (const p of data?.players || []) ratedMap[String(p.player).trim().toLowerCase()] = p;
+  const extraNames = [
+    ...new Set(
+      roster
+        .map((m) => String(m.display_name || "").trim())
+        .filter((name) => name && lookupName(ratedMap, name) === undefined)
+    ),
+  ];
+  const baseList = [
+    ...(data?.players || []),
+    ...extraNames.map((name) => ({ player: name, rating: null, currentGroup: null })),
+  ];
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 pb-24">
@@ -83,6 +105,12 @@ export default function AppRatings() {
               <span className="text-[11px] text-slate-400 shrink-0">{data.matchCount} matches</span>
             </div>
 
+            <BaseGroupEditor
+              players={baseList}
+              baseGroups={data.baseGroups}
+              onSaved={() => load(data.round, true)}
+            />
+
             <div className="flex items-center gap-2 px-3 text-[10px] uppercase tracking-wide text-slate-500 font-semibold">
               <span className="w-4" />
               <span className="flex-1">Player</span>
@@ -110,12 +138,6 @@ export default function AppRatings() {
                 ))}
               </div>
             )}
-
-            <BaseGroupEditor
-              players={data.players}
-              baseGroups={data.baseGroups}
-              onSaved={() => load(data.round, true)}
-            />
 
             <p className="text-[11px] text-slate-500 text-center pb-2 leading-snug">
               Ratings as at Round {data.round}. Tap a player for their round-by-round history.

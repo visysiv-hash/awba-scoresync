@@ -2,6 +2,7 @@ import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminPinGate from "../AdminPinGate";
+import { lookupName } from "@/lib/nameMatch";
 import { ChevronDown, ChevronUp, Loader2, Settings2 } from "lucide-react";
 
 const GROUPS = [1, 2, 3, 4, 5, 6];
@@ -78,13 +79,14 @@ export default function BaseGroupEditor({ players, baseGroups, onSaved }) {
           />
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-700/60">
             {list.map((p) => {
-              const overridden = baseGroups?.[p.player.trim().toLowerCase()] != null;
+              const fixed = lookupName(baseGroups, p.player);
+              const overridden = fixed != null;
               return (
                 <div key={p.player} className="flex items-center gap-2 py-1.5">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-slate-200 truncate">{p.player}</p>
                     <p className="text-[10px] text-slate-500">
-                      Rating {p.rating} · Group {p.currentGroup}
+                      Rating {p.rating ?? "—"} · Group {p.currentGroup ?? "—"}
                       {overridden && <span className="text-amber-400"> · base fixed</span>}
                     </p>
                   </div>
@@ -92,7 +94,7 @@ export default function BaseGroupEditor({ players, baseGroups, onSaved }) {
                     <Loader2 className="w-4 h-4 animate-spin text-yellow-400" />
                   ) : (
                     <Select
-                      value={overridden ? String(baseGroups[p.player.trim().toLowerCase()]) : "auto"}
+                      value={overridden ? String(fixed) : "auto"}
                       onValueChange={(v) => save(p.player, v === "auto" ? null : v)}
                     >
                       <SelectTrigger className="w-24 h-8 bg-slate-900 border-slate-700 text-white text-xs">

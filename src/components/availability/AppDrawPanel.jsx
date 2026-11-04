@@ -6,6 +6,7 @@ import { Loader2, RefreshCw, Swords, Save, ClipboardList } from "lucide-react";
 import AppDrawView from "./AppDrawView";
 import { buildNightDraw, toRecord, todayIso } from "@/lib/nightDraw";
 import { memberGenders } from "@/lib/memberGenders";
+import { lookupName } from "@/lib/nameMatch";
 import { toast } from "sonner";
 
 // App-only scheduling: players come from today's bookings in the app, ratings
@@ -15,6 +16,7 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
   const [showDraw, setShowDraw] = useState(false);
 
   const [appRatings, setAppRatings] = useState(null);
+  const [baseGroups, setBaseGroups] = useState({});
   const [genders, setGenders] = useState({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -22,7 +24,10 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
   useEffect(() => {
     base44.functions
       .invoke("getAppRatings", {})
-      .then((res) => setAppRatings(res.data?.players || []))
+      .then((res) => {
+        setAppRatings(res.data?.players || []);
+        setBaseGroups(res.data?.baseGroups || {});
+      })
       .catch(() => setAppRatings([]));
     memberGenders()
       .then(setGenders)
@@ -31,17 +36,19 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
 
   const merged = useMemo(() => {
     const ratings = {};
-    for (const p of appRatings || []) ratings[String(p.player).toLowerCase()] = p.rating;
+    for (const p of appRatings || []) ratings[String(p.player).trim().toLowerCase()] = p.rating;
     return (players || []).map((p) => {
-      const key = String(p.name).toLowerCase();
+      const key = String(p.name).trim().toLowerCase();
+      const rated = lookupName(ratings, p.name);
+      const base = lookupName(baseGroups, p.name);
       return {
         ...p,
-        rating: ratings[key] ?? p.rating ?? null,
-        gender: genders[key] || null,
-        fromApp: ratings[key] !== undefined,
+        rating: rated ?? base ?? p.rating ?? null,
+        gender: lookupName(genders, p.name) || null,
+        fromApp: rated !== undefined,
       };
     });
-  }, [players, appRatings, genders]);
+  }, [players, appRatings, baseGroups, genders]);
 
   const draw = useMemo(() => (showDraw ? buildNightDraw(merged) : null), [showDraw, merged]);
 
