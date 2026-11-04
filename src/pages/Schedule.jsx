@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { swapPlayer, swapInGame, todayIso } from "@/lib/nightDraw";
 import { buildSchedulePdf } from "@/lib/schedulePdf";
+import SchedulePdfDialog from "@/components/schedule/SchedulePdfDialog";
 import { repairSchedule } from "@/lib/repairSchedule";
 import { appRatingMap } from "@/lib/appRatingMap";
 import { getCurrentMember } from "@/lib/currentMember";
@@ -62,6 +63,7 @@ export default function Schedule() {
   const [swapGame, setSwapGame] = useState(1);
   const [scopeBusy, setScopeBusy] = useState(false);
   const [ratings, setRatings] = useState({});
+  const [pdfUrl, setPdfUrl] = useState(null);
   const isAdmin = getCurrentMember()?.is_admin === true;
 
   // Pair totals shown beside every pair, so the balance of each game is visible.
@@ -210,7 +212,13 @@ export default function Schedule() {
   // A real A4 file, so printing from a phone gives the same single page.
   const downloadPdf = () => {
     if (!record) return;
-    buildSchedulePdf(record, auDate(date), ratings).save(`AWBA_Schedule_${date}.pdf`);
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(buildSchedulePdf(record, auDate(date), ratings).output("bloburl"));
+  };
+
+  const closePdf = () => {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
   };
 
   return (
@@ -366,6 +374,13 @@ export default function Schedule() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SchedulePdfDialog
+        open={!!pdfUrl}
+        url={pdfUrl}
+        fileName={`AWBA_Schedule_${date}.pdf`}
+        onClose={closePdf}
+      />
     </div>
   );
 }
