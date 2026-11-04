@@ -339,15 +339,19 @@ export function swapPlayer(record, a, b) {
   };
 }
 
-// Two players traded inside one game only — the rest of the night is untouched. If
-// the second player is not in that game, they simply take the first player's place
-// there, which covers a late swap-in without disturbing their own games.
-export function swapInGame(record, a, b, game) {
+// Two players traded inside one game only — the rest of the night is untouched. A
+// game number repeats on every net and in every group, so the swap is pinned to the
+// one match the admin tapped (net + game). If the second player is not in that match,
+// they simply take the first player's place there, which covers a late swap-in
+// without disturbing their own games.
+export function swapInGame(record, a, b, net, game) {
   const swap = (names) => (names || []).map((n) => (n === a ? b : n === b ? a : n));
   return {
     ...record,
     matches: (record.matches || []).map((m) =>
-      Number(m.game) === Number(game) ? { ...m, team1: swap(m.team1), team2: swap(m.team2) } : m
+      Number(m.net) === Number(net) && Number(m.game) === Number(game)
+        ? { ...m, team1: swap(m.team1), team2: swap(m.team2) }
+        : m
     ),
   };
 }

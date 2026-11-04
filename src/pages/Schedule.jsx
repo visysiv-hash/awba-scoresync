@@ -73,25 +73,26 @@ export default function Schedule() {
   }, [date]);
 
   // Tap one player, then another. A whole-night swap trades the two of them
-  // everywhere, so every match stays a valid line-up; a single-game swap only
-  // touches that one game and leaves the rest of the night as it is. The group
-  // columns have no single game, so a tap there is always a whole-night swap —
-  // which is what makes swapping Carly in group 1 with Eva in group 2 work.
-  const pick = (name, game, forceNight = false) => {
+  // everywhere, so every match stays a valid line-up; a single-game swap is pinned
+  // to the one match that was tapped and leaves every other game as it is. The group
+  // columns belong to no single game, so they only take part in whole-night swaps.
+  const pick = (name, match) => {
     if (!record || !isAdmin) return;
-    const gameMode = swapMode === "game" && !forceNight;
-    if (gameMode && game === undefined) return;
+    const gameMode = swapMode === "game";
+    if (gameMode && !match) return;
     if (!picked) {
       setPicked(name);
-      setPickedGame(gameMode ? game : null);
+      setPickedGame(gameMode ? { net: Number(match.net), game: Number(match.game) } : null);
       return;
     }
-    if (picked === name && (!gameMode || pickedGame === game)) {
+    const sameMatch =
+      !!pickedGame && !!match && pickedGame.net === Number(match.net) && pickedGame.game === Number(match.game);
+    if (picked === name && (!gameMode || sameMatch)) {
       setPicked(null);
       setPickedGame(null);
       return;
     }
-    if (gameMode) setRecord((r) => swapInGame(r, picked, name, pickedGame));
+    if (gameMode && pickedGame) setRecord((r) => swapInGame(r, picked, name, pickedGame.net, pickedGame.game));
     else setRecord((r) => swapPlayer(r, picked, name));
     setDirty(true);
     setPicked(null);
@@ -236,7 +237,7 @@ export default function Schedule() {
               <NightGroupsTable
                 groups={record.groups || []}
                 picked={picked}
-                onPick={isAdmin ? (name) => pick(name, undefined, true) : null}
+                onPick={isAdmin && swapMode === "night" ? pick : null}
               />
               <div className="flex gap-3 items-start">
                 <div className="flex-1 min-w-0">

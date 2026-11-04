@@ -4,14 +4,14 @@
 // Names are tappable so an admin can swap any two players.
 import { pairAverage } from "@/lib/appRatingMap";
 
-const nameBtn = (name, picked, onPick, game) => {
+const nameBtn = (name, picked, onPick, match) => {
   const active = picked === name;
   return (
     <button
       key={name}
       type="button"
       disabled={!onPick}
-      onClick={() => onPick?.(name, game)}
+      onClick={() => onPick?.(name, match)}
       className={`rounded px-0.5 transition-colors ${
         active ? "bg-yellow-400 text-slate-900 font-bold" : onPick ? "hover:bg-black/10" : "cursor-default"
       }`}
@@ -21,7 +21,7 @@ const nameBtn = (name, picked, onPick, game) => {
   );
 };
 
-const pair = (team, picked, onPick, game, ratings) => {
+const pair = (team, picked, onPick, match, ratings) => {
   const names = team || [];
   if (!names.length) return <span className="text-black/30">—</span>;
   const total = pairAverage(names, ratings);
@@ -31,7 +31,7 @@ const pair = (team, picked, onPick, game, ratings) => {
         {names.map((n, i) => (
           <span key={n}>
             {i > 0 && <span className="font-semibold"> &amp; </span>}
-            {nameBtn(n, picked, onPick, game)}
+            {nameBtn(n, picked, onPick, match)}
           </span>
         ))}
       </span>
@@ -67,11 +67,11 @@ export default function NetScheduleTable({ matches = [], picked, onPick, ratings
                 return (
                   <tr key={game} className="border-t border-black/30 first:border-t-0">
                     <td className="w-5 text-center font-bold border-r border-black/30">{game}</td>
-                    <td className="px-1.5 py-1 leading-snug">{pair(m?.team1, picked, onPick, game, ratings)}</td>
+                    <td className="px-1.5 py-1 leading-snug">{pair(m?.team1, picked, onPick, m, ratings)}</td>
                     <td className="w-6 text-center">
                       <span className="inline-block bg-white text-red-600 font-bold px-1 rounded-sm">vs</span>
                     </td>
-                    <td className="px-1.5 py-1 leading-snug">{pair(m?.team2, picked, onPick, game, ratings)}</td>
+                    <td className="px-1.5 py-1 leading-snug">{pair(m?.team2, picked, onPick, m, ratings)}</td>
                     <td className="w-6 border-l border-black/30" />
                     <td className="w-6 border-l border-black/30" />
                   </tr>
