@@ -12,7 +12,7 @@ const localIso = () => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 };
 
-// Lets a member mark themselves in, but only from inside the stadium.
+// One tap for a member to say they've arrived, from inside the stadium.
 export default function CheckInButton() {
   const member = getCurrentMember();
   const [found, setFound] = useState(null);
@@ -52,7 +52,7 @@ export default function CheckInButton() {
     };
   }, []);
 
-  const checkIn = async () => {
+  const tap = () => {
     if (!navigator.geolocation) {
       toast.error("This device can't share a location, so check in with the desk.");
       return;
@@ -89,44 +89,57 @@ export default function CheckInButton() {
 
   if (!found) {
     return (
-      <div className="rounded-2xl bg-white/10 p-3 text-center">
-        <p className="text-xs text-slate-300">No booking today.</p>
-        <Link to="/bookings" className="text-xs font-bold text-yellow-400 hover:underline">
-          Book a session to check in
-        </Link>
-      </div>
+      <Link
+        to="/bookings"
+        className="flex items-center gap-3 rounded-2xl bg-white/10 p-3 active:scale-95 transition"
+      >
+        <div className="w-9 h-9 shrink-0 rounded-full bg-white/15 flex items-center justify-center">
+          <MapPin className="w-4 h-4 text-slate-300" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-white">Check in</p>
+          <p className="text-[11px] text-slate-400">No booking today — book a session first</p>
+        </div>
+      </Link>
     );
   }
 
   const checked = found.booking.checked_in === true;
 
   return (
-    <div
-      className={`rounded-2xl p-3 ${checked ? "bg-emerald-500/20 border border-emerald-500/50" : "bg-white/10"}`}
+    <button
+      onClick={checked ? undefined : tap}
+      disabled={working || checked}
+      className={`w-full flex items-center gap-3 rounded-2xl p-3 text-left transition ${
+        checked ? "bg-emerald-500/20 border border-emerald-500/50" : "bg-white/10 active:scale-95"
+      }`}
     >
-      <p className="text-[10px] uppercase tracking-widest font-semibold text-slate-400 text-center">
-        {found.session.title}
-      </p>
-      {checked ? (
-        <div className="mt-1 flex items-center justify-center gap-2 text-emerald-300">
-          <Check className="w-5 h-5" />
-          <span className="text-sm font-bold">You're checked in</span>
-        </div>
-      ) : (
-        <>
-          <button
-            onClick={checkIn}
-            disabled={working}
-            className="mt-1 w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-black text-slate-900 active:scale-95 transition disabled:opacity-60"
-          >
-            {working ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-            {working ? "Checking location…" : "Check in"}
-          </button>
-          <p className="mt-1.5 text-center text-[10px] text-slate-400">
-            Works when you're at {STADIUM.name}
-          </p>
-        </>
-      )}
-    </div>
+      <div
+        className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center ${
+          checked ? "bg-emerald-400/25" : "bg-white/15"
+        }`}
+      >
+        {working ? (
+          <Loader2 className="w-4 h-4 animate-spin text-emerald-300" />
+        ) : checked ? (
+          <Check className="w-4 h-4 text-emerald-300" />
+        ) : (
+          <MapPin className="w-4 h-4 text-emerald-300" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold text-white">Check in</p>
+        <p className="text-[11px] text-slate-400 truncate">
+          {checked ? found.session.title : working ? "Checking your location…" : "Tap when you arrive"}
+        </p>
+      </div>
+      <span
+        className={`text-[11px] font-black uppercase tracking-widest ${
+          checked ? "text-emerald-300" : "text-slate-300"
+        }`}
+      >
+        {checked ? "Checked in" : working ? "…" : "Tap"}
+      </span>
+    </button>
   );
 }
