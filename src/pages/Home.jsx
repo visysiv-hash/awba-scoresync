@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getCurrentMember } from "../lib/currentMember";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban, Calculator, Swords, Layers, Sparkles, ClipboardCheck } from
+  ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban, Calculator, Swords, Layers, Sparkles, ClipboardCheck } from
   "lucide-react";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
@@ -41,20 +41,6 @@ const tiles = [
   icon: Sparkles,
   to: "/wrapped",
   gradient: "from-fuchsia-500 to-violet-700"
-},
-{
-  label: "News",
-  description: "Latest updates & announcements",
-  icon: Newspaper,
-  to: "/news",
-  gradient: "from-violet-500 to-purple-600"
-},
-{
-  label: "User Manual",
-  description: "How to use ScoreSync",
-  icon: BookOpen,
-  to: "/manual",
-  gradient: "from-slate-500 to-slate-700"
 },
 {
   label: "Book a Session",
