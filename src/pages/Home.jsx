@@ -10,6 +10,8 @@ import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
 import PageBanner from "../components/PageBanner";
 import MyBookingsCard from "../components/MyBookingsCard";
+import CheckInButton from "../components/checkin/CheckInButton";
+import HomeCheckInBoard from "../components/checkin/HomeCheckInBoard";
 
 const tiles = [
 {
@@ -240,6 +242,18 @@ export default function Home() {
         <div className="mt-4">
           <MyBookingsCard />
         </div>
+
+        {/* Member self check-in */}
+        <div className="mt-2">
+          <CheckInButton />
+        </div>
+
+        {/* Admin arrival board — no PIN needed here */}
+        {isAdmin && (
+          <div className="mt-2">
+            <HomeCheckInBoard />
+          </div>
+        )}
 
         {/* Main tiles */}
         <div className="grid grid-cols-2 gap-2 mt-4">

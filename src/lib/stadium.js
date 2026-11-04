@@ -1,0 +1,19 @@
+// Where members have to be standing to check themselves in.
+export const STADIUM = {
+  name: "Lauren Jackson Sports Centre, Albury",
+  lat: -36.0702308,
+  lon: 146.9386121,
+  radius_m: 300,
+};
+
+// Great-circle distance in metres between two points.
+export function distanceMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
