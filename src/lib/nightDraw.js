@@ -7,6 +7,7 @@
 import { buildGroups, groupAverage } from "./drawGenerator";
 import { teamAvg } from "./teamRating";
 import { poolGames, poolRound } from "./poolDraw";
+import { keepApartDraw } from "./neverPair";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -349,7 +350,7 @@ function mixDraw(groups, list, crossGame, distance) {
   };
 }
 
-export function buildNightDraw(players, options = {}) {
+function buildDraw(players, options = {}) {
   const list = players || [];
   const groups = buildGroups(list);
   const requested = options.poolGroups === undefined ? 0 : Number(options.poolGroups);
@@ -387,6 +388,11 @@ export function buildNightDraw(players, options = {}) {
   });
 
   return { totalPlayers: list.length, poolGroups: 1, groups: out };
+}
+
+// A finished draw always keeps the banned pairs apart before it is shown or saved.
+export function buildNightDraw(players, options = {}) {
+  return keepApartDraw(buildDraw(players, options));
 }
 
 export function flattenMatches(draw) {
