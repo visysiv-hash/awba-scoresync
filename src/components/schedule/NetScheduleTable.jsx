@@ -73,8 +73,6 @@ export default function NetScheduleTable({ matches = [], picked, pickedGame, onP
                       <span className="inline-block bg-white text-red-600 font-bold px-1 rounded-sm">vs</span>
                     </td>
                     <td className="px-1.5 py-1 leading-snug print:py-0 print:leading-tight">{pair(m?.team2, selected, onPick, m, ratings)}</td>
-                    <td className="w-6 border-l border-black/30" />
-                    <td className="w-6 border-l border-black/30" />
                   </tr>
                 );
               })}
