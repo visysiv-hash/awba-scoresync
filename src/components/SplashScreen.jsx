@@ -1,0 +1,103 @@
+import { useEffect, useState } from "react";
+import { base44 } from "@/api/base44Client";
+
+const AWBA_LOGO = "https://media.base44.com/images/public/69c519111fbf9fefe3d69538/83f77bd4f_image.png";
+const LOGO_MS = 1300;
+const SPONSOR_MS = 2400;
+const MAX_SPONSORS = 4;
+
+export default function SplashScreen({ onDone }) {
+  const [sponsors, setSponsors] = useState([]);
+  const [ready, setReady] = useState(false);
+  const [index, setIndex] = useState(-1); // -1 = AWBA logo, then sponsor index
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    base44.entities.Sponsor.filter({ active: true }, "display_order", 50)
+      .then((list) => setSponsors((list || []).filter((s) => s.logo_url).slice(0, MAX_SPONSORS)))
+      .catch(() => {})
+      .finally(() => setReady(true));
+  }, []);
+
+  const close = () => setFading(true);
+
+  useEffect(() => {
+    if (fading) {
+      const t = setTimeout(onDone, 400);
+      return () => clearTimeout(t);
+    }
+  }, [fading, onDone]);
+
+  useEffect(() => {
+    if (!ready || fading) return;
+    if (index === -1) {
+      const t = setTimeout(() => (sponsors.length ? setIndex(0) : close()), LOGO_MS);
+      return () => clearTimeout(t);
+    }
+    const isLast = index >= sponsors.length - 1;
+    const t = setTimeout(() => (isLast ? close() : setIndex(index + 1)), SPONSOR_MS);
+    return () => clearTimeout(t);
+  }, [ready, index, sponsors.length, fading]);
+
+  const sponsor = index >= 0 ? sponsors[index] : null;
+
+  return (
+    <div
+      onClick={close}
+      className={`fixed inset-0 z-[100] overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 transition-opacity duration-400 ${
+        fading ? "opacity-0" : "opacity-100"
+      }`}
+    >
+      {sponsor ? (
+        // Sponsor takes over the whole screen
+        <div key={sponsor.id} className="splash-fade flex h-full w-full flex-col items-center justify-center bg-white px-8 py-10">
+          <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-400">
+            Proudly supported by
+          </p>
+          <img
+            src={sponsor.logo_url}
+            alt={sponsor.name}
+            className="max-h-[58vh] w-full max-w-[80vw] object-contain"
+          />
+          <p className="mt-8 text-lg font-bold text-slate-800">{sponsor.name}</p>
+          {sponsors.length > 1 && (
+            <div className="mt-4 flex gap-1.5">
+              {sponsors.map((s, i) => (
+                <span
+                  key={s.id}
+                  className={`h-1.5 w-1.5 rounded-full ${i === index ? "bg-slate-800" : "bg-slate-300"}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        // AWBA lockup
+        <div className="splash-fade flex h-full w-full flex-col items-center justify-center px-8">
+          <img src={AWBA_LOGO} alt="AWBA" className="h-24 max-w-[80vw] object-contain" />
+          <p className="mt-5 text-center text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+            Albury Wodonga
+          </p>
+          <p className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+            Badminton Association
+          </p>
+        </div>
+      )}
+
+      <button
+        onClick={close}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[11px] font-medium text-slate-400 transition-colors hover:text-slate-600"
+      >
+        Tap to skip
+      </button>
+
+      <style>{`
+        @keyframes splashFade {
+          from { opacity: 0; transform: scale(0.97); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .splash-fade { animation: splashFade 0.5s ease-out both; }
+      `}</style>
+    </div>
+  );
+}

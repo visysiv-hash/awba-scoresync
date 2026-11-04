@@ -35,6 +35,7 @@ import BaseGroups from './pages/BaseGroups';
 import SeasonWrapped from './pages/SeasonWrapped';
 import AdminCheckIn from './pages/AdminCheckIn';
 import AdminRoute from './components/AdminRoute';
+import SplashScreen from './components/SplashScreen';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -123,6 +124,7 @@ const AuthenticatedApp = () => {
 
 
 function App() {
+  const [splashDone, setSplashDone] = useState(false);
 
   return (
     <AuthProvider>
@@ -130,6 +132,7 @@ function App() {
         <Router>
           <AuthenticatedApp />
         </Router>
+        {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
         <Toaster />
         <SonnerToaster position="top-center" richColors />
       </QueryClientProvider>
