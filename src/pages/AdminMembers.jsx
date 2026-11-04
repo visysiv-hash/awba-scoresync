@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Search } from "lucide-react";
+import { Loader2, RefreshCw, Search, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import EditMemberDialog from "../components/admin/EditMemberDialog";
 
 export default function AdminMembers() {
   const [pinUnlocked, setPinUnlocked] = useState(false);
@@ -16,6 +17,7 @@ export default function AdminMembers() {
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [query, setQuery] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const q = query.trim().toLowerCase();
   const filtered = q
@@ -112,6 +114,7 @@ export default function AdminMembers() {
                   <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">BV Member</th>
                   <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b whitespace-nowrap">Paid</th>
                   <th className="px-3 py-2 text-center font-semibold text-slate-700 border-b whitespace-nowrap">Admin</th>
+                  <th className="px-3 py-2 text-center font-semibold text-slate-700 border-b whitespace-nowrap">Edit</th>
                 </tr>
               </thead>
               <tbody>
@@ -147,11 +150,26 @@ export default function AdminMembers() {
                         </span>
                       </div>
                     </td>
+                    <td className="px-3 py-2 border-b whitespace-nowrap text-center">
+                      <Button size="sm" variant="outline" onClick={() => setEditing(m)}>
+                        <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        )}
+
+        {editing && (
+          <EditMemberDialog
+            key={editing.id}
+            member={editing}
+            open
+            onOpenChange={(open) => !open && setEditing(null)}
+            onSaved={(updated) => setMembers(prev => prev.map(x => (x.id === updated.id ? { ...x, ...updated } : x)))}
+          />
         )}
       </div>
     </div>
