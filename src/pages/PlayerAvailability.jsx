@@ -20,41 +20,24 @@ export default function PlayerAvailability() {
   const [exporting, setExporting] = useState(false);
   const [excludedNames, setExcludedNames] = useState([]);
   const [method, setMethod] = useState("sheet");
-  const [source, setSource] = useState("app");
   const [loadingApp, setLoadingApp] = useState(false);
   const isAdmin = getCurrentMember()?.is_admin === true;
 
-  // "App data" reads today's bookings and the app's own ratings; "Google Sheet"
-  // falls back to the spreadsheet tabs for the transition period.
-  const fetchRatings = async (from = source) => {
-    if (from === "app") {
-      try {
-        const res = await base44.functions.invoke("getAppRatings", {});
-        return (res.data?.players || []).map((p) => ({ ...p, hasStats: Number(p.gp) > 0 }));
-      } catch {
-        return [];
-      }
+  // Ratings come from the app's own stored results.
+  const fetchRatings = async () => {
+    try {
+      const res = await base44.functions.invoke("getAppRatings", {});
+      return (res.data?.players || []).map((p) => ({ ...p, hasStats: Number(p.gp) > 0 }));
+    } catch {
+      return [];
     }
-    // The ratings call reads several sheets, so it can come back empty now and
-    // then (a stalled sheet read). Retry once before giving up on it.
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const res = await base44.functions.invoke("getPlayerRatingsV2", {});
-        const list = res.data?.players || [];
-        if (list.length > 0) return list;
-      } catch {
-        // fall through to the retry
-      }
-      await new Promise((r) => setTimeout(r, 400));
-    }
-    return [];
   };
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      base44.functions.invoke(source === "app" ? "getTodayAvailablePlayers" : "getPlayerAvailability", {}),
-      fetchRatings(source),
+      base44.functions.invoke("getTodayAvailablePlayers", {}),
+      fetchRatings(),
       base44.entities.LateCancellation
         .list("-created_date", 200)
         .then(res => {
@@ -69,7 +52,7 @@ export default function PlayerAvailability() {
     }).catch(() => {
       toast.error("Couldn't load today's players — please reload the page.");
     }).finally(() => setLoading(false));
-  }, [source]);
+  }, []);
 
   // Which scheduling method is in use right now — stored in the app so every
   // admin sees the same choice. Both methods stay available at all times.
@@ -238,21 +221,6 @@ export default function PlayerAvailability() {
             <h1 className="text-xl font-bold tracking-tight">Tuesday Night Availability</h1>
             <p className="text-xs text-slate-400">Players available this week, sorted by rating</p>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">Source:</span>
-          {[{ id: "app", label: "App data" }, { id: "sheet", label: "Google Sheet" }].map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => setSource(opt.id)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                source === opt.id ? "bg-white text-slate-900" : "bg-white/10 text-white hover:bg-white/20"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
         </div>
 
         {isAdmin && excludedNames.length > 0 && (
