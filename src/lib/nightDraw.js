@@ -477,10 +477,10 @@ const drawFor = (players, options) => {
   return keepApartDraw(buildDraw(players, options));
 };
 
-// Under-16s get a night of their own when there are enough of them for a group:
-// the same engine runs on the junior list and on everyone else, and the two halves
-// are stitched together afterwards, so no pairing rule changes.
-const JUNIOR_MIN = 4;
+// Under-16s get a night of their own so they never play against an adult: the same
+// engine runs on the junior list and on everyone else, and the two halves are
+// stitched together afterwards, so no pairing rule changes.
+const JUNIOR_MIN = 2;
 
 const juniorSplit = (players) => {
   const list = players || [];

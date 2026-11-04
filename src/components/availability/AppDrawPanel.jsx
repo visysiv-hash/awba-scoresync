@@ -117,9 +117,9 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
                   {missing} player{missing === 1 ? " has" : "s have"} no app rating yet and are placed at the end.
                 </p>
               )}
-              {juniors >= 4 && (
+              {juniors >= 2 && (
                 <p className="text-[11px] text-emerald-200 bg-emerald-900/30 border border-emerald-600/40 rounded-lg px-2 py-1.5">
-                  {juniors} players are under 16 and are drawn together in their own group.
+                  {juniors} players are under 16 and are drawn together, away from the adults.
                 </p>
               )}
               {shortGroups > 0 && (
