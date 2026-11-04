@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getCurrentMember } from "../lib/currentMember";
 import {
   ClipboardList, BarChart2, Trophy, CalendarCheck,
-  User, BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban, Calculator, Swords, Layers, Sparkles, ClipboardCheck } from
+  BookOpen, ShieldCheck, Shield, CalendarDays, Newspaper, Star, ChevronDown, ChevronUp, UserPlus, Users, LogOut, Ban, Calculator, Swords, Layers, Sparkles, ClipboardCheck } from
   "lucide-react";
 import NewsTicker from "../components/NewsTicker";
 import SponsorStrip from "../components/SponsorStrip";
@@ -37,13 +37,6 @@ const tiles = [
 },
 {
   label: "Player Profile",
-  description: "View your stats & history",
-  icon: User,
-  to: "/leaderboard?tab=search",
-  gradient: "from-pink-500 to-rose-600"
-},
-{
-  label: "Wrapped",
   description: "Your season, rating trend & badges",
   icon: Sparkles,
   to: "/wrapped",
