@@ -54,9 +54,9 @@ export default function NetScheduleTable({ matches = [], picked, pickedGame, onP
       {nets.map((net) => (
         <div
           key={net}
-          className="rounded-lg border-2 border-black/70 overflow-hidden break-inside-avoid bg-orange-200 text-black"
+          className="rounded-lg border-2 border-black/70 overflow-hidden break-inside-avoid bg-orange-200 text-black print:rounded-none print:overflow-visible print:border-black"
         >
-          <div className="bg-orange-300 border-b-2 border-black/70 text-center py-1 print:py-0">
+          <div className="bg-orange-300 border-b-2 border-black/70 text-center py-1 print:py-0 print:border-black">
             <p className="text-[8px] font-bold tracking-[0.2em] text-black/70">NET NUMBER</p>
             <p className="text-xl font-black leading-none print:text-[11px]">{net}</p>
           </div>
@@ -66,8 +66,8 @@ export default function NetScheduleTable({ matches = [], picked, pickedGame, onP
                 const m = matches.find((x) => Number(x.net) === net && Number(x.game) === game);
                 const selected = !pickedGame || (pickedGame.net === net && pickedGame.game === game) ? picked : null;
                 return (
-                  <tr key={game} className="border-t border-black/30 first:border-t-0">
-                    <td className="w-5 text-center font-bold border-r border-black/30">{game}</td>
+                  <tr key={game} className="border-t border-black/30 first:border-t-0 print:border-black">
+                    <td className="w-5 text-center font-bold border-r border-black/30 print:border-black">{game}</td>
                     <td className="px-1.5 py-1 leading-snug print:py-0 print:leading-tight">{pair(m?.team1, selected, onPick, m, ratings)}</td>
                     <td className="w-6 text-center">
                       <span className="inline-block bg-white text-red-600 font-bold px-1 rounded-sm">vs</span>

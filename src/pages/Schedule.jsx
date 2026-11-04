@@ -31,8 +31,8 @@ const PRINT_CSS = `@media print {
   .no-print { display: none !important; }
   .fixed.bottom-0 { display: none !important; }
   .pb-16 { padding-bottom: 0 !important; }
-  .print-plain * { color: #000 !important; background: #fff !important; }
-  .print-plain table, .print-plain th, .print-plain td { border: 1px solid #000 !important; }
+  .print-plain * { color: #000 !important; }
+  .print-plain table { border-collapse: collapse !important; }
   .print-plain .break-inside-avoid { break-inside: avoid; }
 }`;
 
