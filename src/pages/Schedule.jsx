@@ -9,6 +9,7 @@ import NetScheduleTable from "@/components/schedule/NetScheduleTable";
 import ScheduleAdminControls from "@/components/schedule/ScheduleAdminControls";
 import { swapPlayer, swapInGame, todayIso } from "@/lib/nightDraw";
 import { repairSchedule } from "@/lib/repairSchedule";
+import { appRatingMap } from "@/lib/appRatingMap";
 import { getCurrentMember } from "@/lib/currentMember";
 import { toast } from "sonner";
 
@@ -38,7 +39,13 @@ export default function Schedule() {
   const [scope, setScope] = useState(1);
   const [swapMode, setSwapMode] = useState("night");
   const [scopeBusy, setScopeBusy] = useState(false);
+  const [ratings, setRatings] = useState({});
   const isAdmin = getCurrentMember()?.is_admin === true;
+
+  // Pair totals shown beside every pair, so the balance of each game is visible.
+  useEffect(() => {
+    appRatingMap().then(setRatings).catch(() => {});
+  }, []);
 
   useEffect(() => {
     base44.entities.DrawNight.list({ sort: "-date", limit: 12 })
@@ -230,6 +237,7 @@ export default function Schedule() {
                     matches={record.matches || []}
                     picked={picked}
                     onPick={isAdmin ? pick : null}
+                    ratings={ratings}
                   />
                 </div>
                 <div className="hidden lg:block w-36 shrink-0 rounded-xl border border-slate-700 bg-slate-800 p-2">

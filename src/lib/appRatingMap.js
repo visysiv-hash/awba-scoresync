@@ -1,0 +1,21 @@
+import { base44 } from "@/api/base44Client";
+
+// Every player's current app rating, keyed by lower-cased name. Ratings run lowest =
+// strongest, so a pair's total is simply the sum of its two ratings.
+export async function appRatingMap() {
+  const res = await base44.functions.invoke("getAppRatings", {});
+  const map = {};
+  for (const p of res.data?.players || []) {
+    map[String(p.player).toLowerCase()] = p.rating;
+  }
+  return map;
+}
+
+// Combined rating of a pair; null when neither player has a rating yet.
+export const pairTotal = (names, ratings) => {
+  const values = (names || [])
+    .map((n) => ratings[String(n).toLowerCase()])
+    .filter((r) => r !== null && r !== undefined);
+  if (!values.length) return null;
+  return values.reduce((s, r) => s + r, 0);
+};
