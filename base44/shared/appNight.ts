@@ -1,6 +1,7 @@
 // The app's own view of a night: the saved draw from the Schedule page joined with
 // the results stored in the app, returned in the same shape the spreadsheet readers
 // use, so score entry and the results screens work with the sheet switched off.
+import { deadlinePassed } from "./noResult.ts";
 
 const sydneyToday = () =>
   new Intl.DateTimeFormat("en-CA", {
@@ -19,8 +20,13 @@ export async function appNightFor(base44: any, wantedDate?: string) {
   const nights: any[] = page.items || page || [];
   const wanted = String(wantedDate || "").trim();
   if (wanted) return nights.find((n: any) => String(n.date) === wanted) || null;
+  // Results, Admin score edit and score entry only carry the night still open for
+  // scoring. Once the Wednesday deadline has passed that night is history: its games
+  // stay in the player search and the ladder, but leave the results board.
   const today = sydneyToday();
-  return [...nights].sort((a: any, b: any) => dayGap(a.date, today) - dayGap(b.date, today))[0] || null;
+  const open = nights.filter((n: any) => !deadlinePassed(String(n.date)));
+  if (!open.length) return null;
+  return [...open].sort((a: any, b: any) => dayGap(a.date, today) - dayGap(b.date, today))[0] || null;
 }
 
 // Every game on the draw, with the result already stored for it when there is one.

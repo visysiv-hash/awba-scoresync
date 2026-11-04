@@ -70,7 +70,7 @@ export default function Dashboard() {
           return filtered.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
-                No {filter.toLowerCase()} games found.
+                {filter === "All" ? "No games to show." : `No ${filter.toLowerCase()} games found.`}
               </CardContent>
             </Card>
           ) : (
