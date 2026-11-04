@@ -255,7 +255,6 @@ export default function Schedule() {
             {isAdmin && (
               <ScheduleAdminControls
                 scope={scope}
-                maxGroups={Math.max(1, Math.ceil(totalPlayers / 8))}
                 busy={scopeBusy}
                 onScope={changeScope}
                 onRepair={() => changeScope(scope, true)}
