@@ -6,6 +6,7 @@ import { Loader2, RefreshCw, Swords, Save, ClipboardList } from "lucide-react";
 import AppDrawView from "./AppDrawView";
 import { buildNightDraw, toRecord, todayIso } from "@/lib/nightDraw";
 import { memberGenders } from "@/lib/memberGenders";
+import { memberDobs, isJunior } from "@/lib/memberDob";
 import { lookupName } from "@/lib/nameMatch";
 import { toast } from "sonner";
 
@@ -18,6 +19,7 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
   const [appRatings, setAppRatings] = useState(null);
   const [baseGroups, setBaseGroups] = useState({});
   const [genders, setGenders] = useState({});
+  const [dobs, setDobs] = useState({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -32,6 +34,9 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
     memberGenders()
       .then(setGenders)
       .catch(() => setGenders({}));
+    memberDobs()
+      .then(setDobs)
+      .catch(() => setDobs({}));
   }, []);
 
   const merged = useMemo(() => {
@@ -45,14 +50,16 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
         ...p,
         rating: rated ?? base ?? p.rating ?? null,
         gender: lookupName(genders, p.name) || null,
+        junior: isJunior(lookupName(dobs, p.name)),
         fromApp: rated !== undefined,
       };
     });
-  }, [players, appRatings, baseGroups, genders]);
+  }, [players, appRatings, baseGroups, genders, dobs]);
 
   const draw = useMemo(() => (showDraw && appRatings !== null ? buildNightDraw(merged) : null), [showDraw, merged, appRatings]);
 
   const missing = merged.filter((p) => p.rating === null).length;
+  const juniors = merged.filter((p) => p.junior).length;
   const shortGroups = draw ? draw.groups.filter((g) => !g.complete).length : 0;
 
   const saveNight = async () => {
@@ -108,6 +115,11 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
               {missing > 0 && (
                 <p className="text-[11px] text-amber-200 bg-amber-900/30 border border-amber-600/40 rounded-lg px-2 py-1.5">
                   {missing} player{missing === 1 ? " has" : "s have"} no app rating yet and are placed at the end.
+                </p>
+              )}
+              {juniors >= 4 && (
+                <p className="text-[11px] text-emerald-200 bg-emerald-900/30 border border-emerald-600/40 rounded-lg px-2 py-1.5">
+                  {juniors} players are under 16 and are drawn together in their own group.
                 </p>
               )}
               {shortGroups > 0 && (

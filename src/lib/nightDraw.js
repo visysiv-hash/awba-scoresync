@@ -456,14 +456,86 @@ function buildDraw(players, options = {}) {
   return { totalPlayers: list.length, poolGroups: 1, groups: out };
 }
 
-// A finished draw always keeps the banned pairs apart before it is shown or saved.
-export function buildNightDraw(players, options = {}) {
+const drawFor = (players, options) => {
   // Unique draws are validated as a whole and must never pass through the
   // legacy unconstrained post-draw swap, which can reintroduce repeats.
   if (options.poolGroups === undefined || Number(options.poolGroups) === -2) {
     return buildUniqueDraw(buildGroups(players || []));
   }
   return keepApartDraw(buildDraw(players, options));
+};
+
+// Under-16s get a night of their own when there are enough of them for a group:
+// the same engine runs on the junior list and on everyone else, and the two halves
+// are stitched together afterwards, so no pairing rule changes.
+const JUNIOR_MIN = 4;
+
+const juniorSplit = (players) => {
+  const list = players || [];
+  const juniors = list.filter((p) => p.junior === true);
+  const seniors = list.filter((p) => p.junior !== true);
+  return juniors.length >= JUNIOR_MIN && seniors.length > 0 ? { juniors, seniors } : null;
+};
+
+// Puts a finished draw in its place in the merged night: its groups numbered after
+// the ones before it, and its net numbers moved on from the last net used.
+const placeDraw = (draw, startNet, groupOffset, juniors) => {
+  const netMap = new Map();
+  let next = startNet;
+  // A cross-game label names the group it meets, which moves with the merge.
+  const relabel = (label) =>
+    juniors
+      ? String(label || "").replace(/vs Group (\d+)/, (_, n) => `vs Group ${Number(n) + groupOffset}`)
+      : label;
+  const blocks = draw.groups.map((g) => {
+    const block = (g.courts || []).map(() => next++);
+    (g.courts || []).forEach((n, i) => netMap.set(Number(n), block[i]));
+    return block;
+  });
+  const mapNet = (net) =>
+    net === null || net === undefined
+      ? net
+      : netMap.has(Number(net))
+      ? netMap.get(Number(net))
+      : Number(net);
+  const groups = draw.groups.map((g, i) => ({
+    ...g,
+    group: groupOffset + i + 1,
+    label: `Group ${groupOffset + i + 1}${juniors ? " · Juniors" : ""}`,
+    courts: blocks[i],
+    games: (g.games || []).map((game) => ({
+      ...game,
+      label: relabel(game.label),
+      matches: (game.matches || []).map((m) => ({ ...m, net: mapNet(m.net) })),
+    })),
+  }));
+  const maxNet = blocks.flat().reduce((max, net) => Math.max(max, net), startNet);
+  return { groups, maxNet };
+};
+
+const mergeDraws = (senior, junior) => {
+  const first = placeDraw(senior, 1, 0, false);
+  const second = placeDraw(junior, first.maxNet + 1, first.groups.length, true);
+  return {
+    ...senior,
+    totalPlayers: (senior.totalPlayers || 0) + (junior.totalPlayers || 0),
+    groups: [...first.groups, ...second.groups],
+  };
+};
+
+// A finished draw always keeps the banned pairs apart before it is shown or saved.
+export function buildNightDraw(players, options = {}) {
+  const split = juniorSplit(players);
+  if (!split) return drawFor(players || [], options);
+
+  let juniorDraw;
+  try {
+    juniorDraw = drawFor(split.juniors, options);
+  } catch {
+    // A junior night that cannot be built falls back to the night as a whole.
+    return drawFor(players || [], options);
+  }
+  return mergeDraws(drawFor(split.seniors, options), juniorDraw);
 }
 
 export function flattenMatches(draw) {

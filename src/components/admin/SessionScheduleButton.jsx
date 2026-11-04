@@ -6,6 +6,7 @@ import { Loader2, Swords } from "lucide-react";
 import { toast } from "sonner";
 import { buildNightDraw, toRecord } from "@/lib/nightDraw";
 import { memberGenders } from "@/lib/memberGenders";
+import { memberDobs, isJunior } from "@/lib/memberDob";
 
 // Builds the night's draw from a session's confirmed bookings (plus the waitlist
 // when the admin allows it) and saves it to the Schedule for that session's date.
@@ -20,9 +21,10 @@ export default function SessionScheduleButton({ session, players }) {
     }
     setBusy(true);
     try {
-      const [res, genders] = await Promise.all([
+      const [res, genders, dobs] = await Promise.all([
         base44.functions.invoke("getAppRatings", {}),
         memberGenders().catch(() => ({})),
+        memberDobs().catch(() => ({})),
       ]);
       const ratings = {};
       for (const p of res.data?.players || []) ratings[String(p.player).toLowerCase()] = p.rating;
@@ -31,6 +33,7 @@ export default function SessionScheduleButton({ session, players }) {
         name,
         rating: ratings[String(name).toLowerCase()] ?? null,
         gender: genders[String(name).toLowerCase()] || null,
+        junior: isJunior(dobs[String(name).trim().toLowerCase()]),
       }));
       const payload = toRecord(buildNightDraw(list), session.date, {
         title: session.title,
