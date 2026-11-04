@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { FileDown, Loader2, Printer, Save, Swords } from "lucide-react";
+import { Loader2, Printer, Save, Swords } from "lucide-react";
 import PageBanner from "@/components/PageBanner";
 import NightGroupsTable from "@/components/schedule/NightGroupsTable";
 import NetScheduleTable from "@/components/schedule/NetScheduleTable";
@@ -23,8 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { swapPlayer, swapInGame, todayIso } from "@/lib/nightDraw";
-import { buildSchedulePdf } from "@/lib/schedulePdf";
-import SchedulePdfDialog from "@/components/schedule/SchedulePdfDialog";
+import SchedulePdfExport from "@/components/schedule/SchedulePdfExport";
 import { repairSchedule } from "@/lib/repairSchedule";
 import { appRatingMap } from "@/lib/appRatingMap";
 import { getCurrentMember } from "@/lib/currentMember";
@@ -63,7 +62,6 @@ export default function Schedule() {
   const [swapGame, setSwapGame] = useState(1);
   const [scopeBusy, setScopeBusy] = useState(false);
   const [ratings, setRatings] = useState({});
-  const [pdfUrl, setPdfUrl] = useState(null);
   const isAdmin = getCurrentMember()?.is_admin === true;
 
   // Pair totals shown beside every pair, so the balance of each game is visible.
@@ -209,17 +207,7 @@ export default function Schedule() {
 
   const totalPlayers = (record?.groups || []).reduce((n, g) => n + (g.players || []).length, 0);
 
-  // A real A4 file, so printing from a phone gives the same single page.
-  const downloadPdf = () => {
-    if (!record) return;
-    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    setPdfUrl(buildSchedulePdf(record, auDate(date), ratings).output("bloburl"));
-  };
 
-  const closePdf = () => {
-    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    setPdfUrl(null);
-  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 pb-20 print:p-0 print:pb-0 print:min-h-0">
@@ -251,9 +239,7 @@ export default function Schedule() {
             <Button size="sm" variant="secondary" onClick={() => window.print()} disabled={!record}>
               <Printer className="w-3.5 h-3.5 mr-1" /> Print
             </Button>
-            <Button size="sm" variant="secondary" onClick={downloadPdf} disabled={!record}>
-              <FileDown className="w-3.5 h-3.5 mr-1" /> PDF
-            </Button>
+            <SchedulePdfExport record={record} date={date} dateLabel={auDate(date)} ratings={ratings} />
           </div>
         </div>
 
@@ -375,12 +361,7 @@ export default function Schedule() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <SchedulePdfDialog
-        open={!!pdfUrl}
-        url={pdfUrl}
-        fileName={`AWBA_Schedule_${date}.pdf`}
-        onClose={closePdf}
-      />
+
     </div>
   );
 }

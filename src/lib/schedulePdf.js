@@ -130,8 +130,8 @@ const drawPlayerNets = (doc, x, y, w, matches) => {
   });
 };
 
-export function buildSchedulePdf(record, dateLabel, ratings = {}) {
-  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+export function buildSchedulePdf(record, dateLabel, ratings = {}, surface = null) {
+  const doc = surface || new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const matches = (record && record.matches) || [];
   const m = PAGE.m;
 
