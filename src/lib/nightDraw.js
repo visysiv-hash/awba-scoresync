@@ -5,6 +5,8 @@
 // formats — American doubles (one player against two) and singles — so a group of
 // five, six or seven still gets a night's play instead of nothing.
 import { buildGroups, groupAverage } from "./drawGenerator";
+import { teamAvg } from "./teamRating";
+import { poolGames } from "./poolDraw";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -12,25 +14,7 @@ const key = (a, b) => {
   return x < y ? `${x}|${y}` : `${y}|${x}`;
 };
 
-// Ratings run lowest = strongest. A man partnered with a woman is treated as
-// playing slightly below his rating, so a mixed pair is compared with same-gender
-// pairs fairly and the closest contest is chosen. GENDER_HANDICAP is the size of
-// that adjustment.
-export const GENDER_HANDICAP = 0.2;
-
-const isMale = (p) => String(p.gender || "").trim().toLowerCase().startsWith("m");
-const isFemale = (p) => String(p.gender || "").trim().toLowerCase().startsWith("f");
-
-const teamAvg = (team) => {
-  const rated = team.filter((p) => p.rating !== null && p.rating !== undefined);
-  if (!rated.length) return null;
-  const mixed = rated.some(isMale) && rated.some(isFemale);
-  const total = rated.reduce(
-    (s, p) => s + (mixed && isMale(p) ? p.rating + GENDER_HANDICAP : p.rating),
-    0
-  );
-  return total / rated.length;
-};
+export { GENDER_HANDICAP } from "./teamRating";
 
 // Team sizes per match for a group that is not a full eight.
 const PLANS = {
@@ -163,9 +147,58 @@ function shortGroupGames(players) {
   return games;
 }
 
-export function buildNightDraw(players) {
+// Pairing scope. "1" keeps the night's groups to themselves (the way it has always
+// worked); 2 or 3 throws that many neighbouring groups into one pool, so any of the
+// 16 or 24 players can be paired with any other and every round is balanced across
+// the whole pool.
+function pooledDraw(groups, list, poolGroups) {
+  const out = [];
+  let court = 1;
+
+  for (let i = 0; i < groups.length; i += poolGroups) {
+    const chunk = groups.slice(i, i + poolGroups);
+    const players = chunk.flatMap((g) => g.players);
+    const courtCount = Math.max(2, Math.ceil(players.length / 4));
+    const courts = Array.from({ length: courtCount }, () => court++);
+    const complete = players.length >= 8;
+
+    const games = complete
+      ? poolGames(players).map((g) => ({
+          game: g.game,
+          label: `Game ${g.game} · across ${chunk.length} groups`,
+          matches: g.matches,
+        }))
+      : shortGroupGames(players).map((matches, gi) => ({
+          game: gi + 1,
+          label: `Game ${gi + 1} · mixed formats`,
+          matches,
+        }));
+
+    out.push({
+      group: out.length + 1,
+      label:
+        chunk.length === 1
+          ? `Group ${chunk[0].groupNum}`
+          : `Groups ${chunk.map((g) => g.groupNum).join(" & ")}`,
+      courts,
+      complete,
+      average: groupAverage(players),
+      players,
+      top4: players.slice(0, 4).map((p) => p.name),
+      bottom4: players.slice(-4).map((p) => p.name),
+      games,
+    });
+  }
+
+  return { totalPlayers: list.length, poolGroups, groups: out };
+}
+
+export function buildNightDraw(players, options = {}) {
   const list = players || [];
   const groups = buildGroups(list);
+  const poolGroups = Math.max(1, Math.min(3, Number(options.poolGroups) || 1));
+
+  if (poolGroups > 1 && groups.length > 1) return pooledDraw(groups, list, poolGroups);
 
   const out = groups.map((g, i) => {
     const complete = g.players.length === 8;
@@ -179,6 +212,7 @@ export function buildNightDraw(players) {
 
     return {
       group: g.groupNum,
+      label: `Group ${g.groupNum}`,
       courts: [i * 2 + 1, i * 2 + 2],
       complete,
       average: groupAverage(g.players),
@@ -189,7 +223,7 @@ export function buildNightDraw(players) {
     };
   });
 
-  return { totalPlayers: list.length, groups: out };
+  return { totalPlayers: list.length, poolGroups: 1, groups: out };
 }
 
 export function flattenMatches(draw) {
@@ -218,6 +252,7 @@ export function toRecord(draw, date, meta = {}) {
     published: true,
     groups: draw.groups.map((g) => ({
       group: g.group,
+      label: g.label || String(g.group),
       courts: g.courts,
       players: g.players.map((p) => p.name),
       top4: g.top4,

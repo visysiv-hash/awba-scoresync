@@ -1,5 +1,25 @@
-// Group columns of a night's draw: the top four, the bottom four and the two
-// courts the group plays on. Names are tappable so an admin can swap two players.
+// Group columns of a night's draw: the ranked blocks of players and the courts the
+// group plays on. A group of eight shows its top four and bottom four; a pool of two
+// or three groups shows every player in blocks of four. Names are tappable so an
+// admin can swap two players.
+const blocks = (g) => {
+  const players = g.players || [];
+  if (players.length > 8) {
+    const out = [];
+    for (let i = 0; i < players.length; i += 4) {
+      out.push({
+        label: `${i + 1}–${Math.min(i + 4, players.length)}`,
+        names: players.slice(i, i + 4),
+      });
+    }
+    return out;
+  }
+  return [
+    { label: "TOP 4", names: g.top4 || [] },
+    { label: "BOTTOM 4", names: g.bottom4 || [] },
+  ];
+};
+
 export default function NightGroupsTable({ groups = [], picked, onPick }) {
   if (!groups.length) return null;
 
@@ -25,37 +45,46 @@ export default function NightGroupsTable({ groups = [], picked, onPick }) {
     </div>
   );
 
+  const columns = groups.map((g) => ({ group: g, rows: blocks(g) }));
+  const rowCount = Math.max(...columns.map((c) => c.rows.length));
+
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-700">
       <table className="min-w-full border-collapse text-xs">
         <thead>
           <tr>
             <th className="bg-slate-800 text-slate-400 font-semibold text-left px-2 py-1.5 sticky left-0 z-10">Rank</th>
-            {groups.map((g) => (
-              <th key={g.group} className="bg-purple-300 text-slate-900 font-bold px-2 py-1.5 text-center min-w-[110px]">
-                {g.group}
+            {columns.map((c) => (
+              <th
+                key={c.group.group}
+                className="bg-purple-300 text-slate-900 font-bold px-2 py-1.5 text-center min-w-[110px]"
+              >
+                {c.group.label || c.group.group}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          <tr className="border-t border-slate-700">
-            <td className="bg-sky-200 text-slate-900 font-bold px-2 py-1.5 sticky left-0 z-10">TOP 4</td>
-            {groups.map((g) => (
-              <td key={g.group} className="bg-slate-800/60 px-1 py-1.5 align-top">{cell(g.top4)}</td>
-            ))}
-          </tr>
-          <tr className="border-t border-slate-700">
-            <td className="bg-sky-200 text-slate-900 font-bold px-2 py-1.5 sticky left-0 z-10">BOTTOM 4</td>
-            {groups.map((g) => (
-              <td key={g.group} className="bg-slate-800/60 px-1 py-1.5 align-top">{cell(g.bottom4)}</td>
-            ))}
-          </tr>
+          {Array.from({ length: rowCount }, (_, r) => (
+            <tr key={r} className="border-t border-slate-700">
+              <td className="bg-sky-200 text-slate-900 font-bold px-2 py-1.5 sticky left-0 z-10 whitespace-nowrap">
+                {columns.find((c) => c.rows[r])?.rows[r].label || ""}
+              </td>
+              {columns.map((c) => (
+                <td key={c.group.group} className="bg-slate-800/60 px-1 py-1.5 align-top">
+                  {cell(c.rows[r]?.names || [])}
+                </td>
+              ))}
+            </tr>
+          ))}
           <tr className="border-t border-slate-700">
             <td className="bg-slate-700 text-slate-200 font-bold px-2 py-1.5 sticky left-0 z-10">Courts</td>
-            {groups.map((g) => (
-              <td key={g.group} className="bg-slate-900 px-2 py-1.5 text-center font-bold text-yellow-400">
-                {(g.courts || []).join(" / ")}
+            {columns.map((c) => (
+              <td
+                key={c.group.group}
+                className="bg-slate-900 px-2 py-1.5 text-center font-bold text-yellow-400"
+              >
+                {(c.group.courts || []).join(" / ")}
               </td>
             ))}
           </tr>

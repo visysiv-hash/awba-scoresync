@@ -38,6 +38,10 @@
             "type": "number",
             "title": "Group"
           },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
           "courts": {
             "type": "array",
             "title": "Courts",

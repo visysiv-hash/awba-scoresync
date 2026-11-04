@@ -57,7 +57,8 @@ export default function AppDrawView({ draw }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] text-slate-400">
-          {draw.totalPlayers} players · {draw.groups.length} groups · gender-balanced draw
+          {draw.totalPlayers} players · {draw.groups.length} {draw.groups.length === 1 ? "pool" : "pools"} ·
+          {draw.poolGroups > 1 ? ` paired across ${draw.poolGroups} groups` : " paired within each group"}
         </p>
         <Button size="sm" variant="secondary" onClick={() => window.print()}>
           <Printer className="w-3.5 h-3.5 mr-1" /> Print
@@ -68,7 +69,7 @@ export default function AppDrawView({ draw }) {
         <Card key={g.groupNum} className="bg-slate-800 border-slate-700 text-white shadow">
           <CardHeader className="pb-1 pt-3 px-3">
             <CardTitle className="text-sm flex items-center justify-between">
-              <span className="font-bold text-yellow-400">Group {g.groupNum}</span>
+              <span className="font-bold text-yellow-400">{g.label || `Group ${g.groupNum}`}</span>
               <span className="text-[11px] text-slate-400">
                 Court {(g.courts || []).join(" & ")} · avg{" "}
                 <span className="text-white font-bold">{g.average ?? "—"}</span>
@@ -94,7 +95,7 @@ export default function AppDrawView({ draw }) {
         {draw.groups.map((g) => (
           <div key={g.groupNum} className="mb-6 break-inside-avoid">
             <h2 className="text-base font-bold mb-1">
-              Group {g.groupNum} — {g.players.map((p) => p.name).join(", ")}
+              {g.label || `Group ${g.groupNum}`} — {g.players.map((p) => p.name).join(", ")}
             </h2>
             <table className="w-full text-[11px] border-collapse">
               <thead>
