@@ -62,11 +62,13 @@ export default function SplashScreen({ onDone }) {
           <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-400">
             Proudly supported by
           </p>
-          <img
-            src={sponsor.logo_url}
-            alt={sponsor.name}
-            className="min-h-0 w-full max-w-[86vw] flex-1 object-contain sm:max-w-[34rem]"
-          />
+          <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+            <img
+              src={sponsor.logo_url}
+              alt={sponsor.name}
+              className="max-h-full w-auto max-w-full object-contain"
+            />
+          </div>
           <p className="mt-8 text-lg font-bold text-slate-800">{sponsor.name}</p>
           {sponsors.length > 1 && (
             <div className="mt-4 flex gap-1.5">
