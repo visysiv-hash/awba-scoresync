@@ -50,17 +50,17 @@ export default function NetScheduleTable({ matches = [], picked, pickedGame, onP
     .sort((a, b) => a - b);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-3 print:gap-1">
       {nets.map((net) => (
         <div
           key={net}
           className="rounded-lg border-2 border-black/70 overflow-hidden break-inside-avoid bg-orange-200 text-black"
         >
-          <div className="bg-orange-300 border-b-2 border-black/70 text-center py-1">
+          <div className="bg-orange-300 border-b-2 border-black/70 text-center py-1 print:py-0">
             <p className="text-[8px] font-bold tracking-[0.2em] text-black/70">NET NUMBER</p>
-            <p className="text-xl font-black leading-none">{net}</p>
+            <p className="text-xl font-black leading-none print:text-[11px]">{net}</p>
           </div>
-          <table className="w-full border-collapse text-[11px]">
+          <table className="w-full border-collapse text-[11px] print:text-[9px]">
             <tbody>
               {[1, 2, 3].map((game) => {
                 const m = matches.find((x) => Number(x.net) === net && Number(x.game) === game);
@@ -68,11 +68,11 @@ export default function NetScheduleTable({ matches = [], picked, pickedGame, onP
                 return (
                   <tr key={game} className="border-t border-black/30 first:border-t-0">
                     <td className="w-5 text-center font-bold border-r border-black/30">{game}</td>
-                    <td className="px-1.5 py-1 leading-snug">{pair(m?.team1, selected, onPick, m, ratings)}</td>
+                    <td className="px-1.5 py-1 leading-snug print:py-0 print:leading-tight">{pair(m?.team1, selected, onPick, m, ratings)}</td>
                     <td className="w-6 text-center">
                       <span className="inline-block bg-white text-red-600 font-bold px-1 rounded-sm">vs</span>
                     </td>
-                    <td className="px-1.5 py-1 leading-snug">{pair(m?.team2, selected, onPick, m, ratings)}</td>
+                    <td className="px-1.5 py-1 leading-snug print:py-0 print:leading-tight">{pair(m?.team2, selected, onPick, m, ratings)}</td>
                     <td className="w-6 border-l border-black/30" />
                     <td className="w-6 border-l border-black/30" />
                   </tr>

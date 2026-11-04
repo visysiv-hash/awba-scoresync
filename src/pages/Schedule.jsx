@@ -16,10 +16,14 @@ import { getCurrentMember } from "@/lib/currentMember";
 import { toast } from "sonner";
 
 const PRINT_CSS = `@media print {
+  @page { size: A4; margin: 8mm; }
   body { background: #fff !important; }
   .no-print { display: none !important; }
+  .fixed.bottom-0 { display: none !important; }
+  .pb-16 { padding-bottom: 0 !important; }
   .print-plain * { color: #000 !important; background: #fff !important; }
   .print-plain table, .print-plain th, .print-plain td { border: 1px solid #000 !important; }
+  .print-plain .break-inside-avoid { break-inside: avoid; }
 }`;
 
 const auDate = (value) => {
@@ -170,10 +174,10 @@ export default function Schedule() {
   const totalPlayers = (record?.groups || []).reduce((n, g) => n + (g.players || []).length, 0);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-4 pb-20">
+    <div className="min-h-screen bg-slate-900 text-white p-4 pb-20 print:p-0 print:pb-0 print:min-h-0">
       <style>{PRINT_CSS}</style>
       <div className="max-w-6xl mx-auto space-y-4">
-        <PageBanner className="h-14 mb-2" />
+        <PageBanner className="h-14 mb-2 print:h-8 print:mb-1" />
 
         <div className="flex items-center justify-between gap-3 no-print">
           <div className="flex items-center gap-2">
@@ -234,7 +238,7 @@ export default function Schedule() {
           </div>
         ) : (
           <>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-400 no-print">
               {[record.title, record.time_label].filter(Boolean).join(" · ")}
               {record.title ? " · " : ""}
               {record.groups?.length || 0} groups · {totalPlayers} players ·{" "}
@@ -267,8 +271,8 @@ export default function Schedule() {
               <GameSwapSelector game={swapGame} onChange={changeSwapGame} />
             )}
 
-            <div className="print-plain space-y-4">
-              <h2 className="hidden print:flex justify-between text-xl font-black">
+            <div className="print-plain space-y-4 print:space-y-1">
+              <h2 className="hidden print:flex justify-between text-sm font-black">
                 <span>SCHEDULE - {[record.title, record.time_label ? `(${record.time_label})` : ""].filter(Boolean).join(" ")}</span>
                 <span>{auDate(date)}</span>
               </h2>
@@ -279,7 +283,7 @@ export default function Schedule() {
                   onPick={isAdmin ? pick : null}
                 />
               </div>
-              <div className="flex gap-3 items-start">
+              <div className="flex gap-3 items-start print:gap-1.5">
                 <div className="flex-1 min-w-0">
                   <NetScheduleTable
                     matches={record.matches || []}
