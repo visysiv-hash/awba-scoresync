@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, Printer, Save, Swords } from "lucide-react";
+import { Loader2, Printer, Save, Swords, Trash2 } from "lucide-react";
 import PageBanner from "@/components/PageBanner";
 import NightGroupsTable from "@/components/schedule/NightGroupsTable";
 import NetScheduleTable from "@/components/schedule/NetScheduleTable";
@@ -61,6 +61,8 @@ export default function Schedule() {
   const [swapMode, setSwapMode] = useState("night");
   const [swapGame, setSwapGame] = useState(1);
   const [scopeBusy, setScopeBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [ratings, setRatings] = useState({});
   const isAdmin = getCurrentMember()?.is_admin === true;
 
@@ -205,6 +207,25 @@ export default function Schedule() {
     }
   };
 
+  const deleteDraw = async () => {
+    if (!record) return;
+    setDeleting(true);
+    try {
+      await base44.entities.DrawNight.delete(record.id);
+      setRecent((list) => list.filter((n) => n.id !== record.id));
+      setRecord(null);
+      setDirty(false);
+      setPicked(null);
+      setPickedGame(null);
+      setConfirmDelete(false);
+      toast.success("Draw deleted.");
+    } catch {
+      toast.error("Couldn't delete the draw.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const totalPlayers = (record?.groups || []).reduce((n, g) => n + (g.players || []).length, 0);
 
 
@@ -240,6 +261,11 @@ export default function Schedule() {
               <Printer className="w-3.5 h-3.5 mr-1" /> Print
             </Button>
             <SchedulePdfExport record={record} date={date} dateLabel={auDate(date)} ratings={ratings} />
+            {isAdmin && (
+              <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)} disabled={!record}>
+                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+              </Button>
+            )}
           </div>
         </div>
 
@@ -361,7 +387,22 @@ export default function Schedule() {
         </AlertDialogContent>
       </AlertDialog>
 
-
+      <AlertDialog open={confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(false)}>
+        <AlertDialogContent className="no-print">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete the draw for {auDate(date)}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The groups and pairings for this night will be removed for everyone. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteDraw} disabled={deleting}>
+              {deleting ? "Deleting…" : "Delete draw"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
