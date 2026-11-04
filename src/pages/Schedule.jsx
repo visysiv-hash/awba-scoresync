@@ -6,7 +6,9 @@ import { Loader2, Printer, Save, Swords } from "lucide-react";
 import PageBanner from "@/components/PageBanner";
 import NightGroupsTable from "@/components/schedule/NightGroupsTable";
 import NetScheduleTable from "@/components/schedule/NetScheduleTable";
-import { swapPlayer, todayIso } from "@/lib/nightDraw";
+import ScheduleAdminControls from "@/components/schedule/ScheduleAdminControls";
+import { swapPlayer, swapInGame, todayIso } from "@/lib/nightDraw";
+import { repairSchedule } from "@/lib/repairSchedule";
 import { getCurrentMember } from "@/lib/currentMember";
 import { toast } from "sonner";
 
@@ -32,6 +34,10 @@ export default function Schedule() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [picked, setPicked] = useState(null);
+  const [pickedGame, setPickedGame] = useState(null);
+  const [scope, setScope] = useState(1);
+  const [swapMode, setSwapMode] = useState("night");
+  const [scopeBusy, setScopeBusy] = useState(false);
   const isAdmin = getCurrentMember()?.is_admin === true;
 
   useEffect(() => {
@@ -49,6 +55,8 @@ export default function Schedule() {
         setRecord((page.items || [])[0] || null);
         setDirty(false);
         setPicked(null);
+        setPickedGame(null);
+        setScope(1);
       })
       .catch(() => alive && setRecord(null))
       .finally(() => alive && setLoading(false));
@@ -57,21 +65,51 @@ export default function Schedule() {
     };
   }, [date]);
 
-  // Tap one player, then any other player — same group or a different one. They
-  // trade places everywhere, so every match stays a valid line-up.
-  const pick = (name) => {
+  // Tap one player, then another. A whole-night swap trades the two of them
+  // everywhere, so every match stays a valid line-up; a single-game swap only
+  // touches that one game and leaves the rest of the night as it is.
+  const pick = (name, game) => {
     if (!record || !isAdmin) return;
+    if (swapMode === "game" && game === undefined) return;
     if (!picked) {
       setPicked(name);
+      setPickedGame(swapMode === "game" ? game : null);
       return;
     }
-    if (picked === name) {
+    if (picked === name && (swapMode !== "game" || pickedGame === game)) {
       setPicked(null);
+      setPickedGame(null);
       return;
     }
-    setRecord((r) => swapPlayer(r, picked, name));
+    if (swapMode === "game") setRecord((r) => swapInGame(r, picked, name, pickedGame));
+    else setRecord((r) => swapPlayer(r, picked, name));
     setDirty(true);
     setPicked(null);
+    setPickedGame(null);
+  };
+
+  // Re-pair the night with a different reach: each group of eight on its own, or any
+  // player from 16 or 24 paired with any other and every round balanced across them.
+  const changeScope = async (value) => {
+    if (!record || value === scope) return;
+    setScopeBusy(true);
+    try {
+      const next = await repairSchedule(record, value);
+      setRecord((r) => ({ ...r, ...next }));
+      setScope(value);
+      setDirty(true);
+      toast.success(value === 1 ? "Re-paired within each group." : `Re-paired across ${value} groups.`);
+    } catch {
+      toast.error("Couldn't re-pair the schedule.");
+    } finally {
+      setScopeBusy(false);
+    }
+  };
+
+  const changeSwapMode = (value) => {
+    setSwapMode(value);
+    setPicked(null);
+    setPickedGame(null);
   };
 
   const save = async () => {
@@ -87,6 +125,8 @@ export default function Schedule() {
       setSaving(false);
     }
   };
+
+  const totalPlayers = (record?.groups || []).reduce((n, g) => n + (g.players || []).length, 0);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 pb-20">
@@ -156,19 +196,41 @@ export default function Schedule() {
             <p className="text-xs text-slate-400">
               {[record.title, record.time_label].filter(Boolean).join(" · ")}
               {record.title ? " · " : ""}
-              {record.groups?.length || 0} groups ·{" "}
-              {(record.groups || []).reduce((n, g) => n + (g.players || []).length, 0)} players ·{" "}
+              {record.groups?.length || 0} groups · {totalPlayers} players ·{" "}
               {record.matches?.length || 0} matches
               {isAdmin && (
-                <span className="text-slate-500"> · tap any two players to swap them</span>
+                <span className="text-slate-500">
+                  {swapMode === "game"
+                    ? " · tap two players in the same game to swap them for that game only"
+                    : " · tap any two players to swap them for the whole night"}
+                </span>
               )}
             </p>
 
+            {isAdmin && (
+              <ScheduleAdminControls
+                scope={scope}
+                maxGroups={Math.max(1, Math.ceil(totalPlayers / 8))}
+                busy={scopeBusy}
+                onScope={changeScope}
+                swapMode={swapMode}
+                onSwapMode={changeSwapMode}
+              />
+            )}
+
             <div className="print-plain space-y-4">
-              <NightGroupsTable groups={record.groups || []} picked={picked} onPick={isAdmin ? pick : null} />
+              <NightGroupsTable
+                groups={record.groups || []}
+                picked={picked}
+                onPick={isAdmin && swapMode === "night" ? pick : null}
+              />
               <div className="flex gap-3 items-start">
                 <div className="flex-1 min-w-0">
-                  <NetScheduleTable matches={record.matches || []} picked={picked} onPick={isAdmin ? pick : null} />
+                  <NetScheduleTable
+                    matches={record.matches || []}
+                    picked={picked}
+                    onPick={isAdmin ? pick : null}
+                  />
                 </div>
                 <div className="hidden lg:block w-36 shrink-0 rounded-xl border border-slate-700 bg-slate-800 p-2">
                   <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1">Players</p>

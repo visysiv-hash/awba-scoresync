@@ -16,7 +16,6 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
 
   const [appRatings, setAppRatings] = useState(null);
   const [genders, setGenders] = useState({});
-  const [poolGroups, setPoolGroups] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -44,13 +43,9 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
     });
   }, [players, appRatings, genders]);
 
-  const draw = useMemo(
-    () => (showDraw ? buildNightDraw(merged, { poolGroups }) : null),
-    [showDraw, merged, poolGroups]
-  );
+  const draw = useMemo(() => (showDraw ? buildNightDraw(merged) : null), [showDraw, merged]);
 
   const missing = merged.filter((p) => p.rating === null).length;
-  const groupCount = Math.max(1, Math.ceil(merged.length / 8));
   const shortGroups = draw ? draw.groups.filter((g) => !g.complete).length : 0;
 
   const saveNight = async () => {
@@ -83,32 +78,9 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
       </Button>
 
       <div className="space-y-1">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Pair across</p>
-        <div className="flex gap-1.5">
-          {[
-            { value: 1, label: "Each group" },
-            { value: 2, label: "2 groups" },
-            { value: 3, label: "3 groups" },
-          ].map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setPoolGroups(option.value)}
-              disabled={option.value > groupCount}
-              className={`flex-1 px-2 py-1 rounded-full text-xs font-semibold transition-colors ${
-                poolGroups === option.value
-                  ? "bg-white text-slate-900"
-                  : "bg-white/10 text-white hover:bg-white/20"
-              } ${option.value > groupCount ? "opacity-30 cursor-not-allowed" : ""}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
         <p className="text-[10px] text-slate-500">
-          {poolGroups === 1
-            ? "Current logic: every group of eight is paired on its own."
-            : `Any player from ${poolGroups * 8} can be paired with any other, and every round is balanced across all of them.`}
+          Every group of eight is paired on its own here. To pair across 16 or 24 players, open the
+          Schedule and change "Pair across".
         </p>
       </div>
 
