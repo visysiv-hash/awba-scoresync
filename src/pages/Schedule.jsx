@@ -7,6 +7,8 @@ import PageBanner from "@/components/PageBanner";
 import NightGroupsTable from "@/components/schedule/NightGroupsTable";
 import NetScheduleTable from "@/components/schedule/NetScheduleTable";
 import ScheduleAdminControls from "@/components/schedule/ScheduleAdminControls";
+import NetAssignmentRow from "@/components/schedule/NetAssignmentRow";
+import { shuffleNets, swapNets } from "@/lib/netAssign";
 import SpreadsheetModeCard from "@/components/admin/SpreadsheetModeCard";
 import PlayerCourts from "@/components/schedule/PlayerCourts";
 import GameSwapSelector from "@/components/schedule/GameSwapSelector";
@@ -178,6 +180,19 @@ export default function Schedule() {
     }
   };
 
+  // Nets can be reshuffled for the week, or two groups can trade theirs, so nobody
+  // plays the same net every week.
+  const shuffleNetNumbers = () => {
+    setRecord((r) => (r ? shuffleNets(r) : r));
+    setDirty(true);
+    toast.success("Nets reshuffled — press Save to keep it.");
+  };
+
+  const tradeNets = (a, b) => {
+    setRecord((r) => (r ? swapNets(r, a, b) : r));
+    setDirty(true);
+  };
+
   const changeSwapMode = (value) => {
     setSwapMode(value);
     setPicked(null);
@@ -328,6 +343,13 @@ export default function Schedule() {
                 onRepair={() => changeScope(scope)}
                 swapMode={swapMode}
                 onSwapMode={changeSwapMode}
+              />
+            )}
+            {isAdmin && (
+              <NetAssignmentRow
+                groups={record.groups || []}
+                onShuffle={shuffleNetNumbers}
+                onSwap={tradeNets}
               />
             )}
             {isAdmin && <SpreadsheetModeCard />}
