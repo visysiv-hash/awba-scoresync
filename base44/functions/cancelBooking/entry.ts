@@ -1,11 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import { isLateCancellation, penaltyMessage, sessionFee } from "../../shared/penalties.ts";
+import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
 
 const BOOKING_SPREADSHEET_ID = "1fmKv6tkG0UAE5lB9af4lJgSQFlVtC9gMZZTdYERUf2U";
 const BOOKING_SHEET = "BookingData";
 
 async function deleteBookingFromSheet(base44, name, date) {
   try {
+    // With the spreadsheet switched off the cancellation stays in the app's records.
+    if (!(await sheetsEnabled(base44))) return;
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const headers = { Authorization: `Bearer ${accessToken}` };
 
