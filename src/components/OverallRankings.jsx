@@ -93,8 +93,7 @@ function normalizeAppPlayer(p) {
   return { ...p, hasStats: Number(p.gp) > 0, baseRating: p.rating };
 }
 
-export default function OverallRankings({ groups, source: sourceProp, onSourceChange }) {
-  const [source, setSource] = useState(sourceProp || "app");
+export default function OverallRankings({ groups }) {
   const [appRound, setAppRound] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [loadingRatings, setLoadingRatings] = useState(true);
@@ -103,25 +102,20 @@ export default function OverallRankings({ groups, source: sourceProp, onSourceCh
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [showExplainer, setShowExplainer] = useState(false);
 
-  // The leaderboard's source switch drives this tab too, so both stay in step.
-  useEffect(() => {
-    if (sourceProp && sourceProp !== source) setSource(sourceProp);
-  }, [sourceProp]);
-
+  // Ratings always come from the app's own stored results.
   useEffect(() => {
     let cancelled = false;
     setLoadingRatings(true);
-    const fn = source === "app" ? "getAppRatings" : "getPlayerRatingsV2";
-    base44.functions.invoke(fn, {})
+    base44.functions.invoke("getAppRatings", {})
       .then(res => {
         if (cancelled) return;
         const players = res.data?.players || [];
-        setRatings(source === "app" ? players.map(normalizeAppPlayer) : players);
-        setAppRound(source === "app" ? res.data?.round ?? null : null);
+        setRatings(players.map(normalizeAppPlayer));
+        setAppRound(res.data?.round ?? null);
       })
       .finally(() => { if (!cancelled) setLoadingRatings(false); });
     return () => { cancelled = true; };
-  }, [source]);
+  }, []);
 
   const risingPlayers = ratings.filter(p =>
     p.hasStats && p.currentGroup > 1 && p.rating < p.currentGroup
@@ -235,25 +229,11 @@ export default function OverallRankings({ groups, source: sourceProp, onSourceCh
       <Card className="shadow-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">All Player Ratings</CardTitle>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className="text-xs text-slate-400">Source:</span>
-            {[{ id: "app", label: "App data" }, { id: "sheet", label: "Google Sheet" }].map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => (onSourceChange ? onSourceChange(opt.id) : setSource(opt.id))}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                  source === opt.id
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-            {source === "app" && appRound != null && (
+          {appRound != null && (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span className="text-xs text-slate-400">as at Round {appRound}</span>
-            )}
-          </div>
+            </div>
+          )}
           <div className="flex items-start gap-2 text-xs text-slate-400 mt-1">
             <Info className="w-3 h-3 mt-0.5 shrink-0 text-yellow-400" />
             <span>Rating = Group Base − Avg Point Diff per game ÷ 10. Tap a player to see breakdown.</span>
