@@ -3,7 +3,7 @@ export const STADIUM = {
   name: "Lauren Jackson Sports Centre, Albury",
   lat: -36.0702308,
   lon: 146.9386121,
-  radius_m: 300,
+  radius_m: 50,
 };
 
 // Great-circle distance in metres between two points.
