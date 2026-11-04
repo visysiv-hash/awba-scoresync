@@ -21,6 +21,12 @@
     "active": {
       "type": "boolean",
       "title": "Active"
+    },
+    "splash_only": {
+      "type": "boolean",
+      "title": "Splash Screen Only",
+      "description": "Show this logo on the splash screen only, not in the home page scrolling strip.",
+      "default": false
     }
   },
   "required": [

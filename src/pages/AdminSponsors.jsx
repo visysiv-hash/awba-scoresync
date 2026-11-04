@@ -16,6 +16,7 @@ const emptyForm = () => ({
   website_url: "",
   display_order: 0,
   active: true,
+  splash_only: false,
 });
 
 export default function AdminSponsors() {
@@ -54,6 +55,7 @@ export default function AdminSponsors() {
       website_url: sponsor.website_url || "",
       display_order: sponsor.display_order || 0,
       active: sponsor.active !== false,
+      splash_only: sponsor.splash_only === true,
     });
     setEditingId(sponsor.id);
     setShowForm(true);
@@ -166,6 +168,21 @@ export default function AdminSponsors() {
                 <span className="text-sm">Active (visible to users)</span>
               </label>
 
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={form.splash_only}
+                  onChange={e => setForm(p => ({ ...p, splash_only: e.target.checked }))}
+                />
+                <span className="text-sm">
+                  Splash screen only
+                  <span className="block text-xs text-muted-foreground">
+                    Shows on the splash screen, hidden from the home page sponsor strip.
+                  </span>
+                </span>
+              </label>
+
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={cancelForm}>Cancel</Button>
                 <Button className="flex-1" onClick={handleSave} disabled={saving}>
@@ -192,7 +209,10 @@ export default function AdminSponsors() {
                     }
                     <div>
                       <p className="font-semibold text-sm">{sponsor.name}</p>
-                      <p className="text-xs text-muted-foreground">Order: {sponsor.display_order || 0} · {sponsor.active ? "Active" : "Hidden"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Order: {sponsor.display_order || 0} · {sponsor.active ? "Active" : "Hidden"}
+                        {sponsor.splash_only ? " · Splash only" : ""}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">

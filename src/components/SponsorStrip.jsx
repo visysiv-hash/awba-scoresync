@@ -6,7 +6,8 @@ export default function SponsorStrip() {
 
   useEffect(() => {
     base44.entities.Sponsor.filter({ active: true }, "display_order", 50).then(all => {
-      setSponsors(all);
+      // Sponsors flagged "splash screen only" stay off the home strip
+      setSponsors((all || []).filter(s => s.splash_only !== true));
     }).catch(() => {});
   }, []);
 
