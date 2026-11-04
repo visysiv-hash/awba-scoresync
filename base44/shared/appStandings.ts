@@ -7,6 +7,8 @@
 // to nil carries the 21-point penalty. A player's totals sit in the ladder of the
 // group they played that round in, so each group ladder reflects games in that group.
 
+import { isNoResult } from "./noResult.ts";
+
 const PENALTY = 21;
 
 const PLACEHOLDERS = ["na", "n/a", "n.a.", "-", "tbc", "tba", "vacant", "blank"];
@@ -85,6 +87,10 @@ export function computeAppStandings(
     const t1 = clean(r.team1_players);
     const t2 = clean(r.team2_players);
     if (!t1.length || !t2.length) continue;
+
+    // A game nobody scored was not played: no game played, no ladder points and
+    // no points for or against for anyone. Its cost sits in the ratings instead.
+    if (isNoResult(r)) continue;
 
     const round = Number(r.round) || 0;
     const games = Array.isArray(r.rounds) && r.rounds.length

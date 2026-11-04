@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.53';
 import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
+import { deadlinePassed } from "../../shared/noResult.ts";
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -108,6 +109,14 @@ Deno.serve(async (req) => {
       { limit: 1 }
     );
     if (!(onToday.items || []).length) scoreDate = nightDate;
+  }
+
+  // Scores close at 11:59pm Thursday: after that the night already carries the
+  // no-submission penalty, and the committee enters any late correction instead.
+  if (deadlinePassed(scoreDate)) {
+    return Response.json({
+      error: `Scores for ${scoreDate} closed at 11:59pm Thursday. Please ask the committee to enter them.`,
+    });
   }
 
   const record: any = {

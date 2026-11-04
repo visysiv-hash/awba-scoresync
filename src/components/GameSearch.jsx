@@ -71,7 +71,8 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
             ) : (
               results.map((g, i) => {
                 const localSubmit = submittedScores[`${g.net}-${g.game}`];
-                const isScored = g.submitted || !!localSubmit;
+                const noResult = !!g.noResult;
+                const isScored = (g.submitted || !!localSubmit) && !noResult;
                 const displayRounds = localSubmit?.rounds || g.rounds;
                 const displayTotal1 = localSubmit?.total1 ?? g.total1;
                 const displayTotal2 = localSubmit?.total2 ?? g.total2;
@@ -79,12 +80,13 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
                   <div
                     key={i}
                     className="border rounded-lg p-3 text-sm space-y-1 cursor-pointer hover:bg-accent transition-colors"
-                    onClick={() => onSelectGame(g)}
+                    onClick={() => { if (!noResult) onSelectGame(g); }}
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
                         <div className="flex justify-between text-xs text-muted-foreground mb-1">
                           <span>Net {g.net} · Match {g.game}</span>
+                          {noResult && <span className="text-amber-600 font-medium">No score by Thursday</span>}
                           {isScored && <span className="text-green-600 font-medium">✓ Scored</span>}
                         </div>
                         <div className="flex items-center gap-2 font-semibold">
@@ -103,8 +105,18 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
                       </div>
                       <ChevronRight className="w-4 h-4 text-muted-foreground ml-2 shrink-0" />
                     </div>
-                    {!isScored && (
-                      <p className="text-xs text-blue-600 font-medium">Click to enter scores →</p>
+                    {noResult && (
+                      <p className="text-xs text-amber-700 font-medium">
+                        No score was entered by the Thursday deadline, so both pairs take the rating penalty.
+                        Ask the committee if the score was missed.
+                      </p>
+                    )}
+                    {!isScored && !noResult && (
+                      <p className="text-xs text-blue-600 font-medium">
+                        {g.closed
+                          ? "Thursday deadline passed — entry closed."
+                          : "Click to enter scores (due by 11:59pm Thursday) →"}
+                      </p>
                     )}
                   </div>
                 );

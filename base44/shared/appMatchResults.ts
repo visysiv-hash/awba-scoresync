@@ -3,6 +3,7 @@
 // of waiting for the sheet tabs to be extended to the latest week.
 
 import { sheetsEnabled } from "./sheetSwitch.ts";
+import { isNoResult } from "./noResult.ts";
 
 const gameKey = (r: any) =>
   [
@@ -60,7 +61,12 @@ async function removeDuplicates(base44: any, rows: any[]) {
   const extra: any[] = [];
   for (const list of Object.values(bySlot)) {
     if (list.length < 2) continue;
+    // A real score always beats the no-result penalty row for the same game, so a
+    // late submission (or a committee correction) replaces the penalty.
+    const scored = list.filter((r) => !isNoResult(r));
     const keeper =
+      scored.find((r) => r.source === "app") ||
+      scored[0] ||
       list.find((r) => r.source === "app") ||
       [...list].sort((a, b) => String(a.created_date).localeCompare(String(b.created_date)))[0];
     for (const r of list) if (r !== keeper) extra.push(r);

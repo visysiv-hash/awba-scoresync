@@ -11,7 +11,7 @@ export function isTuesdaySession(dateStr: string): boolean {
   return !Number.isNaN(d.getTime()) && d.getUTCDay() === 2;
 }
 
-function tzOffsetMs(date: Date, timeZone: string): number {
+export function tzOffsetMs(date: Date, timeZone: string): number {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
     hour12: false,

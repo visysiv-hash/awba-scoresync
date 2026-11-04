@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.53';
 import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
+import { deadlinePassed, isNoResult } from "../../shared/noResult.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -28,6 +29,9 @@ Deno.serve(async (req) => {
 
     if (night) {
       const q = String(query || "").trim().toLowerCase();
+      // After Thursday 11:59pm the night is closed and a missing score counts as
+      // the no-submission penalty, so entry is no longer offered.
+      const closed = deadlinePassed(date);
       const results = (night.matches || [])
         .filter((m: any) =>
           [...(m.team1 || []), ...(m.team2 || [])].some((n: string) =>
@@ -41,7 +45,7 @@ Deno.serve(async (req) => {
             team1: (m.team1 || []).join(" & "),
             team2: (m.team2 || []).join(" & "),
           };
-          return { ...game, submitted: false };
+          return { ...game, submitted: false, closed };
         })
         .sort((a: any, b: any) => Number(a.game) - Number(b.game));
 
@@ -55,6 +59,7 @@ Deno.serve(async (req) => {
         if (!stored) continue;
         const rounds = Array.isArray(stored.rounds) ? stored.rounds : [];
         result.submitted = true;
+        result.noResult = isNoResult(stored);
         result.rounds = rounds;
         result.total1 = stored.score1 ?? rounds.reduce((t, r) => t + (Number(r.score1) || 0), 0);
         result.total2 = stored.score2 ?? rounds.reduce((t, r) => t + (Number(r.score2) || 0), 0);

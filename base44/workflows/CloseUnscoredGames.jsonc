@@ -1,0 +1,45 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 7 * * 5",
+      "one_time_date": null,
+      "timezone": "Australia/Sydney",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Every Friday morning, any game from the week's session still without a score after the Thursday 11:59pm deadline is recorded as no result, which applies the rating penalty to both pairs.",
+  "name": "Close Unscored Games",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "close_unscored_games",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "close_unscored_games": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "closeUnscoredGames",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Close unscored games",
+            "description": "Thursday deadline penalty"
+          }
+        }
+      }
+    ]
+  }
+}
