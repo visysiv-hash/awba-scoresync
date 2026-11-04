@@ -41,7 +41,7 @@ export default function AdminSponsors() {
     const file = e.target.files[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
     setForm(p => ({ ...p, logo_url: file_url }));
     setUploading(false);
     toast.success("Logo uploaded!");
