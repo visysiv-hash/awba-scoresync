@@ -2,6 +2,8 @@
 // import source, so player history and weekly standings read them directly instead
 // of waiting for the sheet tabs to be extended to the latest week.
 
+import { sheetsEnabled } from "./sheetSwitch.ts";
+
 const gameKey = (r: any) =>
   [
     r.date || "",
@@ -17,7 +19,7 @@ export async function loadAppMatchResults(base44: any, maxPages = 6) {
   let rows: any[] = [];
   let cursor: string | undefined;
   for (let i = 0; i < maxPages; i++) {
-    const options: any = { sort: "round", limit: 1000 };
+    const options: any = { limit: 500 };
     if (cursor) options.cursor = cursor;
     const page = await base44.asServiceRole.entities.MatchResult.filter({}, options);
     rows = rows.concat(page.items || []);
@@ -38,7 +40,8 @@ export async function loadAppMatchResults(base44: any, maxPages = 6) {
     out.push(r);
   }
 
-  await syncSheetScores(base44, out);
+  // The sheet is only read while it is still switched on.
+  if (await sheetsEnabled(base44)) await syncSheetScores(base44, out);
   await assignRounds(base44, out);
   return out;
 }

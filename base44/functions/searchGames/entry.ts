@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.53';
 import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
 
 Deno.serve(async (req) => {

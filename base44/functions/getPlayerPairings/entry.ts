@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.53';
 import { sheetFetch } from "../../shared/sheetCache.ts";
 import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
 import { loadAppMatchResults } from "../../shared/appMatchResults.ts";
