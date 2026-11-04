@@ -97,8 +97,8 @@ export default function Schedule() {
 
   // Re-pair the night with a different reach: each group of eight on its own, or any
   // player from 16 or 24 paired with any other and every round balanced across them.
-  const changeScope = async (value) => {
-    if (!record || value === scope) return;
+  const changeScope = async (value, force = false) => {
+    if (!record || (!force && value === scope)) return;
     setScopeBusy(true);
     try {
       const next = await repairSchedule(record, value);
@@ -220,6 +220,7 @@ export default function Schedule() {
                 maxGroups={Math.max(1, Math.ceil(totalPlayers / 8))}
                 busy={scopeBusy}
                 onScope={changeScope}
+                onRepair={() => changeScope(scope, true)}
                 swapMode={swapMode}
                 onSwapMode={changeSwapMode}
               />

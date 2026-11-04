@@ -18,7 +18,7 @@ const chip = (active) =>
 
 // Admin tools for tonight's schedule: how far the pairings reach, and whether a swap
 // trades two players everywhere or only inside one game.
-export default function ScheduleAdminControls({ scope, maxGroups, busy, onScope, swapMode, onSwapMode }) {
+export default function ScheduleAdminControls({ scope, maxGroups, busy, onScope, onRepair, swapMode, onSwapMode }) {
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 no-print">
       <div className="flex items-center gap-2">
@@ -43,6 +43,10 @@ export default function ScheduleAdminControls({ scope, maxGroups, busy, onScope,
         </div>
         {busy && <Loader2 className="w-3.5 h-3.5 animate-spin text-yellow-400" />}
       </div>
+
+      <button type="button" onClick={onRepair} disabled={busy} className={chip(false)}>
+        Re-pair
+      </button>
 
       <div className="flex items-center gap-2">
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Swap</p>

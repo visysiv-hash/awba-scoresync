@@ -97,27 +97,87 @@ const remember = (seen, teams) => {
   }
 };
 
-// All three rounds of a full group are paired by the app, using the same engine as
-// the short groups: closest team ratings, mixed pairs weighed with the gender
-// handicap, and the fewest repeated partners and opponents across the night.
-function fullGroupGames(players) {
-  const seen = { partners: new Set(), opponents: new Set() };
-  const games = [];
+// Balance comes first. The cost of a game is the squared gap between the two pair
+// averages, and a repeated pairing costs less than a gap of about 0.7 — so the
+// draw will repeat a partner long before it hands anyone a one-sided game.
+const REPEATED_PARTNER = 0.5;
+const PARTNER_AS_OPPONENT = 0.3;
+const REPEATED_OPPONENT = 0.08;
 
-  for (let gi = 0; gi < 3; gi++) {
-    const teams = bestAssignment(players, [[2, 2], [2, 2]], seen);
-    if (!teams) {
-      games.push({ game: gi + 1, label: `Game ${gi + 1} · within group`, matches: [] });
-      continue;
+function roundCost(matches, seen) {
+  let c = 0;
+  for (const m of matches) {
+    for (const team of [m.A, m.B]) {
+      if (team.length === 2 && seen.partners.has(key(team[0].name, team[1].name))) c += REPEATED_PARTNER;
     }
-    remember(seen, teams);
-    games.push({
-      game: gi + 1,
-      label: `Game ${gi + 1} · within group`,
-      matches: teams.map((t) => ({ teamA: t.A, teamB: t.B })),
-    });
+    for (const x of m.A) {
+      for (const y of m.B) {
+        if (seen.partners.has(key(x.name, y.name))) c += PARTNER_AS_OPPONENT;
+        else if (seen.opponents.has(key(x.name, y.name))) c += REPEATED_OPPONENT;
+      }
+    }
+    const a = teamAvg(m.A);
+    const b = teamAvg(m.B);
+    if (a !== null && b !== null) c += (a - b) * (a - b);
   }
-  return games;
+  return c;
+}
+
+const nextSeen = (seen, matches) => {
+  const out = { partners: new Set(seen.partners), opponents: new Set(seen.opponents) };
+  remember(out, matches.map((m) => ({ A: m.A, B: m.B })));
+  return out;
+};
+
+// Every pairing of the eight players, then the three ways four pairs make two
+// games. 315 line-ups is small enough to score each round exactly instead of
+// guessing, which is what let a 3.0 mismatch through before.
+function allPairings(list) {
+  if (!list.length) return [[]];
+  const [first, ...rest] = list;
+  const out = [];
+  for (let i = 0; i < rest.length; i++) {
+    const others = rest.filter((_, j) => j !== i);
+    for (const tail of allPairings(others)) out.push([[first, rest[i]], ...tail]);
+  }
+  return out;
+}
+
+function nightLineUps(players) {
+  const out = [];
+  for (const [p1, p2, p3, p4] of allPairings(players)) {
+    out.push([{ A: p1, B: p2 }, { A: p3, B: p4 }]);
+    out.push([{ A: p1, B: p3 }, { A: p2, B: p4 }]);
+    out.push([{ A: p1, B: p4 }, { A: p2, B: p3 }]);
+  }
+  return out;
+}
+
+// The three rounds are chosen together: the best openings are chased to the end, so
+// round two never eats the options round three needs to stay balanced.
+function fullGroupGames(players) {
+  const lineUps = nightLineUps(players);
+  const none = { partners: new Set(), opponents: new Set() };
+  const ranked = (seen) =>
+    lineUps
+      .map((matches) => ({ matches, cost: roundCost(matches, seen) }))
+      .sort((a, b) => a.cost - b.cost);
+
+  let best = null;
+  for (const g1 of ranked(none).slice(0, 12)) {
+    const after1 = nextSeen(none, g1.matches);
+    for (const g2 of ranked(after1).slice(0, 5)) {
+      const g3 = ranked(nextSeen(after1, g2.matches))[0];
+      const cost = g1.cost + g2.cost + g3.cost;
+      if (!best || cost < best.cost) best = { cost, rounds: [g1.matches, g2.matches, g3.matches] };
+    }
+  }
+
+  return (best ? best.rounds : []).map((matches, gi) => ({
+    game: gi + 1,
+    label: `Game ${gi + 1} · within group`,
+    matches: matches.map((m) => ({ teamA: m.A, teamB: m.B })),
+  }));
 }
 
 function shortGroupGames(players) {

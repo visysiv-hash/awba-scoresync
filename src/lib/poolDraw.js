@@ -12,10 +12,12 @@ const key = (a, b) => {
   return x < y ? `${x}|${y}` : `${y}|${x}`;
 };
 
-const PARTNER_REPEAT = 220;
-const PARTNER_AS_OPPONENT = 60;
-const OPPONENT_REPEAT = 30;
-const GAP_WEIGHT = 15;
+// Balance is the point of pooling: a game's cost is the squared gap between the
+// two pair averages, and every repeat penalty is smaller than a gap of about 1.0,
+// so a whole pool is never made lopsided just to avoid a familiar pairing.
+const PARTNER_REPEAT = 60;
+const PARTNER_AS_OPPONENT = 15;
+const OPPONENT_REPEAT = 5;
 
 const slotRef = (match, idx) => (idx < 2 ? [match.A, idx] : [match.B, idx - 2]);
 
@@ -32,7 +34,7 @@ function matchCost(match, seen) {
   }
   const a = teamAvg(match.A);
   const b = teamAvg(match.B);
-  if (a !== null && b !== null) c += Math.abs(a - b) * GAP_WEIGHT;
+  if (a !== null && b !== null) c += (a - b) * (a - b) * 100;
   return c;
 }
 

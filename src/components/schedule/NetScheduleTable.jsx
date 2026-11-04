@@ -1,8 +1,8 @@
 // One block per net, three games down it, exactly like the printed schedule:
 // game number, pair, vs, pair, then two empty score boxes. Each pair shows its
-// combined rating so an admin can see at a glance how balanced the game is.
+// average rating so an admin can see at a glance how balanced the game is.
 // Names are tappable so an admin can swap any two players.
-import { pairTotal } from "@/lib/appRatingMap";
+import { pairAverage } from "@/lib/appRatingMap";
 
 const nameBtn = (name, picked, onPick, game) => {
   const active = picked === name;
@@ -24,7 +24,7 @@ const nameBtn = (name, picked, onPick, game) => {
 const pair = (team, picked, onPick, game, ratings) => {
   const names = team || [];
   if (!names.length) return <span className="text-black/30">—</span>;
-  const total = pairTotal(names, ratings);
+  const total = pairAverage(names, ratings);
   return (
     <>
       <span className="inline-flex flex-wrap items-baseline">
