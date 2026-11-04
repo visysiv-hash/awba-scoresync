@@ -65,7 +65,7 @@ export default function SplashScreen({ onDone }) {
           <img
             src={sponsor.logo_url}
             alt={sponsor.name}
-            className="max-h-[58vh] w-full max-w-[80vw] object-contain"
+            className="min-h-0 w-full max-w-[86vw] flex-1 object-contain sm:max-w-[34rem]"
           />
           <p className="mt-8 text-lg font-bold text-slate-800">{sponsor.name}</p>
           {sponsors.length > 1 && (
