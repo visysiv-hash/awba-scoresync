@@ -36,7 +36,7 @@ const pair = (team, picked, onPick, match, ratings) => {
         ))}
       </span>
       {total !== null && (
-        <span className="block text-[9px] font-bold text-black/55 leading-none mt-0.5 print:hidden">{total.toFixed(2)}</span>
+        <span className="block text-[9px] font-bold text-black/55 leading-none mt-0.5 print:text-[7px]">{total.toFixed(2)}</span>
       )}
     </>
   );
