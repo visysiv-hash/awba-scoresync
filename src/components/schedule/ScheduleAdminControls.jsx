@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react";
 
 const SCOPES = [
   { value: 1, label: "Each group" },
+  { value: 0, label: "Levels apart" },
   { value: 2, label: "2 groups" },
   { value: 3, label: "3 groups" },
 ];

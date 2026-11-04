@@ -6,7 +6,7 @@
 // five, six or seven still gets a night's play instead of nothing.
 import { buildGroups, groupAverage } from "./drawGenerator";
 import { teamAvg } from "./teamRating";
-import { poolGames } from "./poolDraw";
+import { poolGames, poolRound } from "./poolDraw";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -253,11 +253,102 @@ function pooledDraw(groups, list, poolGroups) {
   return { totalPlayers: list.length, poolGroups, groups: out };
 }
 
+// Distance pairing: every group plays games 1 and 3 inside itself and meets the
+// group two levels away for game 2, so the middle round mixes the night while each
+// game is still chosen on pair averages alone. Two of a group's bottom four are
+// never partnered in that middle game, and a group with nobody to meet plays it
+// inside instead.
+function levelPartners(count) {
+  const taken = new Set();
+  const pairs = [];
+  for (let i = 0; i < count; i++) {
+    if (taken.has(i)) continue;
+    const far =
+      i + 2 < count && !taken.has(i + 2) ? i + 2 : i + 1 < count && !taken.has(i + 1) ? i + 1 : -1;
+    if (far < 0) continue;
+    taken.add(i);
+    taken.add(far);
+    pairs.push([i, far]);
+  }
+  return pairs;
+}
+
+const insideNight = (players) => {
+  const games =
+    players.length === 8
+      ? fullGroupGames(players)
+      : shortGroupGames(players).map((matches, gi) => ({ game: gi + 1, matches }));
+  return games.map((game) => game.matches || []);
+};
+
+function levelsDraw(groups, list) {
+  const courts = groups.map((_, i) => [i * 2 + 1, i * 2 + 2]);
+  const inside = groups.map((g) => insideNight(g.players));
+  const pairs = levelPartners(groups.length);
+  const hostOf = new Map(pairs);
+  const guestOf = new Map(pairs.map(([i, j]) => [j, i]));
+
+  // Partners already used in the two inside games, so the middle game never repeats them.
+  const seen = { partners: new Set(), opponents: new Set() };
+  for (const rounds of inside) {
+    for (const matches of rounds.slice(0, 2)) {
+      remember(seen, matches.map((m) => ({ A: m.teamA, B: m.teamB })));
+    }
+  }
+
+  const cross = new Map();
+  for (const [i, j] of pairs) {
+    const a = groups[i].players;
+    const b = groups[j].players;
+    const bottom = new Set([...a.slice(-4), ...b.slice(-4)].map((p) => p.name));
+    const nets = [...courts[i], ...courts[j]];
+    cross.set(
+      i,
+      poolRound([...a, ...b], seen, bottom).map((m, mi) => ({ ...m, net: nets[mi % nets.length] }))
+    );
+  }
+
+  const out = groups.map((g, i) => {
+    const rounds = inside[i];
+    const games = [{ game: 1, label: "Game 1 · within group", matches: rounds[0] || [] }];
+
+    if (hostOf.has(i)) {
+      games.push({
+        game: 2,
+        label: `Game 2 · vs Group ${groups[hostOf.get(i)].groupNum}`,
+        matches: cross.get(i) || [],
+      });
+      games.push({ game: 3, label: "Game 3 · within group", matches: rounds[1] || [] });
+    } else if (guestOf.has(i)) {
+      games.push({ game: 3, label: "Game 3 · within group", matches: rounds[1] || [] });
+    } else {
+      games.push({ game: 2, label: "Game 2 · within group", matches: rounds[1] || [] });
+      games.push({ game: 3, label: "Game 3 · within group", matches: rounds[2] || [] });
+    }
+
+    return {
+      group: g.groupNum,
+      label: `Group ${g.groupNum}`,
+      courts: courts[i],
+      complete: g.players.length === 8,
+      average: groupAverage(g.players),
+      players: g.players,
+      top4: g.players.slice(0, 4).map((p) => p.name),
+      bottom4: g.players.slice(4, 8).map((p) => p.name),
+      games,
+    };
+  });
+
+  return { totalPlayers: list.length, poolGroups: 1, levels: true, groups: out };
+}
+
 export function buildNightDraw(players, options = {}) {
   const list = players || [];
   const groups = buildGroups(list);
-  const poolGroups = Math.max(1, Math.min(3, Number(options.poolGroups) || 1));
+  const requested = options.poolGroups === undefined ? 1 : Number(options.poolGroups);
+  const poolGroups = Math.max(0, Math.min(3, Number.isFinite(requested) ? requested : 1));
 
+  if (poolGroups === 0 && groups.length > 1) return levelsDraw(groups, list);
   if (poolGroups > 1 && groups.length > 1) return pooledDraw(groups, list, poolGroups);
 
   const out = groups.map((g, i) => {
@@ -294,7 +385,7 @@ export function flattenMatches(draw) {
         rows.push({
           group: g.group,
           game: game.game,
-          net: g.courts[mi % g.courts.length],
+          net: m.net ?? g.courts[mi % g.courts.length],
           team1: m.teamA.map((p) => p.name),
           team2: m.teamB.map((p) => p.name),
         });

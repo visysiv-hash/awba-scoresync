@@ -126,7 +126,13 @@ export default function Schedule() {
       setRecord((r) => ({ ...r, ...next }));
       setScope(value);
       setDirty(true);
-      toast.success(value === 1 ? "Re-paired within each group." : `Re-paired across ${value} groups.`);
+      toast.success(
+        value === 0
+          ? "Re-paired: Games 1 and 3 in group, Game 2 two levels apart."
+          : value === 1
+          ? "Re-paired within each group."
+          : `Re-paired across ${value} groups.`
+      );
     } catch {
       toast.error("Couldn't re-pair the schedule.");
     } finally {

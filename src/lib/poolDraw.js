@@ -21,10 +21,16 @@ const OPPONENT_REPEAT = 5;
 
 const slotRef = (match, idx) => (idx < 2 ? [match.A, idx] : [match.B, idx - 2]);
 
-function matchCost(match, seen) {
+// A pairing the night must never make — two of the bottom four together — is priced
+// out of reach instead of special-cased, so the search simply never lands on it.
+const FORBIDDEN_PAIR = 1e6;
+
+function matchCost(match, seen, blocked) {
   let c = 0;
   for (const team of [match.A, match.B]) {
-    if (team.length === 2 && seen.partners.has(key(team[0].name, team[1].name))) c += PARTNER_REPEAT;
+    if (team.length !== 2) continue;
+    if (seen.partners.has(key(team[0].name, team[1].name))) c += PARTNER_REPEAT;
+    if (blocked && blocked.has(team[0].name) && blocked.has(team[1].name)) c += FORBIDDEN_PAIR;
   }
   for (const x of match.A) {
     for (const y of match.B) {
@@ -64,8 +70,8 @@ function startLineUp(sorted, mode) {
   return matches;
 }
 
-function improve(matches, seen) {
-  const cost = matches.map((m) => matchCost(m, seen));
+function improve(matches, seen, blocked) {
+  const cost = matches.map((m) => matchCost(m, seen, blocked));
   let changed = true;
   let guard = 0;
 
@@ -84,12 +90,12 @@ function improve(matches, seen) {
             const held = t1[i1];
             t1[i1] = t2[i2];
             t2[i2] = held;
-            const nextI = matchCost(matches[i], seen);
-            const after = i === j ? nextI : nextI + matchCost(matches[j], seen);
+            const nextI = matchCost(matches[i], seen, blocked);
+            const after = i === j ? nextI : nextI + matchCost(matches[j], seen, blocked);
 
             if (after < before - 1e-9) {
               cost[i] = nextI;
-              if (i !== j) cost[j] = matchCost(matches[j], seen);
+              if (i !== j) cost[j] = matchCost(matches[j], seen, blocked);
               changed = true;
             } else {
               t2[i2] = t1[i1];
@@ -104,7 +110,7 @@ function improve(matches, seen) {
   return { matches, cost: cost.reduce((s, c) => s + c, 0) };
 }
 
-function buildRound(playing, seen) {
+function buildRound(playing, seen, blocked) {
   const sorted = [...playing].sort((a, b) => {
     const ra = a.rating ?? Infinity;
     const rb = b.rating ?? Infinity;
@@ -114,7 +120,7 @@ function buildRound(playing, seen) {
 
   let best = null;
   for (const mode of ["extremes", "adjacent", "halves"]) {
-    const trial = improve(startLineUp(sorted, mode), seen);
+    const trial = improve(startLineUp(sorted, mode), seen, blocked);
     if (!best || trial.cost < best.cost) best = trial;
   }
   return best.matches;
@@ -157,4 +163,23 @@ export function poolGames(players) {
   }
 
   return games;
+}
+
+const rated = (a, b) => {
+  const ra = a.rating ?? Infinity;
+  const rb = b.rating ?? Infinity;
+  if (ra !== rb) return ra - rb;
+  return String(a.name).localeCompare(String(b.name));
+};
+
+// One balanced round over any set of players — used when two groups meet for a
+// single game. `blocked` names the players who must never end up as partners, which
+// keeps the bottom four of a group apart. Leftovers rest, weakest first.
+export function poolRound(players, seen, blocked) {
+  const pool = players || [];
+  const perRound = Math.floor(pool.length / 4) * 4;
+  if (perRound < 4) return [];
+
+  const playing = [...pool].sort(rated).slice(0, perRound);
+  return buildRound(playing, seen, blocked).map((m) => ({ teamA: m.A, teamB: m.B }));
 }
