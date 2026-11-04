@@ -316,10 +316,13 @@ export default function Schedule() {
           <div className="rounded-xl bg-slate-800 border border-slate-700 p-6 text-center space-y-2">
             <p className="text-sm text-slate-300">No draw saved for {auDate(date)}.</p>
             <p className="text-xs text-slate-500">
-              Generate the draw on the Availability page and save it — it appears here straight away.
+              Generate the draw from {isAdmin ? "the session's Schedule button" : "your session"} and save it — it appears here straight away.
             </p>
-            <Link to="/availability" className="inline-block text-xs font-bold text-yellow-400 hover:underline">
-              Go to Availability
+            <Link
+              to={isAdmin ? "/admin/sessions" : "/bookings"}
+              className="inline-block text-xs font-bold text-yellow-400 hover:underline"
+            >
+              Go to Sessions
             </Link>
           </div>
         ) : (
