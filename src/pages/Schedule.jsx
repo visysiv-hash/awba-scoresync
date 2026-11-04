@@ -7,6 +7,7 @@ import PageBanner from "@/components/PageBanner";
 import NightGroupsTable from "@/components/schedule/NightGroupsTable";
 import NetScheduleTable from "@/components/schedule/NetScheduleTable";
 import ScheduleAdminControls from "@/components/schedule/ScheduleAdminControls";
+import GameSwapSelector from "@/components/schedule/GameSwapSelector";
 import { swapPlayer, swapInGame, todayIso } from "@/lib/nightDraw";
 import { repairSchedule } from "@/lib/repairSchedule";
 import { appRatingMap } from "@/lib/appRatingMap";
@@ -38,6 +39,7 @@ export default function Schedule() {
   const [pickedGame, setPickedGame] = useState(null);
   const [scope, setScope] = useState(1);
   const [swapMode, setSwapMode] = useState("night");
+  const [swapGame, setSwapGame] = useState(1);
   const [scopeBusy, setScopeBusy] = useState(false);
   const [ratings, setRatings] = useState({});
   const isAdmin = getCurrentMember()?.is_admin === true;
@@ -63,6 +65,7 @@ export default function Schedule() {
         setDirty(false);
         setPicked(null);
         setPickedGame(null);
+        setSwapGame(1);
         setScope(1);
       })
       .catch(() => alive && setRecord(null))
@@ -72,28 +75,42 @@ export default function Schedule() {
     };
   }, [date]);
 
-  // Tap one player, then another. A whole-night swap trades the two of them
-  // everywhere, so every match stays a valid line-up; a single-game swap is pinned
-  // to the one match that was tapped and leaves every other game as it is. The group
-  // columns belong to no single game, so they only take part in whole-night swaps.
+  // Group names use the chosen game; a court name selects its exact game.
+  // The second player can come from any group, with both game slots exchanged.
   const pick = (name, match) => {
     if (!record || !isAdmin) return;
     const gameMode = swapMode === "game";
-    if (gameMode && !match) return;
-    if (!picked) {
-      setPicked(name);
-      setPickedGame(gameMode ? { net: Number(match.net), game: Number(match.game) } : null);
-      return;
-    }
-    const sameMatch =
-      !!pickedGame && !!match && pickedGame.net === Number(match.net) && pickedGame.game === Number(match.game);
-    if (picked === name && (!gameMode || sameMatch)) {
+    if (picked === name) {
       setPicked(null);
       setPickedGame(null);
       return;
     }
-    if (gameMode && pickedGame) setRecord((r) => swapInGame(r, picked, name, pickedGame.net, pickedGame.game));
-    else setRecord((r) => swapPlayer(r, picked, name));
+    if (!picked) {
+      if (gameMode) {
+        const source = match || (record.matches || []).find((m) =>
+          Number(m.game) === swapGame && [...(m.team1 || []), ...(m.team2 || [])].includes(name)
+        );
+        if (!source) {
+          toast.error(`${name} is resting in Game ${swapGame}. Select a playing player first.`);
+          return;
+        }
+        setSwapGame(Number(source.game));
+        setPickedGame({ net: Number(source.net), game: Number(source.game) });
+      } else {
+        setPickedGame(null);
+      }
+      setPicked(name);
+      return;
+    }
+    if (gameMode && pickedGame) {
+      if (match && Number(match.game) !== pickedGame.game) {
+        toast.error(`Choose a player in Game ${pickedGame.game}, or tap their name in any group above.`);
+        return;
+      }
+      setRecord((r) => swapInGame(r, picked, name, pickedGame.net, pickedGame.game));
+    } else {
+      setRecord((r) => swapPlayer(r, picked, name));
+    }
     setDirty(true);
     setPicked(null);
     setPickedGame(null);
@@ -119,6 +136,12 @@ export default function Schedule() {
 
   const changeSwapMode = (value) => {
     setSwapMode(value);
+    setPicked(null);
+    setPickedGame(null);
+  };
+
+  const changeSwapGame = (value) => {
+    setSwapGame(value);
     setPicked(null);
     setPickedGame(null);
   };
@@ -212,12 +235,14 @@ export default function Schedule() {
               {isAdmin && (
                 <span className="text-slate-500">
                   {swapMode === "game"
-                    ? " · tap two players in the same game to swap them for that game only"
+                    ? " · choose a game, then tap two players from any groups"
                     : " · tap any two players to swap them for the whole night"}
                 </span>
               )}
               {picked && (
-                <span className="text-yellow-400 font-semibold"> · {picked} selected, now tap who to swap with</span>
+                <span className="text-yellow-400 font-semibold">
+                  {" · "}{picked} selected{pickedGame ? ` for Game ${pickedGame.game} (Net ${pickedGame.net})` : ""}, now tap who to swap with in any group
+                </span>
               )}
             </p>
 
@@ -232,18 +257,22 @@ export default function Schedule() {
                 onSwapMode={changeSwapMode}
               />
             )}
+            {isAdmin && swapMode === "game" && (
+              <GameSwapSelector game={swapGame} onChange={changeSwapGame} />
+            )}
 
             <div className="print-plain space-y-4">
               <NightGroupsTable
                 groups={record.groups || []}
                 picked={picked}
-                onPick={isAdmin && swapMode === "night" ? pick : null}
+                onPick={isAdmin ? pick : null}
               />
               <div className="flex gap-3 items-start">
                 <div className="flex-1 min-w-0">
                   <NetScheduleTable
                     matches={record.matches || []}
                     picked={picked}
+                    pickedGame={pickedGame}
                     onPick={isAdmin ? pick : null}
                     ratings={ratings}
                   />

@@ -42,7 +42,7 @@ const pair = (team, picked, onPick, match, ratings) => {
   );
 };
 
-export default function NetScheduleTable({ matches = [], picked, onPick, ratings = {} }) {
+export default function NetScheduleTable({ matches = [], picked, pickedGame, onPick, ratings = {} }) {
   if (!matches.length) return null;
 
   const nets = [...new Set(matches.map((m) => Number(m.net)))]
@@ -64,14 +64,15 @@ export default function NetScheduleTable({ matches = [], picked, onPick, ratings
             <tbody>
               {[1, 2, 3].map((game) => {
                 const m = matches.find((x) => Number(x.net) === net && Number(x.game) === game);
+                const selected = !pickedGame || (pickedGame.net === net && pickedGame.game === game) ? picked : null;
                 return (
                   <tr key={game} className="border-t border-black/30 first:border-t-0">
                     <td className="w-5 text-center font-bold border-r border-black/30">{game}</td>
-                    <td className="px-1.5 py-1 leading-snug">{pair(m?.team1, picked, onPick, m, ratings)}</td>
+                    <td className="px-1.5 py-1 leading-snug">{pair(m?.team1, selected, onPick, m, ratings)}</td>
                     <td className="w-6 text-center">
                       <span className="inline-block bg-white text-red-600 font-bold px-1 rounded-sm">vs</span>
                     </td>
-                    <td className="px-1.5 py-1 leading-snug">{pair(m?.team2, picked, onPick, m, ratings)}</td>
+                    <td className="px-1.5 py-1 leading-snug">{pair(m?.team2, selected, onPick, m, ratings)}</td>
                     <td className="w-6 border-l border-black/30" />
                     <td className="w-6 border-l border-black/30" />
                   </tr>

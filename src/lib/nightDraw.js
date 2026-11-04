@@ -339,19 +339,26 @@ export function swapPlayer(record, a, b) {
   };
 }
 
-// Two players traded inside one game only — the rest of the night is untouched. A
-// game number repeats on every net and in every group, so the swap is pinned to the
-// one match the admin tapped (net + game). If the second player is not in that match,
-// they simply take the first player's place there, which covers a late swap-in
-// without disturbing their own games.
+// Exchange the selected player's slot and the other player's slot in the same
+// round, even across groups. Only those two matches change; group membership and
+// every other game stay untouched. If the other player is resting, trade the rest.
 export function swapInGame(record, a, b, net, game) {
-  const swap = (names) => (names || []).map((n) => (n === a ? b : n === b ? a : n));
+  const matches = record.matches || [];
+  const contains = (match, name) => [...(match.team1 || []), ...(match.team2 || [])].includes(name);
+  const sourceIndex = matches.findIndex((match) =>
+    Number(match.net) === Number(net) && Number(match.game) === Number(game) && contains(match, a)
+  );
+  if (sourceIndex < 0 || a === b) return record;
+  const targetIndex = matches.findIndex((match) =>
+    Number(match.game) === Number(game) && contains(match, b)
+  );
+  const swap = (names) => (names || []).map((name) => (name === a ? b : name === b ? a : name));
   return {
     ...record,
-    matches: (record.matches || []).map((m) =>
-      Number(m.net) === Number(net) && Number(m.game) === Number(game)
-        ? { ...m, team1: swap(m.team1), team2: swap(m.team2) }
-        : m
+    matches: matches.map((match, index) =>
+      index === sourceIndex || index === targetIndex
+        ? { ...match, team1: swap(match.team1), team2: swap(match.team2) }
+        : match
     ),
   };
 }
