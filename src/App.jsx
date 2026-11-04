@@ -34,6 +34,7 @@ import AppRatings from './pages/AppRatings';
 import BaseGroups from './pages/BaseGroups';
 import SeasonWrapped from './pages/SeasonWrapped';
 import AdminCheckIn from './pages/AdminCheckIn';
+import AdminRoute from './components/AdminRoute';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -87,27 +88,27 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/ratings/app" element={<AppRatings />} />
-          <Route path="/ratings/base-groups" element={<BaseGroups />} />
+          <Route path="/ratings/app" element={<AdminRoute><AppRatings /></AdminRoute>} />
+          <Route path="/ratings/base-groups" element={<AdminRoute><BaseGroups /></AdminRoute>} />
           <Route path="/availability" element={<PlayerAvailability />} />
-          <Route path="/schedule" element={<Schedule />} />
+          <Route path="/schedule" element={<AdminRoute><Schedule /></AdminRoute>} />
           <Route path="/player" element={<PlayerProfile />} />
           <Route path="/wrapped" element={<SeasonWrapped />} />
           <Route path="/manual" element={<UserManual />} />
           <Route path="/explainer" element={<ExplainerDownload />} />
-          <Route path="/admin/scores" element={<AdminScoreEdit />} />
+          <Route path="/admin/scores" element={<AdminRoute><AdminScoreEdit /></AdminRoute>} />
           <Route path="/bookings" element={<BookingSessions />} />
-          <Route path="/admin/sessions" element={<AdminSessions />} />
+          <Route path="/admin/sessions" element={<AdminRoute><AdminSessions /></AdminRoute>} />
           <Route path="/match-details" element={<MatchDetails />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/admin/registrations" element={<AdminRegistrations />} />
+          <Route path="/admin/registrations" element={<AdminRoute><AdminRegistrations /></AdminRoute>} />
           <Route path="/news" element={<News />} />
-          <Route path="/admin/news" element={<AdminNews />} />
-          <Route path="/admin/sponsors" element={<AdminSponsors />} />
-          <Route path="/admin/add-member" element={<AdminAddMember />} />
-          <Route path="/admin/members" element={<AdminMembers />} />
-          <Route path="/admin/late-cancellations" element={<AdminLateCancellations />} />
-          <Route path="/admin/check-in" element={<AdminCheckIn />} />
+          <Route path="/admin/news" element={<AdminRoute><AdminNews /></AdminRoute>} />
+          <Route path="/admin/sponsors" element={<AdminRoute><AdminSponsors /></AdminRoute>} />
+          <Route path="/admin/add-member" element={<AdminRoute><AdminAddMember /></AdminRoute>} />
+          <Route path="/admin/members" element={<AdminRoute><AdminMembers /></AdminRoute>} />
+          <Route path="/admin/late-cancellations" element={<AdminRoute><AdminLateCancellations /></AdminRoute>} />
+          <Route path="/admin/check-in" element={<AdminRoute><AdminCheckIn /></AdminRoute>} />
 
           <Route path="*" element={<PageNotFound />} />
         </Routes>
