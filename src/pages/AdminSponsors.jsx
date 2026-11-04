@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import AdminPinGate from "../components/AdminPinGate";
+import { isAdminUnlocked } from "@/lib/adminUnlock";
 import PageBanner from "../components/PageBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ const emptyForm = () => ({
 });
 
 export default function AdminSponsors() {
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(isAdminUnlocked);
   const [sponsors, setSponsors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(emptyForm());

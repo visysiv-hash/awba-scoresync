@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import AdminPinGate from "../components/AdminPinGate";
+import { isAdminUnlocked } from "@/lib/adminUnlock";
 import AddGuestModal from "../components/admin/AddGuestModal";
 import SessionScheduleButton from "../components/admin/SessionScheduleButton";
 import PageBanner from "../components/PageBanner";
@@ -34,7 +35,7 @@ const loadDefaultBank = () => {
 };
 
 export default function AdminSessions() {
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(isAdminUnlocked);
   const [sessions, setSessions] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [form, setForm] = useState(emptyForm());

@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { markAdminUnlocked } from "@/lib/adminUnlock";
 
 /**
  * Renders a PIN prompt. Calls onSuccess() when the correct PIN is entered.
@@ -21,6 +22,7 @@ export default function AdminPinGate({ onSuccess, onCancel }) {
       const res = await base44.functions.invoke("verifyAdminPin", { pin: pin.trim() });
       setPinLoading(false);
       if (res.data?.success) {
+        markAdminUnlocked();
         onSuccess();
       } else {
         setPinError(true);

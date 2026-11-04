@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import AdminPinGate from "@/components/AdminPinGate";
+import { isAdminUnlocked } from "@/lib/adminUnlock";
 import PageBanner from "@/components/PageBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,7 @@ function sanitizeMobile(raw) {
 }
 
 export default function AdminAddMember() {
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(isAdminUnlocked);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [lastAdded, setLastAdded] = useState(null);

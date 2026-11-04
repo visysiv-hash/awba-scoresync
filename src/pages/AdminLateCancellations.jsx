@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import AdminPinGate from "../components/AdminPinGate";
+import { isAdminUnlocked } from "@/lib/adminUnlock";
 import PageBanner from "../components/PageBanner";
 import PenaltyCard from "../components/admin/PenaltyCard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,7 +18,7 @@ const FILTERS = [
 ];
 
 export default function AdminLateCancellations() {
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(isAdminUnlocked);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("unpaid");

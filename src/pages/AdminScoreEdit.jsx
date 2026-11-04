@@ -6,10 +6,11 @@ import { Loader2, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import RoundScores from "../components/RoundScores";
 import AdminPinGate from "../components/AdminPinGate";
+import { isAdminUnlocked } from "@/lib/adminUnlock";
 import PageBanner from "../components/PageBanner";
 
 export default function AdminScoreEdit() {
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinUnlocked, setPinUnlocked] = useState(isAdminUnlocked);
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingKey, setEditingKey] = useState(null);

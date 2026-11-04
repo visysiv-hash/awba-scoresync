@@ -2,6 +2,7 @@ import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminPinGate from "../AdminPinGate";
+import { isAdminUnlocked } from "@/lib/adminUnlock";
 import { lookupName } from "@/lib/nameMatch";
 import { ChevronDown, ChevronUp, Loader2, Settings2 } from "lucide-react";
 
@@ -10,7 +11,7 @@ const GROUPS = [1, 2, 3, 4, 5, 6];
 // Base group = the group a player's rating starts from. Stored in the app so a
 // wrong starting group can be corrected with no spreadsheet involved.
 export default function BaseGroupEditor({ players, baseGroups, onSaved }) {
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState(isAdminUnlocked);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(null);
