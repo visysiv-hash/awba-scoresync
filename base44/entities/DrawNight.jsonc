@@ -124,6 +124,12 @@
       "type": "boolean",
       "title": "Published",
       "default": true
+    },
+    "archived": {
+      "type": "boolean",
+      "title": "Removed From Schedule",
+      "description": "Hidden from the Schedule page, but the night's games stay available so scores can still be entered.",
+      "default": false
     }
   },
   "required": [

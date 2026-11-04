@@ -503,6 +503,7 @@ export function toRecord(draw, date, meta = {}) {
     pairing_scope: draw.poolGroups,
     courts_per_group: 2,
     published: true,
+    archived: false,
     groups: draw.groups.map((g) => ({
       group: g.group,
       label: g.label || String(g.group),

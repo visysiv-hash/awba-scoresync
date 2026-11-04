@@ -77,18 +77,20 @@ export default function Schedule() {
   }, []);
 
   useEffect(() => {
-    base44.entities.DrawNight.list({ sort: "-date", limit: 12 })
-      .then((page) => setRecent(page.items || []))
+    base44.entities.DrawNight.list({ sort: "-date", limit: 24 })
+      .then((page) => setRecent((page.items || []).filter((n) => !n.archived).slice(0, 12)))
       .catch(() => {});
   }, []);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    base44.entities.DrawNight.filter({ date }, { sort: "-created_date", limit: 1 })
+    base44.entities.DrawNight.filter({ date }, { sort: "-created_date", limit: 10 })
       .then((page) => {
         if (!alive) return;
-        const saved = (page.items || [])[0] || null;
+        // A draw removed from the Schedule keeps its games for score entry, so it
+        // stays out of the way here.
+        const saved = (page.items || []).find((n) => !n.archived) || null;
         setRecord(saved);
         setDirty(false);
         setPicked(null);
@@ -234,14 +236,16 @@ export default function Schedule() {
     if (!record) return;
     setDeleting(true);
     try {
-      await base44.entities.DrawNight.delete(record.id);
+      // The night's games are kept, so scores can still be entered for them;
+      // only the draw itself is taken off the Schedule.
+      await base44.entities.DrawNight.update(record.id, { archived: true });
       setRecent((list) => list.filter((n) => n.id !== record.id));
       setRecord(null);
       setDirty(false);
       setPicked(null);
       setPickedGame(null);
       setConfirmDelete(false);
-      toast.success("Draw deleted.");
+      toast.success("Draw removed — unscored games are still open for scores.");
     } catch {
       toast.error("Couldn't delete the draw.");
     } finally {
@@ -432,15 +436,15 @@ export default function Schedule() {
       <AlertDialog open={confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(false)}>
         <AlertDialogContent className="no-print">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete the draw for {auDate(date)}?</AlertDialogTitle>
+            <AlertDialogTitle>Remove the draw for {auDate(date)}?</AlertDialogTitle>
             <AlertDialogDescription>
-              The groups and pairings for this night will be removed for everyone. This cannot be undone.
+              The groups and pairings for this night will be taken off the Schedule. Its games stay in Results, so any that are still unscored can be entered until the Wednesday deadline.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={deleteDraw} disabled={deleting}>
-              {deleting ? "Deleting…" : "Delete draw"}
+              {deleting ? "Removing…" : "Remove draw"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
