@@ -8,6 +8,7 @@ import { buildGroups, groupAverage } from "./drawGenerator";
 import { teamAvg } from "./teamRating";
 import { poolGames, poolRound } from "./poolDraw";
 import { keepApartDraw, bannedTogether } from "./neverPair";
+import { buildCrossoverPair } from "./crossover";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -326,6 +327,22 @@ function mixDraw(groups, list, crossGame, distance) {
   const hostOf = new Map(pairs);
   const guestOf = new Map(pairs.map(([i, j]) => [j, i]));
 
+  // Two full groups get the freshest night the arithmetic allows: the inside rounds
+  // that repeat the fewest faces, then a cross game built only from pairs nobody in
+  // the group has met yet.
+  const planned = new Map();
+  for (const [i, j] of pairs) {
+    const a = groups[i].players;
+    const b = groups[j].players;
+    if (a.length !== 8 || b.length !== 8) continue;
+    const bottom = new Set([...a.slice(-4), ...b.slice(-4)].map((p) => String(p.name).toLowerCase()));
+    const plan = buildCrossoverPair(a, b, bottom);
+    if (!plan) continue;
+    planned.set(i, { ...plan, guest: j });
+    inside[i] = plan.aRounds;
+    inside[j] = plan.bRounds;
+  }
+
   // Partners and opponents already used in the inside games, so the cross game never
   // repeats them or plays anyone a third time.
   const seen = { partners: new Set(), opponents: new Set(), meets: new Map() };
@@ -337,10 +354,17 @@ function mixDraw(groups, list, crossGame, distance) {
 
   const cross = new Map();
   for (const [i, j] of pairs) {
+    const nets = [...courts[i], ...courts[j]];
+    if (planned.has(i)) {
+      cross.set(
+        i,
+        planned.get(i).cross.map((m, mi) => ({ ...m, net: nets[mi % nets.length] }))
+      );
+      continue;
+    }
     const a = groups[i].players;
     const b = groups[j].players;
     const bottom = new Set([...a.slice(-4), ...b.slice(-4)].map((p) => p.name));
-    const nets = [...courts[i], ...courts[j]];
     cross.set(
       i,
       poolRound([...a, ...b], seen, bottom).map((m, mi) => ({ ...m, net: nets[mi % nets.length] }))
