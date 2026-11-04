@@ -45,8 +45,8 @@ export default function SeasonWrapped() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h2 className="text-lg font-bold text-white">Season Wrapped</h2>
-            <p className="text-[11px] text-slate-400">Your season in one card</p>
+            <h2 className="text-lg font-bold text-white">Player Stats</h2>
+            <p className="text-[11px] text-slate-400">Your season at a glance</p>
           </div>
         </div>
 

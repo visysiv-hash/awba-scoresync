@@ -15,7 +15,7 @@ export default function WrappedHero({ data }) {
 
       <div className="relative">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
-          {seasonLabel} · Wrapped
+          {seasonLabel} · Stats
         </p>
         <h1 className="mt-1 text-3xl font-black leading-tight text-white">{player}</h1>
         {range?.from && (
