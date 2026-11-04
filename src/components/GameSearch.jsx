@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 export default function GameSearch({ onSelectGame, submittedScores = {}, query, onQueryChange, results, onResultsChange, autoSearch = false }) {
   const [loading, setLoading] = useState(false);
+  const [nightDate, setNightDate] = useState("");
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -15,7 +16,10 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
       return;
     }
     setLoading(true);
-    const res = await base44.functions.invoke("searchGames", { query: query.trim() });
+    const res = await base44.functions.invoke("searchGames", {
+      query: query.trim(),
+      date: nightDate || undefined,
+    });
     setLoading(false);
     if (res.data?.error) {
       toast.error(res.data.error);
@@ -35,6 +39,18 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
   return (
     <Card className="shadow-2xl">
       <CardContent className="pt-6 space-y-4">
+        <div className="flex items-center gap-2 text-xs">
+          <label htmlFor="night-date" className="text-muted-foreground">Night</label>
+          <input
+            id="night-date"
+            type="date"
+            value={nightDate}
+            onChange={(e) => { setNightDate(e.target.value); onResultsChange(null); }}
+            className="h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+          <span className="text-muted-foreground">Blank uses the latest night</span>
+        </div>
+
         <div className="flex gap-2">
           <input
             className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"

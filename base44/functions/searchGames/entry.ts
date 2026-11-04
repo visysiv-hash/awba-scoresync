@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { query } = await req.json();
+    const { query, date: wantedDate } = await req.json();
 
     // Tonight's games come from the app's own saved schedule (the Schedule page) and
     // the app's stored scores, so the search no longer depends on the spreadsheet.
@@ -15,8 +15,15 @@ Deno.serve(async (req) => {
     // session when tonight has no draw yet.
     const days = (iso: string) =>
       Math.abs(new Date(`${iso}T00:00:00Z`).getTime() - new Date(`${today}T00:00:00Z`).getTime()) / 86400000;
-    const night = [...nights].sort((a: any, b: any) => days(a.date) - days(b.date))[0];
-    const date = night?.date || today;
+    // A specific night can be asked for (e.g. testing another session); otherwise the
+    // saved draw closest to today is used.
+    const wanted = String(wantedDate || "").trim();
+    const night = wanted
+      ? nights.find((n: any) => String(n.date) === wanted)
+      : [...nights].sort((a: any, b: any) => days(a.date) - days(b.date))[0];
+    const date = night?.date || wanted || today;
+
+    if (wanted && !night) return Response.json({ results: [], date: wanted });
 
     if (night) {
       const q = String(query || "").trim().toLowerCase();
