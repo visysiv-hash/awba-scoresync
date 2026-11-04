@@ -50,7 +50,7 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
     });
   }, [players, appRatings, baseGroups, genders]);
 
-  const draw = useMemo(() => (showDraw ? buildNightDraw(merged) : null), [showDraw, merged]);
+  const draw = useMemo(() => (showDraw && appRatings !== null ? buildNightDraw(merged) : null), [showDraw, merged, appRatings]);
 
   const missing = merged.filter((p) => p.rating === null).length;
   const shortGroups = draw ? draw.groups.filter((g) => !g.complete).length : 0;
@@ -86,8 +86,8 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
 
       <div className="space-y-1">
         <p className="text-[10px] text-slate-500">
-          Games 1 and 3 stay inside each group and Game 2 meets the group two levels away. Change
-          "Pair across" on the Schedule to pair each group on its own or to help beginners.
+          Unique games is the default: fresh partners and opponents, balanced by rating, with the
+          smallest group range found. Use "Pair across" on the Schedule for the other methods.
         </p>
       </div>
 

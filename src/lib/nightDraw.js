@@ -9,6 +9,7 @@ import { teamAvg } from "./teamRating";
 import { poolGames, poolRound } from "./poolDraw";
 import { keepApartDraw, bannedTogether } from "./neverPair";
 import { buildCrossoverPair } from "./crossover";
+import { buildUniqueDraw } from "@/lib/uniqueDraw";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -457,6 +458,11 @@ function buildDraw(players, options = {}) {
 
 // A finished draw always keeps the banned pairs apart before it is shown or saved.
 export function buildNightDraw(players, options = {}) {
+  // Unique draws are validated as a whole and must never pass through the
+  // legacy unconstrained post-draw swap, which can reintroduce repeats.
+  if (options.poolGroups === undefined || Number(options.poolGroups) === -2) {
+    return buildUniqueDraw(buildGroups(players || []));
+  }
   return keepApartDraw(buildDraw(players, options));
 }
 
@@ -482,6 +488,8 @@ export function toRecord(draw, date, meta = {}) {
   return {
     ...meta,
     date,
+    variant: draw.poolGroups === -2 ? "unique" : "normal",
+    pairing_scope: draw.poolGroups,
     courts_per_group: 2,
     published: true,
     groups: draw.groups.map((g) => ({

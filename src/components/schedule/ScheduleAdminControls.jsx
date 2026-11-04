@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 
 const SCOPES = [
+  { value: -2, label: "Unique games" },
   { value: 0, label: "Crossover" },
   { value: -1, label: "Help beginners" },
   { value: 1, label: "Each group" },
@@ -21,9 +22,9 @@ const chip = (active) =>
 export default function ScheduleAdminControls({ scope, busy, onScope, onRepair, swapMode, onSwapMode }) {
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 no-print">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Pair across</p>
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {SCOPES.map((option) => (
             <button
               key={option.value}

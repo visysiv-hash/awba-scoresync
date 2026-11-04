@@ -9,6 +9,8 @@ import NetScheduleTable from "@/components/schedule/NetScheduleTable";
 import ScheduleAdminControls from "@/components/schedule/ScheduleAdminControls";
 import PlayerCourts from "@/components/schedule/PlayerCourts";
 import GameSwapSelector from "@/components/schedule/GameSwapSelector";
+import UniqueGamesStatus from "@/components/schedule/UniqueGamesStatus";
+import { scheduleUniqueness, uniquenessMessage } from "@/lib/scheduleUniqueness";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,7 +55,7 @@ export default function Schedule() {
   const [picked, setPicked] = useState(null);
   const [pickedGame, setPickedGame] = useState(null);
   const [pending, setPending] = useState(null);
-  const [scope, setScope] = useState(0);
+  const [scope, setScope] = useState(-2);
   const [swapMode, setSwapMode] = useState("night");
   const [swapGame, setSwapGame] = useState(1);
   const [scopeBusy, setScopeBusy] = useState(false);
@@ -77,12 +79,13 @@ export default function Schedule() {
     base44.entities.DrawNight.filter({ date }, { sort: "-created_date", limit: 1 })
       .then((page) => {
         if (!alive) return;
-        setRecord((page.items || [])[0] || null);
+        const saved = (page.items || [])[0] || null;
+        setRecord(saved);
         setDirty(false);
         setPicked(null);
         setPickedGame(null);
         setSwapGame(1);
-        setScope(0);
+        setScope(saved?.pairing_scope ?? (saved?.variant === "unique" ? -2 : saved ? 1 : -2));
       })
       .catch(() => alive && setRecord(null))
       .finally(() => alive && setLoading(false));
@@ -145,16 +148,20 @@ export default function Schedule() {
 
   // Re-pair the night with a different reach: each group of eight on its own, or any
   // player from 16 or 24 paired with any other and every round balanced across them.
-  const changeScope = async (value, force = false) => {
-    if (!record || (!force && value === scope)) return;
+  const changeScope = async (value) => {
+    if (!record || scopeBusy) return;
     setScopeBusy(true);
     try {
       const next = await repairSchedule(record, value);
       setRecord((r) => ({ ...r, ...next }));
       setScope(value);
       setDirty(true);
+      setPicked(null);
+      setPickedGame(null);
       toast.success(
-        value === 0
+        value === -2
+          ? uniquenessMessage(scheduleUniqueness(next))
+          : value === 0
           ? "Re-paired: Games 1 and 3 in group, Game 2 two levels apart."
           : value === -1
           ? "Re-paired: Game 3 four levels apart to help beginners."
@@ -183,7 +190,10 @@ export default function Schedule() {
     if (!record) return;
     setSaving(true);
     try {
-      await base44.entities.DrawNight.update(record.id, { groups: record.groups, matches: record.matches });
+      await base44.entities.DrawNight.update(record.id, {
+        groups: record.groups, matches: record.matches,
+        variant: record.variant, pairing_scope: record.pairing_scope,
+      });
       setDirty(false);
       toast.success("Schedule saved.");
     } catch {
@@ -284,11 +294,12 @@ export default function Schedule() {
                 scope={scope}
                 busy={scopeBusy}
                 onScope={changeScope}
-                onRepair={() => changeScope(scope, true)}
+                onRepair={() => changeScope(scope)}
                 swapMode={swapMode}
                 onSwapMode={changeSwapMode}
               />
             )}
+            {(record.variant === "unique" || scope === -2) && <UniqueGamesStatus record={record} />}
             {isAdmin && swapMode === "game" && (
               <GameSwapSelector game={swapGame} onChange={changeSwapGame} />
             )}

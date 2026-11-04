@@ -19,5 +19,5 @@ export async function repairSchedule(record, poolGroups) {
   });
 
   const payload = toRecord(buildNightDraw(players, { poolGroups }), record.date);
-  return { groups: payload.groups, matches: payload.matches };
+  return { groups: payload.groups, matches: payload.matches, variant: payload.variant, pairing_scope: payload.pairing_scope };
 }

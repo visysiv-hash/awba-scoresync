@@ -21,7 +21,15 @@
         "normal",
         "unique"
       ],
+      "enumColors": [
+        "blue",
+        "green"
+      ],
       "default": "normal"
+    },
+    "pairing_scope": {
+      "type": "number",
+      "title": "Pairing Method"
     },
     "courts_per_group": {
       "type": "number",

@@ -1,6 +1,7 @@
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import UniqueGamesStatus from "@/components/schedule/UniqueGamesStatus";
 
 const teamName = (team) => team.map((p) => p.name).join(" & ");
 const teamRating = (team) => {
@@ -58,7 +59,9 @@ export default function AppDrawView({ draw }) {
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] text-slate-400">
           {draw.totalPlayers} players · {draw.groups.length} {draw.groups.length === 1 ? "pool" : "pools"} ·
-          {draw.poolGroups === 0
+          {draw.poolGroups === -2
+            ? " Unique games · automatic group range"
+            : draw.poolGroups === 0
             ? " Game 2 two levels apart"
             : draw.poolGroups === -1
             ? " Game 3 four levels apart"
@@ -69,8 +72,10 @@ export default function AppDrawView({ draw }) {
         </Button>
       </div>
 
+      {draw.uniqueInfo && <UniqueGamesStatus info={draw.uniqueInfo} />}
+
       {draw.groups.map((g) => (
-        <Card key={g.groupNum} className="bg-slate-800 border-slate-700 text-white shadow">
+        <Card key={g.group} className="bg-slate-800 border-slate-700 text-white shadow">
           <CardHeader className="pb-1 pt-3 px-3">
             <CardTitle className="text-sm flex items-center justify-between">
               <span className="font-bold text-yellow-400">{g.label || `Group ${g.groupNum}`}</span>
