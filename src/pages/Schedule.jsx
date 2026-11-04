@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, Printer, Save, Swords } from "lucide-react";
+import { FileDown, Loader2, Printer, Save, Swords } from "lucide-react";
 import PageBanner from "@/components/PageBanner";
 import NightGroupsTable from "@/components/schedule/NightGroupsTable";
 import NetScheduleTable from "@/components/schedule/NetScheduleTable";
@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { swapPlayer, swapInGame, todayIso } from "@/lib/nightDraw";
+import { buildSchedulePdf } from "@/lib/schedulePdf";
 import { repairSchedule } from "@/lib/repairSchedule";
 import { appRatingMap } from "@/lib/appRatingMap";
 import { getCurrentMember } from "@/lib/currentMember";
@@ -206,6 +207,12 @@ export default function Schedule() {
 
   const totalPlayers = (record?.groups || []).reduce((n, g) => n + (g.players || []).length, 0);
 
+  // A real A4 file, so printing from a phone gives the same single page.
+  const downloadPdf = () => {
+    if (!record) return;
+    buildSchedulePdf(record, auDate(date), ratings).save(`AWBA_Schedule_${date}.pdf`);
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 pb-20 print:p-0 print:pb-0 print:min-h-0">
       <style>{PRINT_CSS}</style>
@@ -220,7 +227,7 @@ export default function Schedule() {
               <p className="text-xs text-slate-400">Groups, net numbers and pairings for the night</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <input
               type="date"
               value={date}
@@ -235,6 +242,9 @@ export default function Schedule() {
             )}
             <Button size="sm" variant="secondary" onClick={() => window.print()} disabled={!record}>
               <Printer className="w-3.5 h-3.5 mr-1" /> Print
+            </Button>
+            <Button size="sm" variant="secondary" onClick={downloadPdf} disabled={!record}>
+              <FileDown className="w-3.5 h-3.5 mr-1" /> PDF
             </Button>
           </div>
         </div>
