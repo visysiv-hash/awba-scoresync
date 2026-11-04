@@ -31,11 +31,16 @@ export default function BaseGroups() {
         if (!alive) return;
         const rated = ratings.players || [];
         setBaseGroups(ratings.baseGroups || {});
-        const seen = new Map(rated.map((p) => [String(p.player).trim().toLowerCase(), p]));
+        // One row per player: rated players first, then members with no results yet.
+        const ratedByKey = {};
+        for (const p of rated) ratedByKey[String(p.player).trim().toLowerCase()] = p;
+        const taken = new Set(Object.keys(ratedByKey));
         const rows = [...rated];
         for (const member of roster) {
           const name = String(member.display_name || "").trim();
-          if (!name || lookupName(seen, name) !== undefined) continue;
+          const key = name.toLowerCase();
+          if (!name || taken.has(key) || lookupName(ratedByKey, name) !== undefined) continue;
+          taken.add(key);
           rows.push({ player: name, rating: null, currentGroup: null });
         }
         rows.sort((a, b) => String(a.player).localeCompare(String(b.player)));
