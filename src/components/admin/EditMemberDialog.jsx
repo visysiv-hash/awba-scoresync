@@ -11,14 +11,24 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const GENDERS = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
 const FIELDS = ["display_name", "full_name", "email", "phone", "dob", "gender", "bv_member", "active"];
 
-export default function EditMemberDialog({ member, open, onOpenChange, onSaved }) {
+export default function EditMemberDialog({ member, open, onOpenChange, onSaved, onDeleted }) {
   const [form, setForm] = useState(() => {
     const base = {};
     for (const f of FIELDS) base[f] = member?.[f] ?? "";
@@ -26,6 +36,8 @@ export default function EditMemberDialog({ member, open, onOpenChange, onSaved }
     return base;
   });
   const [saving, setSaving] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -40,6 +52,21 @@ export default function EditMemberDialog({ member, open, onOpenChange, onSaved }
       toast.error(e?.response?.data?.error || "Couldn't save this member.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    setDeleting(true);
+    try {
+      await base44.functions.invoke("deleteMember", { member_id: member.id });
+      onDeleted?.(member);
+      toast.success(`${member.display_name} deleted.`);
+      setConfirming(false);
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Couldn't delete this member.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -94,12 +121,38 @@ export default function EditMemberDialog({ member, open, onOpenChange, onSaved }
           </div>
         </div>
 
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-          <Button onClick={save} disabled={saving}>
-            {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />} Save changes
+        <DialogFooter className="mt-4 sm:justify-between">
+          <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => setConfirming(true)} disabled={saving}>
+            <Trash2 className="w-4 h-4 mr-1" /> Delete
           </Button>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
+            <Button onClick={save} disabled={saving}>
+              {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />} Save changes
+            </Button>
+          </div>
         </DialogFooter>
+
+        <AlertDialog open={confirming} onOpenChange={setConfirming}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {member.display_name}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This removes them from the member list permanently. Past results and bookings are not affected.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Keep member</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); remove(); }}
+                disabled={deleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {deleting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null} Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

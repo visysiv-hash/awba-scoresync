@@ -169,6 +169,7 @@ export default function AdminMembers() {
             open
             onOpenChange={(open) => !open && setEditing(null)}
             onSaved={(updated) => setMembers(prev => prev.map(x => (x.id === updated.id ? { ...x, ...updated } : x)))}
+            onDeleted={(deleted) => setMembers(prev => prev.filter(x => x.id !== deleted.id))}
           />
         )}
       </div>
