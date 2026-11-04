@@ -21,7 +21,7 @@ export default function SchedulePdfDialog({ data, onClose }) {
             <Button size="sm" variant="outline" onClick={retry}>Try again</Button>
           </div>
         )}
-        {url && (
+        {url && data && (
           <>
             <div className="flex flex-wrap justify-end gap-2">
               <Button variant="outline" size="sm" asChild>
