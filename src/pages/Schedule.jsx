@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Printer, Save, Swords } from "lucide-react";
 import PageBanner from "@/components/PageBanner";
 import NightGroupsTable from "@/components/schedule/NightGroupsTable";
-import NightMatchesTable from "@/components/schedule/NightMatchesTable";
+import NetScheduleTable from "@/components/schedule/NetScheduleTable";
 import { swapPlayer, todayIso } from "@/lib/nightDraw";
 import { getCurrentMember } from "@/lib/currentMember";
 import { toast } from "sonner";
@@ -57,19 +57,19 @@ export default function Schedule() {
     };
   }, [date]);
 
-  // Tap one player, then another in the same group: they trade places everywhere,
-  // so every match stays a valid line-up and each player keeps their three games.
-  const pick = (group, name) => {
+  // Tap one player, then any other player — same group or a different one. They
+  // trade places everywhere, so every match stays a valid line-up.
+  const pick = (name) => {
     if (!record || !isAdmin) return;
-    if (!picked || picked.group !== group) {
-      setPicked({ group, name });
+    if (!picked) {
+      setPicked(name);
       return;
     }
-    if (picked.name === name) {
+    if (picked === name) {
       setPicked(null);
       return;
     }
-    setRecord((r) => swapPlayer(r, group, picked.name, name));
+    setRecord((r) => swapPlayer(r, picked, name));
     setDirty(true);
     setPicked(null);
   };
@@ -154,24 +154,33 @@ export default function Schedule() {
         ) : (
           <>
             <p className="text-xs text-slate-400">
+              {[record.title, record.time_label].filter(Boolean).join(" · ")}
+              {record.title ? " · " : ""}
               {record.groups?.length || 0} groups ·{" "}
               {(record.groups || []).reduce((n, g) => n + (g.players || []).length, 0)} players ·{" "}
               {record.matches?.length || 0} matches
               {isAdmin && (
-                <span className="text-slate-500">
-                  {" "}· tap two players in the same group to swap them
-                </span>
+                <span className="text-slate-500"> · tap any two players to swap them</span>
               )}
             </p>
 
             <div className="print-plain space-y-4">
               <NightGroupsTable groups={record.groups || []} picked={picked} onPick={isAdmin ? pick : null} />
-              <NightMatchesTable
-                groups={record.groups || []}
-                matches={record.matches || []}
-                picked={picked}
-                onPick={isAdmin ? pick : null}
-              />
+              <div className="flex gap-3 items-start">
+                <div className="flex-1 min-w-0">
+                  <NetScheduleTable matches={record.matches || []} picked={picked} onPick={isAdmin ? pick : null} />
+                </div>
+                <div className="hidden lg:block w-36 shrink-0 rounded-xl border border-slate-700 bg-slate-800 p-2">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1">Players</p>
+                  <div className="max-h-[520px] overflow-y-auto">
+                    {[...new Set((record.groups || []).flatMap((g) => g.players || []))]
+                      .sort((a, b) => String(a).localeCompare(String(b)))
+                      .map((n) => (
+                        <p key={n} className="text-[11px] leading-snug text-slate-200">{n}</p>
+                      ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </>
         )}

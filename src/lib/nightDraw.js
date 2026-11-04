@@ -11,10 +11,24 @@ const key = (a, b) => {
   return x < y ? `${x}|${y}` : `${y}|${x}`;
 };
 
+// Ratings run lowest = strongest. A man partnered with a woman is treated as
+// playing slightly below his rating, so a mixed pair is compared with same-gender
+// pairs fairly and the closest contest is chosen. GENDER_HANDICAP is the size of
+// that adjustment.
+export const GENDER_HANDICAP = 0.2;
+
+const isMale = (p) => String(p.gender || "").trim().toLowerCase().startsWith("m");
+const isFemale = (p) => String(p.gender || "").trim().toLowerCase().startsWith("f");
+
 const teamAvg = (team) => {
   const rated = team.filter((p) => p.rating !== null && p.rating !== undefined);
   if (!rated.length) return null;
-  return rated.reduce((s, p) => s + p.rating, 0) / rated.length;
+  const mixed = rated.some(isMale) && rated.some(isFemale);
+  const total = rated.reduce(
+    (s, p) => s + (mixed && isMale(p) ? p.rating + GENDER_HANDICAP : p.rating),
+    0
+  );
+  return total / rated.length;
 };
 
 // Team sizes per match for a group that is not a full eight.
@@ -204,8 +218,9 @@ export function flattenMatches(draw) {
   return rows;
 }
 
-export function toRecord(draw, date) {
+export function toRecord(draw, date, meta = {}) {
   return {
+    ...meta,
     date,
     variant: draw.variant,
     courts_per_group: 2,
@@ -222,18 +237,19 @@ export function toRecord(draw, date) {
   };
 }
 
-// Two players traded everywhere in their group: every match stays a valid line-up
-// and each player still plays the same number of games.
-export function swapPlayer(record, group, a, b) {
+// Two players traded everywhere they appear — in the same group or across groups.
+// Every match stays a valid line-up, and each player takes the other's games.
+export function swapPlayer(record, a, b) {
   const swap = (names) => (names || []).map((n) => (n === a ? b : n === b ? a : n));
   return {
     ...record,
-    groups: (record.groups || []).map((g) =>
-      g.group === group ? { ...g, players: swap(g.players), top4: swap(g.top4), bottom4: swap(g.bottom4) } : g
-    ),
-    matches: (record.matches || []).map((m) =>
-      m.group === group ? { ...m, team1: swap(m.team1), team2: swap(m.team2) } : m
-    ),
+    groups: (record.groups || []).map((g) => ({
+      ...g,
+      players: swap(g.players),
+      top4: swap(g.top4),
+      bottom4: swap(g.bottom4),
+    })),
+    matches: (record.matches || []).map((m) => ({ ...m, team1: swap(m.team1), team2: swap(m.team2) })),
   };
 }
 

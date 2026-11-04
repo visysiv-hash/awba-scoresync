@@ -5,26 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Swords } from "lucide-react";
 import { toast } from "sonner";
 import { buildNightDraw, toRecord } from "@/lib/nightDraw";
+import { memberGenders } from "@/lib/memberGenders";
 
-// Builds the night's draw from a session's confirmed bookings and saves it to the
-// Schedule for that session's date, then opens the Schedule ready to print.
+// Builds the night's draw from a session's confirmed bookings (plus the waitlist
+// when the admin allows it) and saves it to the Schedule for that session's date.
 export default function SessionScheduleButton({ session, players }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
   const build = async () => {
     if (!players.length) {
-      toast.error("No confirmed players to schedule.");
+      toast.error("No players to schedule.");
       return;
     }
     setBusy(true);
     try {
-      const res = await base44.functions.invoke("getAppRatings", {});
+      const [res, genders] = await Promise.all([
+        base44.functions.invoke("getAppRatings", {}),
+        memberGenders().catch(() => ({})),
+      ]);
       const ratings = {};
       for (const p of res.data?.players || []) ratings[String(p.player).toLowerCase()] = p.rating;
 
-      const list = players.map((name) => ({ name, rating: ratings[String(name).toLowerCase()] ?? null }));
-      const payload = toRecord(buildNightDraw(list, "normal"), session.date);
+      const list = players.map((name) => ({
+        name,
+        rating: ratings[String(name).toLowerCase()] ?? null,
+        gender: genders[String(name).toLowerCase()] || null,
+      }));
+      const payload = toRecord(buildNightDraw(list, "normal"), session.date, {
+        title: session.title,
+        time_label: [session.start_time, session.end_time].filter(Boolean).join(" – "),
+      });
 
       const page = await base44.entities.DrawNight.filter({ date: session.date }, { limit: 1 });
       const existing = (page.items || [])[0];

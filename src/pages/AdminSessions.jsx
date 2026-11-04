@@ -56,6 +56,8 @@ export default function AdminSessions() {
   const [publishView, setPublishView] = useState(true);
   const [showPast, setShowPast] = useState(false);
   const [guestSession, setGuestSession] = useState(null);
+  // Waitlisted players stay out of the draw unless the admin opts them in.
+  const [waitlistIncluded, setWaitlistIncluded] = useState({});
 
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
@@ -758,7 +760,13 @@ export default function AdminSessions() {
                         >
                           <UserPlus className="w-3.5 h-3.5" /> Add guest
                         </Button>
-                        <SessionScheduleButton session={session} players={confirmed.map(b => b.user_name)} />
+                        <SessionScheduleButton
+                          session={session}
+                          players={[
+                            ...confirmed,
+                            ...(waitlistIncluded[session.id] ? waitlisted : []),
+                          ].map(b => b.user_name)}
+                        />
                         {bks.length === 0 && <span className="text-xs text-muted-foreground">No bookings yet.</span>}
                       </div>
                       {bks.length > 0 && (
@@ -789,6 +797,19 @@ export default function AdminSessions() {
                           >
                             {sortAlpha ? "✓ Sorted A–Z" : "Sort A–Z"}
                           </button>
+                          {waitlisted.length > 0 && (
+                            <button
+                              onClick={() => setWaitlistIncluded(v => ({ ...v, [session.id]: !v[session.id] }))}
+                              title="Waitlisted players are left out of the draw unless you include them"
+                              className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors ${
+                                waitlistIncluded[session.id]
+                                  ? "bg-orange-100 text-orange-700 border-orange-300"
+                                  : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
+                              }`}
+                            >
+                              {waitlistIncluded[session.id] ? "✓ Waitlist in draw" : "Include waitlist"}
+                            </button>
+                          )}
                           <button
                             onClick={() => setPublishView(v => !v)}
                             className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors ${

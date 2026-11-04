@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, Swords, Save, ClipboardList } from "lucide-react";
 import AppDrawView from "./AppDrawView";
 import { buildNightDraw, toRecord, todayIso } from "@/lib/nightDraw";
+import { memberGenders } from "@/lib/memberGenders";
 import { toast } from "sonner";
 
 // App-only scheduling: players come from today's bookings in the app, ratings
@@ -14,6 +15,7 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
   const [showDraw, setShowDraw] = useState(false);
   const [variant, setVariant] = useState("normal");
   const [appRatings, setAppRatings] = useState(null);
+  const [genders, setGenders] = useState({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -22,6 +24,9 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
       .invoke("getAppRatings", {})
       .then((res) => setAppRatings(res.data?.players || []))
       .catch(() => setAppRatings([]));
+    memberGenders()
+      .then(setGenders)
+      .catch(() => setGenders({}));
   }, []);
 
   const merged = useMemo(() => {
@@ -29,9 +34,14 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
     for (const p of appRatings || []) ratings[String(p.player).toLowerCase()] = p.rating;
     return (players || []).map((p) => {
       const key = String(p.name).toLowerCase();
-      return { ...p, rating: ratings[key] ?? p.rating ?? null, fromApp: ratings[key] !== undefined };
+      return {
+        ...p,
+        rating: ratings[key] ?? p.rating ?? null,
+        gender: genders[key] || null,
+        fromApp: ratings[key] !== undefined,
+      };
     });
-  }, [players, appRatings]);
+  }, [players, appRatings, genders]);
 
   const draw = useMemo(() => (showDraw ? buildNightDraw(merged, variant) : null), [showDraw, merged, variant]);
 

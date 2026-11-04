@@ -3,17 +3,17 @@
 export default function NightGroupsTable({ groups = [], picked, onPick }) {
   if (!groups.length) return null;
 
-  const cell = (group, names) => (
+  const cell = (names) => (
     <div className="space-y-0.5">
       {(names || []).length === 0 && <span className="text-slate-500 italic">—</span>}
       {(names || []).map((name) => {
-        const active = picked && picked.group === group && picked.name === name;
+        const active = picked === name;
         return (
           <button
             key={name}
             type="button"
             disabled={!onPick}
-            onClick={() => onPick?.(group, name)}
+            onClick={() => onPick?.(name)}
             className={`block w-full text-left px-1 rounded transition-colors ${
               active ? "bg-yellow-400 text-slate-900 font-bold" : "text-slate-100 hover:bg-slate-700/60"
             } ${onPick ? "cursor-pointer" : "cursor-default"}`}
@@ -42,13 +42,13 @@ export default function NightGroupsTable({ groups = [], picked, onPick }) {
           <tr className="border-t border-slate-700">
             <td className="bg-sky-200 text-slate-900 font-bold px-2 py-1.5 sticky left-0 z-10">TOP 4</td>
             {groups.map((g) => (
-              <td key={g.group} className="bg-slate-800/60 px-1 py-1.5 align-top">{cell(g.group, g.top4)}</td>
+              <td key={g.group} className="bg-slate-800/60 px-1 py-1.5 align-top">{cell(g.top4)}</td>
             ))}
           </tr>
           <tr className="border-t border-slate-700">
             <td className="bg-sky-200 text-slate-900 font-bold px-2 py-1.5 sticky left-0 z-10">BOTTOM 4</td>
             {groups.map((g) => (
-              <td key={g.group} className="bg-slate-800/60 px-1 py-1.5 align-top">{cell(g.group, g.bottom4)}</td>
+              <td key={g.group} className="bg-slate-800/60 px-1 py-1.5 align-top">{cell(g.bottom4)}</td>
             ))}
           </tr>
           <tr className="border-t border-slate-700">

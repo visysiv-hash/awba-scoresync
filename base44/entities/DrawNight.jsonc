@@ -6,6 +6,14 @@
       "type": "string",
       "title": "Date"
     },
+    "title": {
+      "type": "string",
+      "title": "Session Title"
+    },
+    "time_label": {
+      "type": "string",
+      "title": "Session Time"
+    },
     "variant": {
       "type": "string",
       "title": "Draw Type",
