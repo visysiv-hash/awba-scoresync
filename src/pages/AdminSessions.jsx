@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import AdminPinGate from "../components/AdminPinGate";
 import AddGuestModal from "../components/admin/AddGuestModal";
+import SessionScheduleButton from "../components/admin/SessionScheduleButton";
 import PageBanner from "../components/PageBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -757,6 +758,7 @@ export default function AdminSessions() {
                         >
                           <UserPlus className="w-3.5 h-3.5" /> Add guest
                         </Button>
+                        <SessionScheduleButton session={session} players={confirmed.map(b => b.user_name)} />
                         {bks.length === 0 && <span className="text-xs text-muted-foreground">No bookings yet.</span>}
                       </div>
                       {bks.length > 0 && (

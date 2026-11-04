@@ -23,7 +23,9 @@ const auDate = (value) => {
 };
 
 export default function Schedule() {
-  const [date, setDate] = useState(todayIso());
+  const [date, setDate] = useState(
+    () => new URLSearchParams(window.location.search).get("date") || todayIso()
+  );
   const [record, setRecord] = useState(null);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);

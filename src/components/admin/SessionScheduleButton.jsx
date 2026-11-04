@@ -1,0 +1,56 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { Button } from "@/components/ui/button";
+import { Loader2, Swords } from "lucide-react";
+import { toast } from "sonner";
+import { buildNightDraw, toRecord } from "@/lib/nightDraw";
+
+// Builds the night's draw from a session's confirmed bookings and saves it to the
+// Schedule for that session's date, then opens the Schedule ready to print.
+export default function SessionScheduleButton({ session, players }) {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+
+  const build = async () => {
+    if (!players.length) {
+      toast.error("No confirmed players to schedule.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await base44.functions.invoke("getAppRatings", {});
+      const ratings = {};
+      for (const p of res.data?.players || []) ratings[String(p.player).toLowerCase()] = p.rating;
+
+      const list = players.map((name) => ({ name, rating: ratings[String(name).toLowerCase()] ?? null }));
+      const payload = toRecord(buildNightDraw(list, "normal"), session.date);
+
+      const page = await base44.entities.DrawNight.filter({ date: session.date }, { limit: 1 });
+      const existing = (page.items || [])[0];
+      if (existing) await base44.entities.DrawNight.update(existing.id, payload);
+      else await base44.entities.DrawNight.create(payload);
+
+      toast.success("Draw created — opening the Schedule.");
+      navigate(`/schedule?date=${session.date}`);
+    } catch (e) {
+      toast.error("Couldn't create the draw.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-7 text-xs gap-1"
+      onClick={build}
+      disabled={busy || players.length === 0}
+      title="Generate the night's groups, courts and pairings from these bookings"
+    >
+      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Swords className="w-3.5 h-3.5" />}
+      Schedule
+    </Button>
+  );
+}
