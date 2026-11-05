@@ -27,6 +27,9 @@ export default function LateCancellationDialog({ notice, onClose }) {
           <AlertDialogDescription className="text-slate-700">
             {notice.message}
           </AlertDialogDescription>
+          <p className="text-xs text-slate-500 pt-1">
+            If you saved this session to your calendar, delete that event too.
+          </p>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogAction onClick={onClose}>I understand</AlertDialogAction>

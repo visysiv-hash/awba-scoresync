@@ -2,6 +2,12 @@
 
 const TZ = "Australia/Melbourne";
 
+// Shown after a booking is cancelled: the app can't reach an invite already saved to their calendar.
+export const CALENDAR_REMINDER = {
+  description: "If you saved this session to your calendar, delete that event too.",
+  duration: 8000,
+};
+
 function pad(n) {
   return String(n).padStart(2, "0");
 }

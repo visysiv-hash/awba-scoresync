@@ -11,7 +11,7 @@ import PlayerSelector from "../components/booking/PlayerSelector";
 import SessionCalendar from "../components/booking/SessionCalendar";
 import PageBanner from "../components/PageBanner";
 import SessionReminderBanner from "../components/booking/SessionReminderBanner";
-import { downloadSessionIcs } from "../lib/sessionIcs";
+import { downloadSessionIcs, CALENDAR_REMINDER } from "../lib/sessionIcs";
 import { getCurrentMember } from "../lib/currentMember";
 import { formatAusDate, formatAusDateWithDay } from "../lib/dateFormat";
 
@@ -146,7 +146,7 @@ export default function BookingSessions() {
     if (res.data?.success) {
       setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: "cancelled" } : b));
       if (res.data.lateCancellation) setLateNotice(res.data.lateCancellation);
-      else toast.success("Booking cancelled.");
+      else toast.success("Booking cancelled.", CALENDAR_REMINDER);
     } else {
       toast.error(res.data?.error || "Failed to cancel.");
     }
