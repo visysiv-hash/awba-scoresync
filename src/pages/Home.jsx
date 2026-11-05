@@ -12,6 +12,7 @@ import PageBanner from "../components/PageBanner";
 import MyBookingsCard from "../components/MyBookingsCard";
 import CheckInButton from "../components/checkin/CheckInButton";
 import HomeCheckInBoard from "../components/checkin/HomeCheckInBoard";
+import NightProgress from "../components/night/NightProgress";
 
 const tiles = [
 {
@@ -233,6 +234,11 @@ export default function Home() {
             <HomeCheckInBoard />
           </div>
         )}
+
+        {/* Tonight's ladder */}
+        <div className="mt-4">
+          <NightProgress />
+        </div>
 
         {/* Main tiles */}
         <div className="grid grid-cols-2 gap-2 mt-4">
