@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, Clock, MapPin, Loader2, CalendarCheck } from "lucide-react";
 import { getCurrentMember } from "@/lib/currentMember";
+import { loadMyBookings } from "@/lib/myBookings";
 
 function getWeekRange() {
   const now = new Date();
@@ -43,7 +44,7 @@ export default function MyBookingsThisWeek() {
       try {
         const [sessions, bookings] = await Promise.all([
           base44.entities.Session.list("date", 200),
-          base44.entities.Booking.list("-created_date", 500),
+          loadMyBookings(player?.email),
         ]);
         const { start, end } = getWeekRange();
         const today = todayMelbourne();

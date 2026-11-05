@@ -68,13 +68,26 @@ export default function BookingSessions() {
 
   useEffect(() => {
     const load = async () => {
-      const [allSessions, allBookings] = await Promise.all([
-        base44.entities.Session.list("date", 100),
-        base44.entities.Booking.list("-created_date", 500),
-      ]);
+      const allSessions = await base44.entities.Session.list("date", 100);
       const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
-      setSessions(allSessions.filter(s => s.date >= today).sort((a, b) => a.date.localeCompare(b.date)));
-      setBookings(allBookings);
+      const upcoming = allSessions.filter(s => s.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+      setSessions(upcoming);
+
+      // Load every booking for these sessions, page by page, so none are missed
+      const rows = [];
+      for (let i = 0; i < upcoming.length; i += 20) {
+        const ids = upcoming.slice(i, i + 20).map(s => s.id);
+        let cursor;
+        do {
+          const page = await base44.entities.Booking.filter(
+            { session_id: { $in: ids } },
+            { limit: 500, ...(cursor ? { cursor } : {}) }
+          );
+          rows.push(...page.items);
+          cursor = page.next_cursor;
+        } while (cursor);
+      }
+      setBookings(rows);
       setLoading(false);
     };
     load();

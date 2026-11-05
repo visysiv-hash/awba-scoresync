@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { CalendarDays, MapPin, Clock, Loader2, CheckSquare, ChevronDown, ChevronUp } from "lucide-react";
 import { getCurrentMember } from "@/lib/currentMember";
 import { formatAusDateWithDay } from "@/lib/dateFormat";
+import { loadMyBookings } from "@/lib/myBookings";
 import LateCancellationDialog from "@/components/booking/LateCancellationDialog";
 
 // Today's date in Melbourne time as YYYY-MM-DD (lexicographically comparable)
@@ -31,7 +32,7 @@ export default function MyBookingsCard() {
       try {
         const [allSessions, allBookings] = await Promise.all([
           base44.entities.Session.list("date", 200),
-          base44.entities.Booking.list("-created_date", 500),
+          loadMyBookings(player?.email),
         ]);
         const today = todayMelbourne();
         setSessions(allSessions.filter(s => s.date >= today));
