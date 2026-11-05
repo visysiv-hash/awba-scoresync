@@ -10,6 +10,7 @@ import { getCurrentMember } from "@/lib/currentMember";
 import { formatAusDateWithDay } from "@/lib/dateFormat";
 import { loadMyBookings } from "@/lib/myBookings";
 import LateCancellationDialog from "@/components/booking/LateCancellationDialog";
+import CalendarInviteButton from "@/components/booking/CalendarInviteButton";
 
 // Today's date in Melbourne time as YYYY-MM-DD (lexicographically comparable)
 function todayMelbourne() {
@@ -135,6 +136,13 @@ export default function MyBookingsCard() {
                     <Button size="sm" variant="ghost" className="text-red-300 hover:text-red-200 hover:bg-white/10 h-6 text-xs px-2" onClick={() => handleCancel(b)}>
                       Cancel
                     </Button>
+                    {sess && (
+                      <CalendarInviteButton
+                        sessions={[sess]}
+                        label="Calendar"
+                        className="h-6 px-2 text-xs text-teal-300 hover:text-teal-200 hover:bg-white/10 whitespace-nowrap"
+                      />
+                    )}
                   </div>
                 </div>
               </div>
