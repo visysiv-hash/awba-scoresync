@@ -26,7 +26,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { swapPlayer, swapInGame, todayIso } from "@/lib/nightDraw";
+import { swapPlayer, swapInGame, todayIso, RANDOM_SCOPE } from "@/lib/nightDraw";
+import ReplacePlayerDialog from "@/components/schedule/ReplacePlayerDialog";
 import SchedulePdfExport from "@/components/schedule/SchedulePdfExport";
 import { repairSchedule } from "@/lib/repairSchedule";
 import { appRatingMap } from "@/lib/appRatingMap";
@@ -66,6 +67,7 @@ export default function Schedule() {
   const [swapGame, setSwapGame] = useState(1);
   const [scopeBusy, setScopeBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showReplace, setShowReplace] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [ratings, setRatings] = useState({});
   const isAdmin = getCurrentMember()?.is_admin === true;
@@ -161,6 +163,24 @@ export default function Schedule() {
     setPending(null);
   };
 
+  // A stand-in steps in: their games are re-formed (never the whole night), and the
+  // junior safety rule is re-checked before anything is accepted.
+  const applyPlayerChange = (next, message) => {
+    if (!next) return false;
+    try {
+      juniorSafety.assertSafe(next);
+      setRecord(next);
+      setDirty(true);
+      setPicked(null);
+      setPickedGame(null);
+      toast.success(message);
+      return true;
+    } catch (error) {
+      toast.error(error.message);
+      return false;
+    }
+  };
+
   // Re-pair the night with a different reach: each group of eight on its own, or any
   // player from 16 or 24 paired with any other and every round balanced across them.
   const changeScope = async (value) => {
@@ -176,6 +196,8 @@ export default function Schedule() {
       toast.success(
         value === -2
           ? uniquenessMessage(scheduleUniqueness(next))
+          : value >= RANDOM_SCOPE
+          ? "Re-paired: anyone can partner anyone across the whole night, every game still balanced."
           : value === 0
           ? "Re-paired: Games 1 and 3 in group, Game 2 two levels apart."
           : value === -1
@@ -367,6 +389,7 @@ export default function Schedule() {
                 onRepair={() => changeScope(scope)}
                 swapMode={swapMode}
                 onSwapMode={changeSwapMode}
+                onReplacePlayer={() => setShowReplace(true)}
               />
             )}
             {isAdmin && (
@@ -432,6 +455,14 @@ export default function Schedule() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {showReplace && record && (
+        <ReplacePlayerDialog
+          record={record}
+          onApply={applyPlayerChange}
+          onClose={() => setShowReplace(false)}
+        />
+      )}
 
       <AlertDialog open={confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(false)}>
         <AlertDialogContent className="no-print">

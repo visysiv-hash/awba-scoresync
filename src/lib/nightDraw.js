@@ -421,6 +421,19 @@ function mixDraw(groups, list, crossGame, distance) {
   };
 }
 
+// "Random games": the whole night becomes one pool, so anyone can partner or play
+// anyone — but every round is still chosen on pair strength, so the games stay even.
+export const RANDOM_SCOPE = 99;
+
+function randomDraw(groups, list) {
+  const pooled = pooledDraw(groups, list, groups.length);
+  return {
+    ...pooled,
+    poolGroups: RANDOM_SCOPE,
+    groups: pooled.groups.map((g) => ({ ...g, label: "Whole night" })),
+  };
+}
+
 function buildDraw(players, options = {}) {
   const list = players || [];
   const groups = buildGroups(list);
@@ -428,8 +441,9 @@ function buildDraw(players, options = {}) {
   const poolGroups = Number.isFinite(requested) ? requested : 0;
 
   // 0 = crossover (Game 2 two levels apart), -1 = help beginners (Game 3 four levels
-  // apart), 1 = each group on its own.
+  // apart), 1 = each group on its own, RANDOM_SCOPE = the whole night in one pool.
   if (groups.length > 1) {
+    if (poolGroups >= RANDOM_SCOPE) return randomDraw(groups, list);
     if (poolGroups === 0) return mixDraw(groups, list, 2, 2);
     if (poolGroups === -1) return mixDraw(groups, list, 3, 4);
     if (poolGroups > 1) return pooledDraw(groups, list, Math.min(3, poolGroups));
