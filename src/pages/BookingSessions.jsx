@@ -4,14 +4,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CalendarDays, CalendarPlus, MapPin, Users, Clock, Loader2, CheckSquare, Square, LayoutList, Zap, ChevronDown, ChevronUp } from "lucide-react";
+import { CalendarDays, MapPin, Users, Clock, Loader2, CheckSquare, Square, LayoutList, Zap, ChevronDown, ChevronUp } from "lucide-react";
 import MultiBookingModal from "../components/booking/MultiBookingModal";
 import LateCancellationDialog from "../components/booking/LateCancellationDialog";
 import PlayerSelector from "../components/booking/PlayerSelector";
 import SessionCalendar from "../components/booking/SessionCalendar";
 import PageBanner from "../components/PageBanner";
 import SessionReminderBanner from "../components/booking/SessionReminderBanner";
-import { downloadSessionIcs } from "../lib/sessionIcs";
+import CalendarInviteButton from "../components/booking/CalendarInviteButton";
 import CalendarReminderDialog from "../components/booking/CalendarReminderDialog";
 import { getCurrentMember } from "../lib/currentMember";
 import { formatAusDate, formatAusDateWithDay } from "../lib/dateFormat";
@@ -241,14 +241,11 @@ export default function BookingSessions() {
                           </Button>
                         )}
                         {sess && (
-                          <Button size="sm" variant="ghost" className="text-teal-300 hover:text-teal-200 hover:bg-white/10 h-6 text-xs px-2" onClick={async (e) => {
-                            e.stopPropagation();
-                            const result = await downloadSessionIcs(sess);
-                            if (result === "shared") toast.success("Choose your calendar app to add the session");
-                            else if (result === "opened" || result === "downloaded") toast.success("Calendar invite ready — open it to add the session");
-                          }}>
-                            <CalendarPlus className="w-3 h-3 mr-1" /> Calendar
-                          </Button>
+                          <CalendarInviteButton
+                            sessions={[sess]}
+                            label="Calendar"
+                            className="h-6 px-2 text-xs text-teal-300 hover:text-teal-200 hover:bg-white/10 whitespace-nowrap"
+                          />
                         )}
                       </div>
                     </div>

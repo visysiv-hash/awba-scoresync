@@ -1,4 +1,6 @@
-// Builds a downloadable calendar invite (.ics) for a booked session.
+// Builds a calendar invite (.ics) for booked sessions.
+
+import { base44 } from "@/api/base44Client";
 
 const TZ = "Australia/Melbourne";
 
@@ -107,48 +109,15 @@ function fileNameFor(session) {
   return `awba-${slug || "session"}-${session.date}.ics`;
 }
 
-// Returns "shared" | "opened" | "downloaded" | "cancelled" so the caller can tell the player what happened.
-async function deliverIcs(content, filename, title) {
-  // Phones: the native share sheet offers "Add to Calendar" straight away.
-  const file = typeof File !== "undefined" ? new File([content], filename, { type: "text/calendar" }) : null;
-  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title });
-      return "shared";
-    } catch (error) {
-      if (error && error.name === "AbortError") return "cancelled";
-    }
-  }
-
-  const url = URL.createObjectURL(new Blob([content], { type: "text/calendar;charset=utf-8" }));
-
-  // Open in a new tab first: downloads triggered inside an embedded frame are often blocked,
-  // while a real tab either shows the invite or saves it.
-  const opened = window.open(url, "_blank");
-  if (opened) {
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-    return "opened";
-  }
-
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-  return "downloaded";
-}
-
-export async function downloadSessionIcs(session) {
-  if (!session) return "cancelled";
-  return deliverIcs(buildSessionIcs(session), fileNameFor(session), session.title || "Badminton session");
-}
-
-// One invite file covering every session just booked.
-export async function downloadBookingsIcs(sessions) {
+// Uploads the invite and returns a real link the player taps, which opens it in their calendar app.
+// A link beats a script-triggered download: downloads and pop-up tabs are blocked inside the app frame.
+export async function prepareIcsLink(sessions) {
   const list = (sessions || []).filter(Boolean);
-  if (list.length === 0) return "cancelled";
+  if (list.length === 0) return null;
   const filename = list.length === 1 ? fileNameFor(list[0]) : `awba-sessions-${list[0].date}.ics`;
-  return deliverIcs(buildBookingsIcs(list), filename, "AWBA sessions");
+  const file = new File([buildBookingsIcs(list)], filename, { type: "text/calendar" });
+  const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+  const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 3600 });
+  if (!signed_url) throw new Error("No calendar link was returned.");
+  return { url: signed_url, filename };
 }

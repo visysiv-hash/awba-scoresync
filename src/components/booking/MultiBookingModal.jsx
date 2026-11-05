@@ -3,8 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, X, CalendarDays, CalendarPlus, Clock, MapPin, CheckCircle2, AlertCircle, Search, User, Users } from "lucide-react";
-import { downloadBookingsIcs } from "@/lib/sessionIcs";
+import { Loader2, X, CalendarDays, Clock, MapPin, CheckCircle2, AlertCircle, Search, User, Users } from "lucide-react";
+import CalendarInviteButton from "@/components/booking/CalendarInviteButton";
 
 export default function MultiBookingModal({ sessions, player, onBooked, onClose, preselectSelf = true, addMode = false, excludeNames = [] }) {
   const [roster, setRoster] = useState([]);
@@ -259,17 +259,11 @@ export default function MultiBookingModal({ sessions, player, onBooked, onClose,
         ) : (
           <div className="space-y-2">
             {sessions.length > 0 && (
-              <Button
-                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-                onClick={async () => {
-                  const result = await downloadBookingsIcs(sessions);
-                  if (result === "shared") toast.success("Choose your calendar app to add the sessions");
-                  else if (result === "opened" || result === "downloaded") toast.success("Calendar invite ready — open it to add the sessions");
-                }}
-              >
-                <CalendarPlus className="w-4 h-4 mr-2" />
-                {sessions.length > 1 ? `Add all ${sessions.length} to calendar` : "Add to calendar"}
-              </Button>
+              <CalendarInviteButton
+                sessions={sessions}
+                label={sessions.length > 1 ? `Add all ${sessions.length} to calendar` : "Add to calendar"}
+                className="w-full h-10 bg-teal-600 text-white hover:bg-teal-700 shadow text-sm"
+              />
             )}
             <Button className="w-full" variant="outline" onClick={onClose}>Done</Button>
           </div>

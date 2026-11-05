@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { BellRing, CalendarPlus, X } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { BellRing, X } from "lucide-react";
 import { isReminderDue } from "@/lib/sessionReminder";
-import { downloadSessionIcs } from "@/lib/sessionIcs";
+import CalendarInviteButton from "@/components/booking/CalendarInviteButton";
 
 export default function SessionReminderBanner({ sessions, bookings, player }) {
   const [dismissed, setDismissed] = useState([]);
@@ -46,17 +44,11 @@ export default function SessionReminderBanner({ sessions, bookings, player }) {
               <X className="h-4 w-4" />
             </button>
           </div>
-          <Button
-            size="sm"
-            className="mt-2 w-full bg-slate-900 text-white hover:bg-slate-800"
-            onClick={async () => {
-              const result = await downloadSessionIcs(session);
-              if (result === "shared") toast.success("Choose your calendar app to add the session");
-              else if (result === "opened" || result === "downloaded") toast.success("Calendar invite ready — open it to add the session");
-            }}
-          >
-            <CalendarPlus className="mr-1.5 h-3.5 w-3.5" /> Add to my calendar
-          </Button>
+          <CalendarInviteButton
+            sessions={[session]}
+            label="Add to my calendar"
+            className="mt-2 w-full h-8 bg-slate-900 text-xs text-white hover:bg-slate-800"
+          />
         </div>
       ))}
     </div>
