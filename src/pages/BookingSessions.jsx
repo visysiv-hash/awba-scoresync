@@ -11,7 +11,8 @@ import PlayerSelector from "../components/booking/PlayerSelector";
 import SessionCalendar from "../components/booking/SessionCalendar";
 import PageBanner from "../components/PageBanner";
 import SessionReminderBanner from "../components/booking/SessionReminderBanner";
-import { downloadSessionIcs, CALENDAR_REMINDER } from "../lib/sessionIcs";
+import { downloadSessionIcs } from "../lib/sessionIcs";
+import CalendarReminderDialog from "../components/booking/CalendarReminderDialog";
 import { getCurrentMember } from "../lib/currentMember";
 import { formatAusDate, formatAusDateWithDay } from "../lib/dateFormat";
 
@@ -46,6 +47,7 @@ export default function BookingSessions() {
   const [viewMode, setViewMode] = useState("list"); // "list" | "calendar"
   const [myBookingsExpanded, setMyBookingsExpanded] = useState(false);
   const [lateNotice, setLateNotice] = useState(null);
+  const [calendarNotice, setCalendarNotice] = useState(false);
 
   const selectNextN = (n) => {
     const available = visibleSessions.filter(s => !myBooking(s.id) && s.bookings_open !== false && confirmedCount(s.id) < s.max_spots);
@@ -146,7 +148,7 @@ export default function BookingSessions() {
     if (res.data?.success) {
       setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: "cancelled" } : b));
       if (res.data.lateCancellation) setLateNotice(res.data.lateCancellation);
-      else toast.success("Booking cancelled.", CALENDAR_REMINDER);
+      else { toast.success("Booking cancelled."); setCalendarNotice(true); }
     } else {
       toast.error(res.data?.error || "Failed to cancel.");
     }
@@ -536,6 +538,7 @@ export default function BookingSessions() {
       )}
 
       <LateCancellationDialog notice={lateNotice} onClose={() => setLateNotice(null)} />
+      <CalendarReminderDialog open={calendarNotice} onClose={() => setCalendarNotice(false)} />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CALENDAR_REMINDER } from "@/lib/sessionIcs";
+import CalendarReminderDialog from "@/components/booking/CalendarReminderDialog";
 import { CalendarDays, MapPin, Clock, Loader2, CheckSquare, ChevronDown, ChevronUp } from "lucide-react";
 import { getCurrentMember } from "@/lib/currentMember";
 import { formatAusDateWithDay } from "@/lib/dateFormat";
@@ -27,6 +27,7 @@ export default function MyBookingsCard() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [lateNotice, setLateNotice] = useState(null);
+  const [calendarNotice, setCalendarNotice] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -60,7 +61,7 @@ export default function MyBookingsCard() {
       if (res.data?.success) {
         setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: "cancelled" } : b));
         if (res.data.lateCancellation) setLateNotice(res.data.lateCancellation);
-        else toast.success("Booking cancelled.", CALENDAR_REMINDER);
+        else { toast.success("Booking cancelled."); setCalendarNotice(true); }
       } else {
         toast.error("Failed to cancel.");
       }
@@ -143,6 +144,7 @@ export default function MyBookingsCard() {
       )}
 
       <LateCancellationDialog notice={lateNotice} onClose={() => setLateNotice(null)} />
+      <CalendarReminderDialog open={calendarNotice} onClose={() => setCalendarNotice(false)} />
     </div>
   );
 }
