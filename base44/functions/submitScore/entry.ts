@@ -4,7 +4,11 @@ import { deadlinePassed } from "../../shared/noResult.ts";
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  const { netNumber, gameNumber, team1, team2, rounds, total1, total2 } = await req.json();
+  const { netNumber, gameNumber, team1, team2, rounds, total1, total2, rating } = await req.json();
+
+  // Optional 1–5 star rating of how the game played. Anything outside that is ignored.
+  const stars = Math.round(Number(rating));
+  const ratingOut = stars >= 1 && stars <= 5 ? stars : undefined;
 
   // With the spreadsheet switched off the app's own copy is the only record.
   const useSheet = await sheetsEnabled(base44);
@@ -132,6 +136,7 @@ Deno.serve(async (req) => {
     rounds,
     source: "app",
   };
+  if (ratingOut) record.rating = ratingOut;
 
   // One result per game per night: a second submission corrects the first.
   const existing = await base44.asServiceRole.entities.MatchResult.filter(

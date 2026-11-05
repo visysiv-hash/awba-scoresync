@@ -69,6 +69,11 @@
         }
       }
     },
+    "rating": {
+      "type": "number",
+      "title": "Game Rating (1\u20135)",
+      "description": "Optional star rating from the players on how much they enjoyed this game."
+    },
     "source": {
       "type": "string",
       "title": "Source",

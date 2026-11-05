@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import RoundScores from "./RoundScores";
+import StarRating from "./StarRating";
 import { getCurrentMember } from "@/lib/currentMember";
 
 const emptyRounds = () => [{ score1: "", score2: "", }, { score1: "", score2: "" }];
@@ -27,6 +28,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showZeroConfirm, setShowZeroConfirm] = useState(false);
+  const [rating, setRating] = useState(0);
 
   // Load prefilled game from search
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
       setTeam2(prefilledGame.team2 || "");
       setRounds(emptyRounds());
       setSubmitted(false);
+      setRating(0);
       onPrefilledUsed?.();
     }
   }, [prefilledGame]);
@@ -59,6 +62,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
       setGameDetails(res.data);
       setTeam1(res.data.team1 || "");
       setTeam2(res.data.team2 || "");
+      setRating(res.data.rating || 0);
     }
   };
 
@@ -97,6 +101,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
       rounds,
       total1,
       total2,
+      rating,
     });
     setSubmitting(false);
     if (res.data?.success) {
@@ -132,6 +137,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
     setTeam2("");
     setRounds(emptyRounds());
     setSubmitted(false);
+    setRating(0);
   };
 
   return (
@@ -202,6 +208,14 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
 
             <RoundScores rounds={rounds} onChange={setRounds} team1={team1} team2={team2} />
 
+            <div className="space-y-1.5 border-t pt-4">
+              <p className="text-sm font-semibold text-center">How was the game?</p>
+              <StarRating value={rating} onChange={setRating} className="justify-center" />
+              <p className="text-xs text-muted-foreground text-center">
+                {rating ? `${rating} out of 5 — tap the same star to clear` : "Optional — tap a star to rate how the game played"}
+              </p>
+            </div>
+
             <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleSubmit} disabled={submitting}>
               {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               {submitting ? "Submitting..." : "Submit Scores"}
@@ -239,6 +253,11 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
                 <span className="font-bold">{rounds.reduce((s, r) => s + Number(r.score2), 0)}</span> {team2}
               </p>
             </div>
+            {rating > 0 && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                Game rated <StarRating value={rating} size="sm" />
+              </div>
+            )}
             <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => onScoreSubmitted?.({ goBack: true })}>← Back to Game List</Button>
             <Button variant="outline" className="w-full" onClick={handleReset}>Enter Another Score</Button>
           </div>
