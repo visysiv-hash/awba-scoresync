@@ -62,16 +62,44 @@ export function buildSessionIcs(session) {
   ].join("\r\n");
 }
 
-export function downloadSessionIcs(session) {
-  if (!session) return;
-  const blob = new Blob([buildSessionIcs(session)], { type: "text/calendar;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+function fileNameFor(session) {
   const slug = (session.title || "session").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `awba-${slug || "session"}-${session.date}.ics`;
+}
+
+// Returns "shared" | "opened" | "downloaded" | "cancelled" so the caller can tell the player what happened.
+export async function downloadSessionIcs(session) {
+  if (!session) return "cancelled";
+  const content = buildSessionIcs(session);
+  const filename = fileNameFor(session);
+
+  // Phones: the native share sheet offers "Add to Calendar" straight away.
+  const file = typeof File !== "undefined" ? new File([content], filename, { type: "text/calendar" }) : null;
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: session.title || "Badminton session" });
+      return "shared";
+    } catch (error) {
+      if (error && error.name === "AbortError") return "cancelled";
+    }
+  }
+
+  const url = URL.createObjectURL(new Blob([content], { type: "text/calendar;charset=utf-8" }));
+
+  // Open in a new tab first: downloads triggered inside an embedded frame are often blocked,
+  // while a real tab either shows the invite or saves it.
+  const opened = window.open(url, "_blank");
+  if (opened) {
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return "opened";
+  }
+
+  const link = document.createElement("a");
   link.href = url;
-  link.download = `awba-${slug || "session"}-${session.date}.ics`;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return "downloaded";
 }

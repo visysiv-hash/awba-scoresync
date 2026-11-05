@@ -239,7 +239,12 @@ export default function BookingSessions() {
                           </Button>
                         )}
                         {sess && (
-                          <Button size="sm" variant="ghost" className="text-teal-300 hover:text-teal-200 hover:bg-white/10 h-6 text-xs px-2" onClick={() => downloadSessionIcs(sess)}>
+                          <Button size="sm" variant="ghost" className="text-teal-300 hover:text-teal-200 hover:bg-white/10 h-6 text-xs px-2" onClick={async (e) => {
+                            e.stopPropagation();
+                            const result = await downloadSessionIcs(sess);
+                            if (result === "shared") toast.success("Choose your calendar app to add the session");
+                            else if (result === "opened" || result === "downloaded") toast.success("Calendar invite ready — open it to add the session");
+                          }}>
                             <CalendarPlus className="w-3 h-3 mr-1" /> Calendar
                           </Button>
                         )}
