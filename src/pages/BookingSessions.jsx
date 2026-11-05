@@ -100,6 +100,7 @@ export default function BookingSessions() {
   };
 
   const confirmedCount = (sessionId) => bookings.filter(b => b.session_id === sessionId && b.status === "confirmed").length;
+  const waitlistedCount = (sessionId) => bookings.filter(b => b.session_id === sessionId && b.status === "waitlisted").length;
   const myBooking = (sessionId) => bookings.find(b => b.session_id === sessionId && b.user_email === player?.email && b.status !== "cancelled");
   const myBookingsForSession = (sessionId) => bookings.filter(b =>
     b.session_id === sessionId &&
@@ -347,6 +348,9 @@ export default function BookingSessions() {
             const confirmed = confirmedCount(session.id);
             const spotsLeft = session.max_spots - confirmed;
             const full = spotsLeft <= 0;
+            const waitlisted = waitlistedCount(session.id);
+            const maxWaitlist = session.max_waitlist || 0;
+            const waitlistLeft = maxWaitlist ? Math.max(0, maxWaitlist - waitlisted) : null;
             const myBk = myBooking(session.id);
             const isSelected = selectedIds.has(session.id);
 
@@ -438,6 +442,17 @@ export default function BookingSessions() {
                         : <span>{confirmed}/{session.max_spots} booked · <span className="text-green-600 font-semibold">{spotsLeft} left</span></span>
                       }
                     </span>
+                    {full && (
+                      <span className="flex items-center gap-1 col-span-2">
+                        <Clock className="w-3 h-3" />
+                        {waitlistLeft === null
+                          ? <span className="text-amber-600 font-semibold">Waitlist {waitlisted} joined</span>
+                          : waitlistLeft > 0
+                            ? <span className="text-amber-600 font-semibold">Waitlist {waitlisted}/{maxWaitlist} · {waitlistLeft} waitlist spot{waitlistLeft > 1 ? "s" : ""} left</span>
+                            : <span className="text-red-500 font-semibold">Waitlist full ({waitlisted}/{maxWaitlist})</span>
+                        }
+                      </span>
+                    )}
                   </div>
 
                   {(() => {
