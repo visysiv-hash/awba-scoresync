@@ -48,11 +48,6 @@
     "checked_in_at": {
       "type": "string",
       "title": "Checked In At"
-    },
-    "reminder_sent_at": {
-      "type": "string",
-      "title": "Reminder Sent At",
-      "description": "Set when the reminder email for this booking has gone out, so a player is only reminded once."
     }
   },
   "required": [

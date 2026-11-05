@@ -4,12 +4,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CalendarDays, MapPin, Users, Clock, Loader2, CheckSquare, Square, LayoutList, Zap, ChevronDown, ChevronUp } from "lucide-react";
+import { CalendarDays, CalendarPlus, MapPin, Users, Clock, Loader2, CheckSquare, Square, LayoutList, Zap, ChevronDown, ChevronUp } from "lucide-react";
 import MultiBookingModal from "../components/booking/MultiBookingModal";
 import LateCancellationDialog from "../components/booking/LateCancellationDialog";
 import PlayerSelector from "../components/booking/PlayerSelector";
 import SessionCalendar from "../components/booking/SessionCalendar";
 import PageBanner from "../components/PageBanner";
+import SessionReminderBanner from "../components/booking/SessionReminderBanner";
+import { downloadSessionIcs } from "../lib/sessionIcs";
 import { getCurrentMember } from "../lib/currentMember";
 import { formatAusDate, formatAusDateWithDay } from "../lib/dateFormat";
 
@@ -185,6 +187,8 @@ export default function BookingSessions() {
           <p className="text-slate-400 text-sm mt-1">Tap sessions to select, then book all at once</p>
         </div>
 
+        <SessionReminderBanner sessions={sessions} bookings={bookings} player={player} />
+
         <div className="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2 mb-3">
           {player ? (
             <span className="text-sm text-white">Booking as: <span className="font-semibold text-teal-300">{player.name}</span></span>
@@ -232,6 +236,11 @@ export default function BookingSessions() {
                         ) : (
                           <Button size="sm" variant="ghost" className="text-red-300 hover:text-red-200 hover:bg-white/10 h-6 text-xs px-2" onClick={() => handleCancel(b)}>
                             Cancel
+                          </Button>
+                        )}
+                        {sess && (
+                          <Button size="sm" variant="ghost" className="text-teal-300 hover:text-teal-200 hover:bg-white/10 h-6 text-xs px-2" onClick={() => downloadSessionIcs(sess)}>
+                            <CalendarPlus className="w-3 h-3 mr-1" /> Calendar
                           </Button>
                         )}
                       </div>
