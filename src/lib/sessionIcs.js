@@ -35,21 +35,47 @@ function icsStamp(ts) {
   return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
 }
 
-export function buildSessionIcs(session) {
+const CALENDAR_HEADER = [
+  "BEGIN:VCALENDAR",
+  "VERSION:2.0",
+  "PRODID:-//AWBA//Session//EN",
+  "CALSCALE:GREGORIAN",
+  "METHOD:PUBLISH",
+];
+
+function isTuesday(dateStr) {
+  if (!dateStr) return false;
+  const weekday = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, weekday: "short" })
+    .format(new Date(`${dateStr}T12:00:00Z`));
+  return weekday === "Tue";
+}
+
+// Reminders match the in-app ones: Tuesday sessions at 10am, every other day an hour before.
+function alarmLines(session, startMinutes) {
+  const minutesBefore = isTuesday(session.date) && startMinutes > 600
+    ? startMinutes - 10 * 60
+    : 60;
+  return [
+    "BEGIN:VALARM",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Badminton session reminder",
+    `TRIGGER:-PT${minutesBefore}M`,
+    "END:VALARM",
+  ];
+}
+
+function eventLines(session) {
   const startTime = session.start_time || "19:00";
   const endTime = session.end_time || startTime;
   const start = icsStamp(melbourneToUtc(session.date, startTime));
   const end = icsStamp(melbourneToUtc(session.date, endTime));
+  const [h, m] = startTime.split(":").map(Number);
+  const startMinutes = (Number.isNaN(h) ? 19 : h) * 60 + (Number.isNaN(m) ? 0 : m);
 
-  const summary = (session.title || "Badminton session").replace(/[,;\\]/g, (m) => `\\${m}`);
-  const location = (session.location || "Lauren Jackson Sports Centre").replace(/[,;\\]/g, (m) => `\\${m}`);
+  const summary = (session.title || "Badminton session").replace(/[,;\\]/g, (x) => `\\${x}`);
+  const location = (session.location || "Lauren Jackson Sports Centre").replace(/[,;\\]/g, (x) => `\\${x}`);
 
   return [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//AWBA//Session//EN",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
     "BEGIN:VEVENT",
     `UID:${session.id || Date.now()}@awba`,
     `DTSTAMP:${icsStamp(Date.now())}`,
@@ -58,7 +84,20 @@ export function buildSessionIcs(session) {
     `SUMMARY:${summary}`,
     `LOCATION:${location}`,
     "DESCRIPTION:Your booked AWBA session.",
+    ...alarmLines(session, startMinutes),
     "END:VEVENT",
+  ];
+}
+
+export function buildSessionIcs(session) {
+  return [...CALENDAR_HEADER, ...eventLines(session), "END:VCALENDAR"].join("\r\n");
+}
+
+// One invite file covering every session just booked.
+export function buildBookingsIcs(sessions) {
+  return [
+    ...CALENDAR_HEADER,
+    ...(sessions || []).flatMap(eventLines),
     "END:VCALENDAR",
   ].join("\r\n");
 }
@@ -69,16 +108,12 @@ function fileNameFor(session) {
 }
 
 // Returns "shared" | "opened" | "downloaded" | "cancelled" so the caller can tell the player what happened.
-export async function downloadSessionIcs(session) {
-  if (!session) return "cancelled";
-  const content = buildSessionIcs(session);
-  const filename = fileNameFor(session);
-
+async function deliverIcs(content, filename, title) {
   // Phones: the native share sheet offers "Add to Calendar" straight away.
   const file = typeof File !== "undefined" ? new File([content], filename, { type: "text/calendar" }) : null;
   if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: session.title || "Badminton session" });
+      await navigator.share({ files: [file], title });
       return "shared";
     } catch (error) {
       if (error && error.name === "AbortError") return "cancelled";
@@ -103,4 +138,17 @@ export async function downloadSessionIcs(session) {
   document.body.removeChild(link);
   setTimeout(() => URL.revokeObjectURL(url), 60000);
   return "downloaded";
+}
+
+export async function downloadSessionIcs(session) {
+  if (!session) return "cancelled";
+  return deliverIcs(buildSessionIcs(session), fileNameFor(session), session.title || "Badminton session");
+}
+
+// One invite file covering every session just booked.
+export async function downloadBookingsIcs(sessions) {
+  const list = (sessions || []).filter(Boolean);
+  if (list.length === 0) return "cancelled";
+  const filename = list.length === 1 ? fileNameFor(list[0]) : `awba-sessions-${list[0].date}.ics`;
+  return deliverIcs(buildBookingsIcs(list), filename, "AWBA sessions");
 }
