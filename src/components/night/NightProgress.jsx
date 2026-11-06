@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Flame, Loader2, ChevronRight } from "lucide-react";
+import { Flame, ChevronRight } from "lucide-react";
 import { getCurrentMember } from "@/lib/currentMember";
 import { formatAusDate } from "@/lib/dateFormat";
 import NightRankRow from "./NightRankRow";
@@ -28,21 +28,23 @@ export default function NightProgress() {
   const meShown = myIndex >= 0 && myIndex < shown.length;
   const progress = data?.totalGames ? Math.round((data.scoredGames / data.totalGames) * 100) : 0;
 
+  // Only ever shown on the night itself.
+  if (loading || !data?.active) return null;
+
   return (
     <div className="rounded-2xl border border-white/15 bg-gradient-to-br from-slate-800/90 to-slate-900 shadow-xl p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2.5 w-2.5 shrink-0 mt-0.5">
-            {data?.live && <span className="absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-70 animate-ping" />}
-            <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${data?.live ? "bg-teal-400" : "bg-slate-500"}`} />
+            <span className="absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-70 animate-ping" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-teal-400" />
           </span>
           <div>
             <p className="text-sm font-black text-white leading-tight flex items-center gap-1">
               <Flame className="w-3.5 h-3.5 text-orange-400" /> Night Ladder
             </p>
             <p className="text-[10px] text-slate-400 leading-tight">
-              {data?.live ? "Live" : "Last session"}
-              {data?.date ? ` · ${formatAusDate(data.date)}` : ""}
+              Live{data?.date ? ` · ${formatAusDate(data.date)}` : ""}
               {data?.totalGames ? ` · ${data.scoredGames}/${data.totalGames} games in` : ""}
             </p>
           </div>
@@ -75,11 +77,7 @@ export default function NightProgress() {
         {players.length > 0 && <span className="text-[10px] text-slate-500 self-center ml-auto">{players.length} players scored</span>}
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center gap-2 py-4 text-slate-400 text-xs">
-          <Loader2 className="w-4 h-4 animate-spin" /> Loading the night…
-        </div>
-      ) : players.length === 0 ? (
+      {players.length === 0 ? (
         <p className="text-xs text-slate-400 text-center py-3">No games scored yet — the ladder fills up as scores come in.</p>
       ) : (
         <div className="space-y-1.5">
