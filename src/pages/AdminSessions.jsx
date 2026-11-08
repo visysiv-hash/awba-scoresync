@@ -38,6 +38,7 @@ export default function AdminSessions() {
   const [pinUnlocked, setPinUnlocked] = useState(isAdminUnlocked);
   const [sessions, setSessions] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [members, setMembers] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [showForm, setShowForm] = useState(false);
   const [expandedSession, setExpandedSession] = useState(null);
@@ -64,12 +65,14 @@ export default function AdminSessions() {
 
   const loadData = async () => {
     setLoading(true);
-    const [s, b] = await Promise.all([
+    const [s, b, m] = await Promise.all([
       base44.entities.Session.list("date", 200),
       base44.entities.Booking.list("-created_date", 1000),
+      base44.entities.Member.list("display_name", 500),
     ]);
     setSessions(s);
     setBookings(b);
+    setMembers(m || []);
     setLoading(false);
   };
 
@@ -94,6 +97,17 @@ export default function AdminSessions() {
   useEffect(() => { if (pinUnlocked) { loadData(); loadBankFromSheet(); } }, [pinUnlocked]);
 
   const sessionBookings = (sessionId) => bookings.filter(b => b.session_id === sessionId && b.status !== "cancelled");
+
+  // The member record holds the full name; a booking only carries the display name.
+  const fullNameFor = (b) => {
+    const emailKey = String(b.user_email || "").trim().toLowerCase();
+    const nameKey = String(b.user_name || "").trim().toLowerCase();
+    const member =
+      (emailKey && members.find(m => String(m.email || "").trim().toLowerCase() === emailKey)) ||
+      members.find(m => String(m.display_name || "").trim().toLowerCase() === nameKey);
+    const full = String(member?.full_name || "").trim();
+    return full && full.toLowerCase() !== nameKey ? full : "";
+  };
 
   // Unique session titles act as "main headings" (e.g. Tuesday Games, Thursday Games)
   const uniqueTitles = Array.from(new Set(sessions.map(s => s.title)));
@@ -846,7 +860,7 @@ export default function AdminSessions() {
                                       return (
                                         <div key={ri} className="px-1.5 py-1 border-t text-[10px] min-h-[22px] flex items-center">
                                           {b ? (
-                                            <span className="text-slate-700 break-words leading-tight">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
+                                            <span className="text-slate-700 break-words leading-tight">{b.user_name}{fullNameFor(b) ? ` · ${fullNameFor(b)}` : ""}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
                                           ) : <span className="text-slate-300">—</span>}
                                         </div>
                                       );
@@ -861,7 +875,7 @@ export default function AdminSessions() {
                                       return (
                                         <div key={ri} className="px-1.5 py-1 border-t text-[10px] min-h-[22px] flex items-center">
                                           {b ? (
-                                            <span className="text-slate-700 break-words leading-tight">{b.user_name}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
+                                            <span className="text-slate-700 break-words leading-tight">{b.user_name}{fullNameFor(b) ? ` · ${fullNameFor(b)}` : ""}{showEmail && b.user_email ? ` (${b.user_email})` : ""}</span>
                                           ) : <span className="text-slate-300">—</span>}
                                         </div>
                                       );
@@ -879,7 +893,7 @@ export default function AdminSessions() {
                               <p className="text-xs font-semibold text-green-700 mb-1">✅ Confirmed ({confirmed.length})</p>
                               {(sortAlpha ? [...confirmed].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || "")) : confirmed).map((b, i) => (
                                 <div key={i} className="flex items-center justify-between gap-2 pl-2">
-                                  <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
+                                  <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {fullNameFor(b) && <span className="text-slate-400">· {fullNameFor(b)}</span>} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
                                   <div className="flex items-center gap-1">
                                     <button
                                       onClick={async () => {
@@ -914,7 +928,7 @@ export default function AdminSessions() {
                               <p className="text-xs font-semibold text-orange-600 mb-1">⏳ Waitlist ({waitlisted.length})</p>
                               {(sortAlpha ? [...waitlisted].sort((a, b) => (a.user_name || "").localeCompare(b.user_name || "")) : waitlisted).map((b, i) => (
                                 <div key={i} className="flex items-center justify-between gap-2 pl-2">
-                                  <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
+                                  <p className="text-xs text-slate-700">{i + 1}. {b.user_name} {fullNameFor(b) && <span className="text-slate-400">· {fullNameFor(b)}</span>} {showEmail && <span className="text-slate-400">({b.user_email})</span>}</p>
                                   <div className="flex items-center gap-1">
                                     <button
                                       onClick={() => handlePromote(b)}
