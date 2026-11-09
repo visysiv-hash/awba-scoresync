@@ -28,6 +28,7 @@ export default function ScheduleAdminControls({
   busy,
   onScope,
   onRepair,
+  onResetList,
   swapMode,
   onSwapMode,
   onReplacePlayer,
@@ -52,6 +53,18 @@ export default function ScheduleAdminControls({
       <button type="button" onClick={onRepair} disabled={busy} className={chip(false)}>
         Re-pair
       </button>
+
+      {onResetList && (
+        <button
+          type="button"
+          onClick={onResetList}
+          disabled={busy}
+          title="Put every player back in rating order (strongest first), then pair the night again"
+          className={chip(false)}
+        >
+          Reset list to ratings
+        </button>
+      )}
 
       {onReplacePlayer && (
         <button type="button" onClick={onReplacePlayer} disabled={busy} className={chip(false)}>

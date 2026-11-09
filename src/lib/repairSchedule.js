@@ -7,8 +7,13 @@ import { lookupName } from "@/lib/nameMatch";
 // Re-pairs a saved night using a new pairing scope. The players are the ones already
 // on the schedule; ratings, genders and junior status come from the app, so a re-pair
 // is balanced exactly like a freshly generated draw.
-export async function repairSchedule(record, poolGroups) {
-  const names = [...new Set((record.groups || []).flatMap((g) => g.players || []))];
+//
+// The group list on the schedule is the admin's own arrangement, swaps included, so it
+// is used as-is: re-pairing only rebuilds the games. Pass resetOrder to drop back to the
+// rating order (strongest to weakest) before pairing.
+export async function repairSchedule(record, poolGroups, { resetOrder = false } = {}) {
+  const savedLists = (record.groups || []).map((g) => g.players || []);
+  const names = [...new Set(savedLists.flat())];
 
   const [ratingMap, genders, dobs] = await Promise.all([
     appRatingMap().catch(() => ({})),
@@ -26,6 +31,9 @@ export async function repairSchedule(record, poolGroups) {
     };
   });
 
-  const payload = toRecord(buildNightDraw(players, { poolGroups }), record.date);
+  const options = { poolGroups };
+  if (!resetOrder && savedLists.some((list) => list.length)) options.groupLists = savedLists;
+
+  const payload = toRecord(buildNightDraw(players, options), record.date);
   return { groups: payload.groups, matches: payload.matches, variant: payload.variant, pairing_scope: payload.pairing_scope };
 }

@@ -184,18 +184,22 @@ export default function Schedule() {
 
   // Re-pair the night with a different reach: each group of eight on its own, or any
   // player from 16 or 24 paired with any other and every round balanced across them.
-  const changeScope = async (value) => {
+  // The group list is the admin's own arrangement, so a re-pair keeps whatever players
+  // were swapped into each group and only rebuilds the games.
+  const changeScope = async (value, { resetOrder = false } = {}) => {
     if (!record || scopeBusy) return;
     setScopeBusy(true);
     try {
-      const next = await repairSchedule(record, value);
+      const next = await repairSchedule(record, value, { resetOrder });
       setRecord((r) => ({ ...r, ...next }));
       setScope(value);
       setDirty(true);
       setPicked(null);
       setPickedGame(null);
       toast.success(
-        value === -2
+        resetOrder
+          ? "Group list reset to rating order and re-paired — press Save to keep it."
+          : value === -2
           ? uniquenessMessage(scheduleUniqueness(next))
           : value >= RANDOM_SCOPE
           ? "Re-paired: anyone can partner anyone across the whole night, every game still balanced."
@@ -203,7 +207,7 @@ export default function Schedule() {
           ? "Re-paired: Games 1 and 3 in group, Game 2 two levels apart."
           : value === -1
           ? "Re-paired: Game 3 four levels apart to help beginners."
-          : "Re-paired within each group."
+          : "Re-paired within each group — your group list is kept."
       );
     } catch (error) {
       toast.error(error.message || "Couldn't re-pair the schedule.");
@@ -211,6 +215,10 @@ export default function Schedule() {
       setScopeBusy(false);
     }
   };
+
+  // Any manual swaps of whole-night places are dropped: the groups go back to strongest
+  // to weakest and the night is paired again from that list.
+  const resetList = () => changeScope(scope, { resetOrder: true });
 
   // Nets can be reshuffled for the week, or two groups can trade theirs, so nobody
   // plays the same net every week.
@@ -402,7 +410,7 @@ export default function Schedule() {
                 <span className="text-slate-500">
                   {swapMode === "game"
                     ? " · choose a game, then tap two players from any groups"
-                    : " · tap any two players to swap them for the whole night"}
+                    : " · tap any two players to swap them for the whole night — Re-pair keeps the list as you arranged it"}
                 </span>
               )}
               {picked && (
@@ -427,6 +435,7 @@ export default function Schedule() {
                 busy={scopeBusy}
                 onScope={changeScope}
                 onRepair={() => changeScope(scope)}
+                onResetList={resetList}
                 swapMode={swapMode}
                 onSwapMode={changeSwapMode}
                 onReplacePlayer={() => setShowReplace(true)}

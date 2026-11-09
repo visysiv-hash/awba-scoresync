@@ -4,7 +4,7 @@
 // the gender adjustment shapes all three games. Shorter groups are filled with mixed
 // formats — American doubles (one player against two) and singles — so a group of
 // five, six or seven still gets a night's play instead of nothing.
-import { buildGroups, groupAverage } from "./drawGenerator";
+import { buildGroups, groupAverage, groupFromLists } from "./drawGenerator";
 import { teamAvg } from "./teamRating";
 import { poolGames, poolRound } from "./poolDraw";
 import { keepApartDraw, bannedTogether } from "./neverPair";
@@ -434,9 +434,14 @@ function randomDraw(groups, list) {
   };
 }
 
+// The night's groups: either the admin's own list (swaps kept) or, when there is none,
+// the rating order.
+const groupsFor = (list, options) =>
+  options.groupLists?.length ? groupFromLists(list, options.groupLists) : buildGroups(list);
+
 function buildDraw(players, options = {}) {
   const list = players || [];
-  const groups = buildGroups(list);
+  const groups = groupsFor(list, options);
   const requested = options.poolGroups === undefined ? 0 : Number(options.poolGroups);
   const poolGroups = Number.isFinite(requested) ? requested : 0;
 
@@ -479,7 +484,7 @@ const drawFor = (players, options) => {
   // Unique draws are validated as a whole and must never pass through the
   // legacy unconstrained post-draw swap, which can reintroduce repeats.
   if (options.poolGroups === undefined || Number(options.poolGroups) === -2) {
-    return buildUniqueDraw(buildGroups(players || []));
+    return buildUniqueDraw(groupsFor(players || [], options));
   }
   return keepApartDraw(buildDraw(players, options));
 };
