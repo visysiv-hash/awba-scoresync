@@ -123,12 +123,13 @@
     "published": {
       "type": "boolean",
       "title": "Published",
-      "default": true
+      "description": "Unpublished draws are drafts: players cannot see their games or enter scores until the draw is published.",
+      "default": false
     },
     "archived": {
       "type": "boolean",
       "title": "Removed From Schedule",
-      "description": "Hidden from the Schedule page, but the night's games stay available so scores can still be entered.",
+      "description": "Deleted from the Schedule. Its games disappear from Match Details and Results too, so nothing lingers without a draw.",
       "default": false
     }
   },

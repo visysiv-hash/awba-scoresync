@@ -67,7 +67,10 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
         {results !== null && (
           <div className="space-y-3">
             {results.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No matches found.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No matches found.
+                <span className="block text-xs mt-1">The draw for this night may not be published yet.</span>
+              </p>
             ) : (
               results.map((g, i) => {
                 const localSubmit = submittedScores[`${g.net}-${g.game}`];

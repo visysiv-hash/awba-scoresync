@@ -19,12 +19,15 @@ export async function appNightFor(base44: any, wantedDate?: string) {
   const page: any = await base44.asServiceRole.entities.DrawNight.filter({}, { limit: 200 });
   const nights: any[] = page.items || page || [];
   const wanted = String(wantedDate || "").trim();
-  if (wanted) return nights.find((n: any) => String(n.date) === wanted) || null;
+  if (wanted) return nights.find((n: any) => String(n.date) === wanted && !n.archived) || null;
   // Results, Admin score edit and score entry only carry the night still open for
   // scoring. Once the Wednesday deadline has passed that night is history: its games
   // stay in the player search and the ladder, but leave the results board.
   const today = sydneyToday();
-  const open = nights.filter((n: any) => !deadlinePassed(String(n.date)));
+  // A deleted draw, or one not published yet, is never the night on show.
+  const open = nights.filter(
+    (n: any) => !n.archived && n.published !== false && !deadlinePassed(String(n.date))
+  );
   if (!open.length) return null;
   return [...open].sort((a: any, b: any) => dayGap(a.date, today) - dayGap(b.date, today))[0] || null;
 }

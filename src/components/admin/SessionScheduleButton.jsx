@@ -45,7 +45,7 @@ export default function SessionScheduleButton({ session, players }) {
       if (existing) await base44.entities.DrawNight.update(existing.id, payload);
       else await base44.entities.DrawNight.create(payload);
 
-      toast.success("Draw created — opening the Schedule.");
+      toast.success("Draw created as a draft — publish it when the night is ready.");
       navigate(`/schedule?date=${session.date}`);
     } catch (e) {
       toast.error(e.message || "Couldn't create the draw.");

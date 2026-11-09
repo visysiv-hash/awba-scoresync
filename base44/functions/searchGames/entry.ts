@@ -11,21 +11,26 @@ Deno.serve(async (req) => {
     // the app's stored scores, so the search no longer depends on the spreadsheet.
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney" }).format(new Date());
     const nightRows: any = await base44.asServiceRole.entities.DrawNight.filter({});
-    const nights: any[] = Array.isArray(nightRows) ? nightRows : nightRows.items || [];
+    const all: any[] = Array.isArray(nightRows) ? nightRows : nightRows.items || [];
 
-    // The saved draw closest to today: tonight's own schedule, or the next/previous
-    // session when tonight has no draw yet.
+    // A draw deleted from the Schedule, or one the committee hasn't published yet,
+    // is left out completely — so no games linger here without a draw.
+    const nights = all.filter((n: any) => !n.archived && n.published !== false);
+
     const days = (iso: string) =>
       Math.abs(new Date(`${iso}T00:00:00Z`).getTime() - new Date(`${today}T00:00:00Z`).getTime()) / 86400000;
-    // A specific night can be asked for (e.g. testing another session); otherwise the
-    // saved draw closest to today is used.
+    // A specific night can be asked for (e.g. testing another session); otherwise only
+    // a night that is still open for scoring is used, so a missing draw tonight never
+    // shows another week's games.
     const wanted = String(wantedDate || "").trim();
     const night = wanted
       ? nights.find((n: any) => String(n.date) === wanted)
-      : [...nights].sort((a: any, b: any) => days(a.date) - days(b.date))[0];
+      : [...nights]
+          .filter((n: any) => !deadlinePassed(String(n.date)))
+          .sort((a: any, b: any) => days(a.date) - days(b.date))[0];
     const date = night?.date || wanted || today;
 
-    if (wanted && !night) return Response.json({ results: [], date: wanted });
+    if (!night) return Response.json({ results: [], date });
 
     if (night) {
       const q = String(query || "").trim().toLowerCase();

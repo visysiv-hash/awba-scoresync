@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, Printer, Save, Swords, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Printer, Save, Swords, Trash2 } from "lucide-react";
 import PageBanner from "@/components/PageBanner";
 import NightGroupsTable from "@/components/schedule/NightGroupsTable";
 import NetScheduleTable from "@/components/schedule/NetScheduleTable";
@@ -70,6 +70,7 @@ export default function Schedule() {
   const [showReplace, setShowReplace] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [ratings, setRatings] = useState({});
+  const [publishing, setPublishing] = useState(false);
   const isAdmin = getCurrentMember()?.is_admin === true;
   const juniorSafety = useJuniorScheduleProtection(record);
 
@@ -254,12 +255,31 @@ export default function Schedule() {
     }
   };
 
+  // A draw is a draft until it is published: only then do players see their games
+  // in Match Details and can enter scores.
+  const isDraft = record?.published === false;
+
+  const togglePublish = async () => {
+    if (!record) return;
+    const next = isDraft;
+    setPublishing(true);
+    try {
+      await base44.entities.DrawNight.update(record.id, { published: next });
+      setRecord((r) => ({ ...r, published: next }));
+      toast.success(next ? "Draw published — players can see it now." : "Draw unpublished — hidden from players again.");
+    } catch {
+      toast.error("Couldn't change the publish setting.");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   const deleteDraw = async () => {
     if (!record) return;
     setDeleting(true);
     try {
-      // The night's games are kept, so scores can still be entered for them;
-      // only the draw itself is taken off the Schedule.
+      // Deleting the draw hides it everywhere: an archived draw is left out of the
+      // Schedule, Match Details and Results, so no games linger without a draw.
       await base44.entities.DrawNight.update(record.id, { archived: true });
       setRecent((list) => list.filter((n) => n.id !== record.id));
       setRecord(null);
@@ -267,7 +287,7 @@ export default function Schedule() {
       setPicked(null);
       setPickedGame(null);
       setConfirmDelete(false);
-      toast.success("Draw removed — unscored games are still open for scores.");
+      toast.success("Draw deleted — its games are gone from Match Details too.");
     } catch {
       toast.error("Couldn't delete the draw.");
     } finally {
@@ -304,6 +324,20 @@ export default function Schedule() {
               <Button size="sm" onClick={save} disabled={saving} className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold">
                 {saving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
                 Save
+              </Button>
+            )}
+            {isAdmin && (
+              <Button
+                size="sm"
+                onClick={togglePublish}
+                disabled={!record || publishing}
+                className={isDraft ? "bg-green-500 hover:bg-green-400 text-slate-900 font-bold" : ""}
+                variant={isDraft ? undefined : "secondary"}
+              >
+                {publishing
+                  ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                  : isDraft ? <Eye className="w-3.5 h-3.5 mr-1" /> : <EyeOff className="w-3.5 h-3.5 mr-1" />}
+                {isDraft ? "Publish" : "Unpublish"}
               </Button>
             )}
             <Button size="sm" variant="secondary" onClick={() => window.print()} disabled={!record}>
@@ -353,6 +387,12 @@ export default function Schedule() {
           </div>
         ) : (
           <>
+            {isDraft && (
+              <div className="rounded-xl bg-amber-500/15 border border-amber-400/40 p-3 text-xs text-amber-200 no-print">
+                <span className="font-bold">Draft — players can't see this yet.</span> These games stay hidden in Match Details,
+                and no scores can be entered, until you press <span className="font-bold">Publish</span>.
+              </div>
+            )}
             <p className="text-xs text-slate-400 no-print">
               {[record.title, record.time_label].filter(Boolean).join(" · ")}
               {record.title ? " · " : ""}
@@ -469,7 +509,7 @@ export default function Schedule() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remove the draw for {auDate(date)}?</AlertDialogTitle>
             <AlertDialogDescription>
-              The groups and pairings for this night will be taken off the Schedule. Its games stay in Results, so any that are still unscored can be entered until the Wednesday deadline.
+              The groups and pairings for this night will be removed, and its games will no longer appear in Match Details or Results. Scores already entered are kept.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -516,7 +516,8 @@ export function toRecord(draw, date, meta = {}) {
     variant: draw.poolGroups === -2 ? "unique" : "normal",
     pairing_scope: draw.poolGroups,
     courts_per_group: 2,
-    published: true,
+    // A freshly generated draw is a draft: players only see it once published.
+    published: false,
     archived: false,
     groups: draw.groups.map((g) => ({
       group: g.group,

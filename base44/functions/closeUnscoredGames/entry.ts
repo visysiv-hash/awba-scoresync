@@ -25,7 +25,7 @@ export default async function (req: Request): Promise<Response> {
     const night = wanted
       ? allNights.find((n: any) => String(n.date) === wanted)
       : [...allNights]
-          .filter((n: any) => String(n.date) <= today)
+          .filter((n: any) => String(n.date) <= today && !n.archived && n.published !== false)
           .sort((a: any, b: any) => String(b.date).localeCompare(String(a.date)))[0];
 
     if (!night?.date) {
