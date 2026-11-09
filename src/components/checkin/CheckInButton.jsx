@@ -5,6 +5,16 @@ import { MapPin, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { getCurrentMember } from "@/lib/currentMember";
 import { STADIUM, distanceMeters } from "@/lib/stadium";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const localIso = () => {
   const d = new Date();
@@ -19,6 +29,7 @@ export default function CheckInButton() {
   const [waitlisted, setWaitlisted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!member) {
@@ -78,9 +89,15 @@ export default function CheckInButton() {
         }
         const stamp = new Date().toISOString();
         try {
-          await base44.entities.Booking.update(found.booking.id, { checked_in: true, checked_in_at: stamp });
-          setFound((f) => ({ ...f, booking: { ...f.booking, checked_in: true, checked_in_at: stamp } }));
-          toast.success("You're checked in. See you on court!");
+          // The player confirms payment at the desk first, so the booking is recorded
+          // as paid with the check-in — reception no longer needs the slip.
+          await base44.entities.Booking.update(found.booking.id, {
+            checked_in: true,
+            checked_in_at: stamp,
+            paid: true,
+          });
+          setFound((f) => ({ ...f, booking: { ...f.booking, checked_in: true, checked_in_at: stamp, paid: true } }));
+          toast.success("Paid and checked in. See you on court!");
         } catch {
           toast.error("Couldn't save your check-in.");
         } finally {
@@ -131,8 +148,9 @@ export default function CheckInButton() {
   const checked = found.booking.checked_in === true;
 
   return (
+    <>
     <button
-      onClick={checked ? undefined : tap}
+      onClick={checked ? undefined : () => setConfirming(true)}
       disabled={working || checked}
       className={`w-full flex items-center gap-3 rounded-2xl p-3 text-left transition ${
         checked ? "bg-emerald-500/20 border border-emerald-500/50" : "bg-white/10 active:scale-95"
@@ -165,5 +183,26 @@ export default function CheckInButton() {
         {checked ? "Checked in" : working ? "…" : "Tap"}
       </span>
     </button>
+
+    {/* Nobody is checked in off the paper slip any more: the player confirms payment
+        at the desk, and that confirmation is what marks the booking paid. */}
+    <AlertDialog open={confirming} onOpenChange={setConfirming}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Have you paid at reception?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tonight's fee is paid at the desk before you go onto the courts. Confirming here marks
+            your booking as <span className="font-semibold">paid and checked in</span>.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => toast.error("Pay at reception — then check in here.")}>
+            Not yet
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={tap}>Yes, I've paid</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
