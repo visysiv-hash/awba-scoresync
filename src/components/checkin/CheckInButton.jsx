@@ -30,6 +30,7 @@ export default function CheckInButton() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [locationFallback, setLocationFallback] = useState(false);
 
   useEffect(() => {
     if (!member) {
@@ -73,43 +74,51 @@ export default function CheckInButton() {
     };
   }, []);
 
-  const tap = () => {
+  // Location comes first: the payment question only reaches a player who is actually here.
+  const startCheckIn = () => {
     if (!navigator.geolocation) {
-      toast.error("This device can't share a location, so check in with the desk.");
+      setLocationFallback(true);
       return;
     }
     setWorking(true);
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      (pos) => {
         const away = distanceMeters(pos.coords.latitude, pos.coords.longitude, STADIUM.lat, STADIUM.lon);
+        setWorking(false);
         if (away > STADIUM.radius_m) {
-          setWorking(false);
           toast.error(`Check-in only works at ${STADIUM.name}. You're about ${Math.round(away)} m away.`);
           return;
         }
-        const stamp = new Date().toISOString();
-        try {
-          // The player confirms payment at the desk first, so the booking is recorded
-          // as paid with the check-in — reception no longer needs the slip.
-          await base44.entities.Booking.update(found.booking.id, {
-            checked_in: true,
-            checked_in_at: stamp,
-            paid: true,
-          });
-          setFound((f) => ({ ...f, booking: { ...f.booking, checked_in: true, checked_in_at: stamp, paid: true } }));
-          toast.success("Paid and checked in. See you on court!");
-        } catch {
-          toast.error("Couldn't save your check-in.");
-        } finally {
-          setWorking(false);
-        }
+        setConfirming(true);
       },
+      // No fix from the phone (blocked, indoors, no signal): never lock the player out —
+      // they confirm they're at the stadium instead.
       () => {
         setWorking(false);
-        toast.error("No location yet. Allow location access, then tap again.");
+        setLocationFallback(true);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
+  };
+
+  // The player has confirmed payment at the desk, so the booking is recorded as paid
+  // with the check-in — reception no longer needs the paper slip.
+  const save = async () => {
+    const stamp = new Date().toISOString();
+    setWorking(true);
+    try {
+      await base44.entities.Booking.update(found.booking.id, {
+        checked_in: true,
+        checked_in_at: stamp,
+        paid: true,
+      });
+      setFound((f) => ({ ...f, booking: { ...f.booking, checked_in: true, checked_in_at: stamp, paid: true } }));
+      toast.success("Paid and checked in. See you on court!");
+    } catch {
+      toast.error("Couldn't save your check-in.");
+    } finally {
+      setWorking(false);
+    }
   };
 
   if (loading || !member) return null;
@@ -150,7 +159,7 @@ export default function CheckInButton() {
   return (
     <>
     <button
-      onClick={checked ? undefined : () => setConfirming(true)}
+      onClick={checked ? undefined : startCheckIn}
       disabled={working || checked}
       className={`w-full flex items-center gap-3 rounded-2xl p-3 text-left transition ${
         checked ? "bg-emerald-500/20 border border-emerald-500/50" : "bg-white/10 active:scale-95"
@@ -184,6 +193,32 @@ export default function CheckInButton() {
       </span>
     </button>
 
+    {/* The phone couldn't give a location, so the player vouches for being here. */}
+    <AlertDialog open={locationFallback} onOpenChange={setLocationFallback}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>We couldn't check your location</AlertDialogTitle>
+          <AlertDialogDescription>
+            Your phone wouldn't share its location, so we can't confirm you're at {STADIUM.name}.
+            Are you sure you are at {STADIUM.name} right now?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => toast.error("Check in once you're at the stadium.")}>
+            No
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              setLocationFallback(false);
+              setConfirming(true);
+            }}
+          >
+            Yes, I'm here
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
     {/* Nobody is checked in off the paper slip any more: the player confirms payment
         at the desk, and that confirmation is what marks the booking paid. */}
     <AlertDialog open={confirming} onOpenChange={setConfirming}>
@@ -199,7 +234,7 @@ export default function CheckInButton() {
           <AlertDialogCancel onClick={() => toast.error("Pay at reception — then check in here.")}>
             Not yet
           </AlertDialogCancel>
-          <AlertDialogAction onClick={tap}>Yes, I've paid</AlertDialogAction>
+          <AlertDialogAction onClick={save}>Yes, I've paid</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
