@@ -32,6 +32,7 @@ import Leaderboard from './pages/Leaderboard';
 import Dashboard from './pages/Dashboard';
 import AppRatings from './pages/AppRatings';
 import BaseGroups from './pages/BaseGroups';
+import RatingPreview from './pages/RatingPreview';
 import SeasonWrapped from './pages/SeasonWrapped';
 import AdminCheckIn from './pages/AdminCheckIn';
 import AdminRoute from './components/AdminRoute';
@@ -91,6 +92,7 @@ const AuthenticatedApp = () => {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/ratings/app" element={<AdminRoute><AppRatings /></AdminRoute>} />
           <Route path="/ratings/base-groups" element={<AdminRoute><BaseGroups /></AdminRoute>} />
+          <Route path="/ratings/preview" element={<AdminRoute><RatingPreview /></AdminRoute>} />
           <Route path="/availability" element={<PlayerAvailability />} />
           <Route path="/schedule" element={<AdminRoute><Schedule /></AdminRoute>} />
           <Route path="/player" element={<PlayerProfile />} />

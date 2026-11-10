@@ -7,7 +7,7 @@ import BaseGroupRow from "@/components/ratings/BaseGroupRow";
 import { isAdminUnlocked } from "@/lib/adminUnlock";
 import { saveBaseGroup } from "@/lib/baseGroups";
 import { lookupName } from "@/lib/nameMatch";
-import { ArrowLeft, Layers, Loader2, Search } from "lucide-react";
+import { ArrowLeft, FlaskConical, Layers, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 
 // Base groups on their own page: every rated player and every member, so a wrong
@@ -119,6 +119,13 @@ export default function BaseGroups() {
           Auto uses the group the player was first placed in. Pick a number to fix where their rating starts.
           {fixedCount > 0 && <span className="text-amber-300"> {fixedCount} adjusted.</span>}
         </p>
+
+        <Link
+          to="/ratings/preview"
+          className="flex items-center gap-2 rounded-lg bg-yellow-500/10 border border-yellow-400/30 px-3 py-2 text-[11px] font-bold text-yellow-300 hover:bg-yellow-500/20"
+        >
+          <FlaskConical className="w-4 h-4" /> Preview the proposed rating model — nothing is saved
+        </Link>
 
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
