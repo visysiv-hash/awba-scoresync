@@ -217,9 +217,11 @@ export default function AdminSponsors() {
                   </div>
                   <div className="flex gap-1 shrink-0">
                     {sponsor.website_url && (
-                      <a href={sponsor.website_url} target="_blank" rel="noreferrer">
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400"><ExternalLink className="w-4 h-4" /></Button>
-                      </a>
+                      <Button asChild size="icon" variant="ghost" className="h-7 w-7 text-slate-400">
+                        <a href={sponsor.website_url} target="_blank" rel="noreferrer" aria-label={`Open ${sponsor.name} website`}>
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </Button>
                     )}
                     <Button size="icon" variant="ghost" className={`h-7 w-7 ${sponsor.active ? "text-green-600" : "text-slate-400"}`} onClick={() => toggleActive(sponsor)}>
                       <span className="text-xs font-bold">{sponsor.active ? "ON" : "OFF"}</span>

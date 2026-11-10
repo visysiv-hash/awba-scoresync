@@ -5,18 +5,25 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (user?.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    if (!user) {
+      return Response.json({ error: 'Not signed in' }, { status: 401 });
     }
 
-    const { net, game, rounds } = await req.json();
+    // The night is sent with the edit: a net and match number repeat every week,
+    // so without the date the correction could land on another night's game.
+    const { net, game, rounds, date } = await req.json();
+    if (!Array.isArray(rounds) || !rounds.length) {
+      return Response.json({ error: 'No rounds supplied' }, { status: 400 });
+    }
+    const slot: any = { net: Number(net), game: Number(game) };
+    if (date) slot.date = String(date);
 
     // Sheet switched off: correct the app's own copy of the result.
     if (!(await sheetsEnabled(base44))) {
       const total1 = rounds.reduce((s, r) => s + Number(r.score1), 0);
       const total2 = rounds.reduce((s, r) => s + Number(r.score2), 0);
       const existing = await base44.asServiceRole.entities.MatchResult.filter(
-        { net: Number(net), game: Number(game) },
+        slot,
         { limit: 5, sort: "-created_date" }
       );
       const latest = (existing.items || [])[0];
@@ -86,7 +93,7 @@ Deno.serve(async (req) => {
     // the app ratings immediately instead of after the next import.
     try {
       const appRows = await base44.asServiceRole.entities.MatchResult.filter(
-        { net: Number(net), game: Number(game) },
+        slot,
         { limit: 5, sort: "-created_date" }
       );
       const latest = (appRows.items || [])[0];

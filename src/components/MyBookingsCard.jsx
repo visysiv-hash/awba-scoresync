@@ -96,21 +96,22 @@ export default function MyBookingsCard() {
 
   return (
     <div>
-      <button
-        onClick={() => setExpanded(prev => !prev)}
-        className="w-full flex items-center justify-between gap-2 bg-green-900/40 border border-green-500/40 rounded-lg px-3 py-2.5 hover:bg-green-900/50 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <CheckSquare className="w-4 h-4 text-green-400" />
-          <h2 className="text-sm font-bold text-white text-left">My Booked Sessions ({myUpcoming.length})</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link to="/bookings" onClick={e => e.stopPropagation()} className="text-xs text-teal-300 font-semibold hover:underline">View all</Link>
+      <div className="flex items-center gap-2 bg-green-900/40 border border-green-500/40 rounded-lg px-3 py-2.5">
+        <button
+          onClick={() => setExpanded(prev => !prev)}
+          aria-expanded={expanded}
+          className="flex-1 min-w-0 flex items-center justify-between gap-2 text-left hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center gap-2">
+            <CheckSquare className="w-4 h-4 text-green-400" />
+            <h2 className="text-sm font-bold text-white text-left">My Booked Sessions ({myUpcoming.length})</h2>
+          </div>
           {expanded
             ? <ChevronUp className="w-4 h-4 text-green-300 shrink-0" />
             : <ChevronDown className="w-4 h-4 text-green-300 shrink-0" />}
-        </div>
-      </button>
+        </button>
+        <Link to="/bookings" className="text-xs text-teal-300 font-semibold hover:underline shrink-0">View all</Link>
+      </div>
       {expanded && (
         <div className="space-y-2 mt-2">
           {myUpcoming.length === 0 ? (

@@ -17,13 +17,19 @@ export default function AdminScoreEdit() {
   const [editRounds, setEditRounds] = useState([]);
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState("");
+  const [nightDate, setNightDate] = useState("");
 
   const loadGames = async () => {
     setLoading(true);
-    const res = await base44.functions.invoke("getAllGames", {});
-    setLoading(false);
-    const scored = (res.data?.games || []).filter(g => g.scored);
-    setGames(scored);
+    try {
+      const res = await base44.functions.invoke("getAllGames", {});
+      setGames((res.data?.games || []).filter(g => g.scored));
+      setNightDate(res.data?.date || "");
+    } catch (error) {
+      toast.error(error?.message || "Couldn't load the night's scores.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { if (pinUnlocked) loadGames(); }, [pinUnlocked]);
@@ -40,18 +46,27 @@ export default function AdminScoreEdit() {
 
   const saveEdit = async (g) => {
     setSaving(true);
-    const res = await base44.functions.invoke("updateScore", {
-      net: g.net,
-      game: g.game,
-      rounds: editRounds,
-    });
-    setSaving(false);
-    if (res.data?.success) {
-      toast.success("Score updated successfully!");
-      setEditingKey(null);
-      loadGames();
-    } else {
-      toast.error(res.data?.error || "Failed to update score.");
+    try {
+      const res = await base44.functions.invoke("updateScore", {
+        net: g.net,
+        game: g.game,
+        rounds: editRounds,
+        date: nightDate,
+      });
+      if (res.data?.success) {
+        toast.success("Score updated successfully!");
+        setEditingKey(null);
+        setEditRounds([]);
+        await loadGames();
+      } else {
+        toast.error(res.data?.error || "Failed to update score.");
+      }
+    } catch (error) {
+      // A failed save must never leave the row spinning: the button frees up and
+      // the reason is shown instead.
+      toast.error(error?.response?.data?.error || error?.message || "Couldn't update the score.");
+    } finally {
+      setSaving(false);
     }
   };
 

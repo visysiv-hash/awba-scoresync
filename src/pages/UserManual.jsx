@@ -138,8 +138,8 @@ export default function UserManual() {
         {/* Header */}
         <div className="bg-slate-800 text-white px-6 py-5 rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/">
-              <button className="text-slate-300 hover:text-white"><ArrowLeft className="w-5 h-5" /></button>
+            <Link to="/" aria-label="Back to home" className="text-slate-300 hover:text-white">
+              <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
               <h1 className="text-xl font-bold">User Manual</h1>

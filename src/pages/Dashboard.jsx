@@ -34,11 +34,11 @@ export default function Dashboard() {
       <div className="max-w-3xl mx-auto">
         <PageBanner className="h-14 mb-4" />
         <div className="flex items-center gap-3 mb-6">
-          <Link to="/">
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
+          <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/10">
+            <Link to="/" aria-label="Back to home">
               <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <h1 className="text-2xl font-bold text-white">Results Dashboard</h1>
         </div>
 

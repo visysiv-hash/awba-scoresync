@@ -9,8 +9,10 @@ Deno.serve(async (req) => {
     // Sheet switched off: the night's games come from the saved draw in the app.
     if (!(await sheetsEnabled(base44))) {
       const { date: wantedDate } = await req.json().catch(() => ({} as any));
-      const { games } = await appGamesFor(base44, wantedDate);
-      return Response.json({ games });
+      const { games, date } = await appGamesFor(base44, wantedDate);
+      // The night the games belong to travels with them, so a correction is saved
+      // against that night rather than whichever week shares the same net and match.
+      return Response.json({ games, date });
     }
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
