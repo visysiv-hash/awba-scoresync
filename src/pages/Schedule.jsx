@@ -187,6 +187,29 @@ export default function Schedule() {
     }
   };
 
+  // A pair who met once too often is broken by one swap between two games of the
+  // same round — nobody gains or loses a game, and no other court moves.
+  const applyRepeatSwap = (move) => {
+    if (!record || !move) return;
+    const low = (n) => String(n || "").trim().toLowerCase();
+    const swap = (names) =>
+      (names || []).map((n) => (low(n) === low(move.a) ? move.b : low(n) === low(move.b) ? move.a : n));
+    const next = {
+      ...record,
+      matches: (record.matches || []).map((m, i) =>
+        i === move.indexA || i === move.indexB ? { ...m, team1: swap(m.team1), team2: swap(m.team2) } : m
+      ),
+    };
+    try {
+      juniorSafety.assertSafe(next);
+      setRecord(next);
+      setDirty(true);
+      toast.success(`${move.label} — press Save to keep it.`);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   // A stand-in steps in: their games are re-formed (never the whole night), and the
   // junior safety rule is re-checked before anything is accepted.
   const applyPlayerChange = (next, message) => {
@@ -465,7 +488,12 @@ export default function Schedule() {
               />
             )}
             {isAdmin && (
-              <DrawReviewCard record={record} ratings={ratings} onApplySplit={applySplit} />
+              <DrawReviewCard
+                record={record}
+                ratings={ratings}
+                onApplySplit={applySplit}
+                onApplySwap={applyRepeatSwap}
+              />
             )}
             {isAdmin && (
               <NetAssignmentRow

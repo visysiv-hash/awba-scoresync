@@ -4,6 +4,18 @@ import { AlertTriangle, ArrowRight, CheckCircle2, ScanSearch, Wand2 } from "luci
 import { pairAverage } from "@/lib/appRatingMap";
 import { reviewDraw, WIDE_GAP } from "@/lib/drawReview";
 
+const at = (w) => `Net ${w.net} Game ${w.game}`;
+
+const whereText = (item) => {
+  const bits = [];
+  if (item.partnerAt.length) bits.push(`partners in ${item.partnerAt.map(at).join(", ")}`);
+  if (item.opponentAt.length) bits.push(`opponents in ${item.opponentAt.map(at).join(", ")}`);
+  return bits.join(" · ");
+};
+
+const repeatTag = (item) =>
+  item.partnerAt.length > 1 ? "Partners twice" : item.opponentAt.length > 1 ? "Opponents twice" : "Both ways";
+
 const teamText = (team, ratings) => {
   const avg = pairAverage(team, ratings);
   return {
@@ -28,7 +40,7 @@ function Split({ team1, team2, ratings }) {
 
 // A second pair of eyes on the schedule that is already on screen: which games are
 // lopsided, and which of them can be split closer with the same four players.
-export default function DrawReviewCard({ record, ratings = {}, onApplySplit }) {
+export default function DrawReviewCard({ record, ratings = {}, onApplySplit, onApplySwap }) {
   const [open, setOpen] = useState(false);
   const review = useMemo(() => (open ? reviewDraw(record, ratings) : null), [open, record, ratings]);
 
@@ -44,7 +56,7 @@ export default function DrawReviewCard({ record, ratings = {}, onApplySplit }) {
           <div>
             <p className="text-sm font-bold text-white">Review this draw</p>
             <p className="text-[11px] text-slate-400">
-              Check the games on screen for lopsided pairs, repeats and short nights
+              Check the games on screen for lopsided pairs and pairs who meet again
             </p>
           </div>
         </div>
@@ -133,6 +145,51 @@ export default function DrawReviewCard({ record, ratings = {}, onApplySplit }) {
               )}
             </div>
           ))}
+
+          {review.repeatItems.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Pairs who meet again
+              </p>
+              {review.repeatItems.map((item) => (
+                <div
+                  key={item.key}
+                  className="rounded-lg border border-slate-700 bg-slate-900/60 p-2.5 space-y-1"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-white">
+                      {item.a} &amp; {item.b}
+                    </p>
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-widest ${
+                        item.partnerAt.length > 1 ? "text-red-300" : "text-amber-300"
+                      }`}
+                    >
+                      {repeatTag(item)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">{whereText(item)}</p>
+                  {item.fix ? (
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <p className="text-[11px] text-emerald-300">{item.fix.label}</p>
+                      <Button
+                        size="sm"
+                        onClick={() => onApplySwap?.(item.fix)}
+                        className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold shrink-0"
+                      >
+                        Fix it <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 inline-flex items-start gap-1">
+                      <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
+                      No single swap breaks this without unbalancing a game — re-pair the night for a fresh set.
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {repeats && (
             <p className="text-[11px] text-slate-400">
