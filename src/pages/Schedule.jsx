@@ -15,6 +15,7 @@ import SpreadsheetModeCard from "@/components/admin/SpreadsheetModeCard";
 import PlayerCourts from "@/components/schedule/PlayerCourts";
 import GameSwapSelector from "@/components/schedule/GameSwapSelector";
 import UniqueGamesStatus from "@/components/schedule/UniqueGamesStatus";
+import DrawReviewCard from "@/components/schedule/DrawReviewCard";
 import { scheduleUniqueness, uniquenessMessage } from "@/lib/scheduleUniqueness";
 import {
   AlertDialog,
@@ -162,6 +163,28 @@ export default function Schedule() {
       toast.error(error.message);
     }
     setPending(null);
+  };
+
+  // The review card offers a closer split for one game. Only that game's two teams
+  // change, so the rest of the night is left exactly as the admin arranged it.
+  const applySplit = (row) => {
+    if (!record || !row?.better) return;
+    const next = {
+      ...record,
+      matches: (record.matches || []).map((m) =>
+        Number(m.net) === Number(row.net) && Number(m.game) === Number(row.game)
+          ? { ...m, team1: row.better.team1, team2: row.better.team2 }
+          : m
+      ),
+    };
+    try {
+      juniorSafety.assertSafe(next);
+      setRecord(next);
+      setDirty(true);
+      toast.success(`Game ${row.game} on Net ${row.net} split closer — press Save to keep it.`);
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
 
   // A stand-in steps in: their games are re-formed (never the whole night), and the
@@ -440,6 +463,9 @@ export default function Schedule() {
                 onSwapMode={changeSwapMode}
                 onReplacePlayer={() => setShowReplace(true)}
               />
+            )}
+            {isAdmin && (
+              <DrawReviewCard record={record} ratings={ratings} onApplySplit={applySplit} />
             )}
             {isAdmin && (
               <NetAssignmentRow
