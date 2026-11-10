@@ -1,6 +1,10 @@
 // Exact-cover search: every active player has one slot per round. Constraints
 // apply across the whole night, including partner-to-opponent encounters.
-export function searchUniqueRounds(count, candidates, sizes, policy, budget = 12000) {
+// The node budget is the real limit on how hard the search tries: a bigger night
+// needs more of it to find a fully unique set of games, while the deadline stops it
+// from ever running away. Without the room, a big roster was abandoning the search
+// early and coming back with repeats, or with no draw at all.
+export function searchUniqueRounds(count, candidates, sizes, policy, budget = 40000) {
   const seen = { meetings: new Uint8Array(count * count), partners: new Uint8Array(count * count), opponents: new Uint8Array(count * count) };
   const byPlayer = Array.from({ length: count }, () => []);
   for (const match of candidates) {

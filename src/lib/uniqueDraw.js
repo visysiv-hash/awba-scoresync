@@ -60,6 +60,17 @@ export function buildUniqueDraw(groups) {
     return cache.get(distance);
   };
 
+  // How many times a pair of players is repeated inside a found draw.
+  const repeats = (found, field) => {
+    const seen = new Set();
+    let count = 0;
+    for (const game of found) for (const match of game) for (const key of match[field]) {
+      if (seen.has(key)) count++;
+      else seen.add(key);
+    }
+    return count;
+  };
+
   let rounds = null;
   let policy = "meetings";
   // A quartet cannot meet four fresh people in a later round when the whole pool
@@ -71,10 +82,16 @@ export function buildUniqueDraw(groups) {
     for (let distance = 0; distance < Math.max(1, groups.length); distance++) {
       if (rule === "meetings" && distance === 0 && groups.some((g) => g.players.length === 8)) continue;
       const candidates = candidatesAt(distance);
-      rounds = searchUniqueRounds(players.length, candidates, sizes, rule);
-      if (!rounds) continue;
+      const found = searchUniqueRounds(players.length, candidates, sizes, rule);
+      if (!found) continue;
+      // A draw only counts when it meets the rule it was searched under; a roster
+      // that makes that impossible moves the search on to the next rule instead of
+      // failing outright, so the admin always ends up with a night to play.
+      const balanced = balanceUniqueRounds(found, candidates, rule);
+      if (rule === "meetings" && repeats(balanced, "meetings")) continue;
+      if (rule === "roles" && (repeats(balanced, "partners") || repeats(balanced, "opponents"))) continue;
+      rounds = balanced;
       policy = rule;
-      rounds = balanceUniqueRounds(rounds, candidates, rule);
       break;
     }
     if (rounds) break;
@@ -123,8 +140,14 @@ export function buildUniqueDraw(groups) {
     groups: out.map((g) => ({ players: g.players.map((p) => p.name) })),
     matches: flat,
   });
+  // The night always comes back with a draw. If the games as displayed don't hold
+  // the rule they were searched under they are reported as a fallback draw, so the
+  // schedule is shown with an honest note instead of failing with nothing to play.
   if ((policy === "meetings" && info.meetings) || (policy === "roles" && (info.partners || info.opponents))) {
-    throw new Error("The draw failed its uniqueness check.");
+    policy = "relaxed";
+    for (const group of out) {
+      for (const game of group.games) game.label = `Game ${game.game} · fallback draw`;
+    }
   }
   return { totalPlayers: players.length, poolGroups: -2, groups: out, uniqueInfo: info };
 }
