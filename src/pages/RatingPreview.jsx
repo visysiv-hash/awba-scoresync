@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import PageBanner from "@/components/PageBanner";
@@ -9,7 +9,9 @@ import NightPicker from "@/components/ratings/NightPicker";
 import { buildBands, blocksFor, spotsFor, groupMismatches, levelLadder, BLOCK_SIZE, VENUES } from "@/lib/ratingBands";
 import { lookupName } from "@/lib/nameMatch";
 import { todayIso } from "@/lib/nightDraw";
+import { saveBaseGroup } from "@/lib/baseGroups";
 import { ArrowLeft, FlaskConical, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 // A dry run of the rating model on a real night. Blocks are built only from the
 // players who booked that night — the rest of the roster is not playing, so they
@@ -21,18 +23,20 @@ export default function RatingPreview() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingNight, setLoadingNight] = useState(false);
+  const [applying, setApplying] = useState(false);
+
+  const loadRatings = useCallback(
+    () =>
+      base44.functions
+        .invoke("getAppRatings", {})
+        .then((res) => setPlayers((res.data || {}).players || []))
+        .catch(() => {}),
+    []
+  );
 
   useEffect(() => {
     let alive = true;
-    base44.functions
-      .invoke("getAppRatings", {})
-      .then((res) => {
-        if (!alive) return;
-        const data = res.data || {};
-        setPlayers(data.players || []);
-      })
-      .catch(() => alive && setPlayers([]))
-      .finally(() => alive && setLoading(false));
+    loadRatings().finally(() => alive && setLoading(false));
 
     base44.entities.Session.list({ sort: "date", limit: 60 })
       .then((page) => {
@@ -91,6 +95,24 @@ export default function RatingPreview() {
   const bands = useMemo(() => buildBands(bookedPlayers), [bookedPlayers]);
   const ladder = useMemo(() => levelLadder(players), [players]);
   const mismatches = useMemo(() => groupMismatches(players), [players]);
+
+  // Only the ticked players move, and only when you press the button. Their stored
+  // results are untouched — the group their rating starts from is what changes.
+  const applyMoves = async (moves) => {
+    if (!moves.length) return;
+    setApplying(true);
+    try {
+      for (const move of moves) await saveBaseGroup(move.player, move.to);
+      toast.success(
+        `Moved ${moves.length} player${moves.length === 1 ? "" : "s"} to their results group`
+      );
+      await loadRatings();
+    } catch {
+      toast.error("Could not save those groups — nothing was changed. Try again.");
+    } finally {
+      setApplying(false);
+    }
+  };
 
   // A block of eight is two nets. Everyone booked plays while there is a net for
   // them; only an over-capacity night leaves players resting. A short trailing
@@ -197,7 +219,7 @@ export default function RatingPreview() {
                 (every rated player — where their own games say they belong)
               </span>
             </h2>
-            <GroupMismatchList rows={mismatches} />
+            <GroupMismatchList rows={mismatches} onApply={applyMoves} applying={applying} />
 
             <h2 className="text-xs font-bold text-slate-300 pt-1">
               Levels from results only{" "}
