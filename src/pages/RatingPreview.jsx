@@ -4,9 +4,9 @@ import { base44 } from "@/api/base44Client";
 import PageBanner from "@/components/PageBanner";
 import BandBlockCard from "@/components/ratings/BandBlockCard";
 import RatingAnchorList from "@/components/ratings/RatingAnchorList";
-import BaseGroupCheckList from "@/components/ratings/BaseGroupCheckList";
+import LevelLadder from "@/components/ratings/LevelLadder";
 import NightPicker from "@/components/ratings/NightPicker";
-import { buildBands, blocksFor, spotsFor, anchorChanges, baseGroupChecks, BLOCK_SIZE, VENUES } from "@/lib/ratingBands";
+import { buildBands, blocksFor, spotsFor, anchorChanges, levelLadder, BLOCK_SIZE, VENUES } from "@/lib/ratingBands";
 import { lookupName } from "@/lib/nameMatch";
 import { todayIso } from "@/lib/nightDraw";
 import { ArrowLeft, FlaskConical, Loader2 } from "lucide-react";
@@ -16,7 +16,6 @@ import { ArrowLeft, FlaskConical, Loader2 } from "lucide-react";
 // are not in a block. Nothing here is saved.
 export default function RatingPreview() {
   const [players, setPlayers] = useState([]);
-  const [manualGroups, setManualGroups] = useState({});
   const [sessions, setSessions] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [bookings, setBookings] = useState([]);
@@ -31,7 +30,6 @@ export default function RatingPreview() {
         if (!alive) return;
         const data = res.data || {};
         setPlayers(data.players || []);
-        setManualGroups(data.baseGroups || {});
       })
       .catch(() => alive && setPlayers([]))
       .finally(() => alive && setLoading(false));
@@ -92,7 +90,7 @@ export default function RatingPreview() {
 
   const bands = useMemo(() => buildBands(bookedPlayers), [bookedPlayers]);
   const anchors = useMemo(() => anchorChanges(bookedPlayers), [bookedPlayers]);
-  const checks = useMemo(() => baseGroupChecks(players, manualGroups), [players, manualGroups]);
+  const ladder = useMemo(() => levelLadder(players), [players]);
 
   // A block of eight is two nets. Everyone booked plays while there is a net for
   // them; only an over-capacity night leaves players resting. A short trailing
@@ -194,12 +192,12 @@ export default function RatingPreview() {
             )}
 
             <h2 className="text-xs font-bold text-slate-300 pt-1">
-              Starting groups checked against history{" "}
+              Levels from results only{" "}
               <span className="text-slate-500 font-normal">
-                (every rated player — by hand or auto)
+                ({ladder.length} players — no starting group used, ranked by the rating their games produced)
               </span>
             </h2>
-            <BaseGroupCheckList rows={checks} />
+            <LevelLadder rows={ladder} />
 
             <h2 className="text-xs font-bold text-slate-300 pt-1">
               Half-step anchors <span className="text-slate-500 font-normal">(booked players, {anchors.length} would move)</span>

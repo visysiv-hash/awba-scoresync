@@ -80,75 +80,30 @@ export function anchorChanges(players) {
     .sort((a, b) => Math.abs(b.shift) - Math.abs(a.shift));
 }
 
-// The group level a player has actually been playing in, weighted by the games
-// they played at that level — their real test, not the anchor they started from.
-export function playedLevel(rounds) {
-  const list = rounds || [];
-  const games = list.reduce((s, r) => s + (Number(r.gp) || 0), 0);
-  if (!games) return null;
-  const sum = list.reduce((s, r) => s + (Number(r.blendedBase) || 0) * (Number(r.gp) || 0), 0);
-  return parseFloat((sum / games).toFixed(2));
-}
+// The level each player's own results have settled them at — the rolling rating,
+// which started wherever they were placed and has moved game by game since. Their
+// starting group is shown only as the place they left from, never as the answer,
+// so two players are judged against each other on results alone.
+export function levelLadder(players) {
+  const rows = (players || [])
+    .filter((p) => Number.isFinite(Number(p.rating)) && (Number(p.gp) || 0) > 0)
+    .map((p) => {
+      const rating = parseFloat(Number(p.rating).toFixed(2));
+      const start = p.baseGroup == null ? null : Number(p.baseGroup);
+      const games = Number(p.gp) || 0;
+      return {
+        player: p.player,
+        rating,
+        start,
+        drift: start == null ? null : parseFloat((rating - start).toFixed(2)),
+        games,
+        margin: games ? parseFloat((Number(p.diff) / games).toFixed(1)) : null,
+      };
+    })
+    .sort((a, b) => a.rating - b.rating);
 
-// A second opinion on every player's starting group — the one set by hand, or the
-// one the ratings fall back to — measured against the level they have really been
-// playing at and their points margin there, so a wrong starting group shows up
-// from their own results rather than from the anchor itself.
-export function baseGroupChecks(players, baseGroups) {
-  const manual = {};
-  for (const [key, value] of Object.entries(baseGroups || {})) {
-    const n = Number(value);
-    if (Number.isFinite(n)) manual[String(key).trim().toLowerCase()] = n;
-  }
-
-  const rows = [];
-  for (const player of players || []) {
-    if (!Number.isFinite(Number(player.rating))) continue;
-    const key = String(player.player || "").trim().toLowerCase();
-    const byHand = manual[key];
-    const isManual = Number.isFinite(byHand);
-    const auto = player.baseGroup == null ? null : Number(player.baseGroup);
-    const base = isManual ? byHand : auto;
-    const level = playedLevel(player.rounds);
-    const games = Number(player.gp) || 0;
-    const margin = games ? parseFloat((Number(player.diff) / games).toFixed(1)) : null;
-
-    let verdict = base == null ? "No starting group yet" : "Too few games to judge yet";
-    let tone = "gray";
-    if (base != null && games >= 9 && level != null) {
-      const off = parseFloat((level - base).toFixed(2));
-      if (off >= 1) {
-        verdict = `Playing around group ${Math.round(level)} — base looks a group low`;
-        tone = "yellow";
-      } else if (off <= -1) {
-        verdict = `Playing around group ${Math.round(level)} — base looks a group high`;
-        tone = "yellow";
-      } else if (margin != null && margin >= 4) {
-        verdict = "Winning at this level — may belong one group higher";
-        tone = "yellow";
-      } else if (margin != null && margin <= -4) {
-        verdict = "Being beaten at this level — may belong one group lower";
-        tone = "yellow";
-      } else {
-        verdict = "History backs this base";
-        tone = "green";
-      }
-    }
-
-    rows.push({
-      player: player.player,
-      base,
-      manual: isManual,
-      rating: parseFloat(Number(player.rating).toFixed(2)),
-      level,
-      margin,
-      games,
-      verdict,
-      tone,
-      off: level == null || base == null ? 0 : Math.abs(level - base),
-    });
-  }
-
-  const order = { yellow: 0, gray: 1, green: 2 };
-  return rows.sort((a, b) => order[a.tone] - order[b.tone] || b.off - a.off);
+  return rows.map((row, i) => ({
+    ...row,
+    gap: i + 1 < rows.length ? parseFloat((rows[i + 1].rating - row.rating).toFixed(2)) : null,
+  }));
 }
