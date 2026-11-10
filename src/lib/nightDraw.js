@@ -8,7 +8,6 @@ import { buildGroups, groupAverage, groupFromLists } from "./drawGenerator";
 import { teamAvg } from "./teamRating";
 import { poolGames, poolRound } from "./poolDraw";
 import { keepApartDraw, bannedTogether } from "./neverPair";
-import { buildCrossoverPair } from "./crossover";
 import { buildUniqueDraw } from "@/lib/uniqueDraw";
 import { juniorMatchAllowed, assertJuniorDraw } from "@/lib/juniorSafety";
 import { juniorPreferenceCost } from "@/lib/juniorPreference";
@@ -322,36 +321,16 @@ const insideNight = (players) => {
   return games.map((game) => game.matches || []);
 };
 
-// Cross-group night: one round meets another group, the rest are played inside the
-// group. Game 2 meets the group two levels away (a crossover); Game 3 meets the
-// group four levels away, so the strongest group plays the newest players and every
-// beginner gets a stronger partner.
+// Cross-group night: two rounds are played inside the group and one meets a group
+// further down the ratings. Both groups' players are pooled for that round, so every
+// team holds one player from each group and the games stay even — a pair from a
+// stronger group playing a pair from a weaker one can never be a close game.
 function mixDraw(groups, list, crossGame, distance) {
   const courts = groups.map((_, i) => [i * 2 + 1, i * 2 + 2]);
   const inside = groups.map((g) => insideNight(g.players));
   const pairs = levelPartners(groups.length, distance);
   const hostOf = new Map(pairs);
   const guestOf = new Map(pairs.map(([i, j]) => [j, i]));
-
-  // Two full groups get the freshest night the arithmetic allows: the inside rounds
-  // that repeat the fewest faces, then a cross game built only from pairs nobody in
-  // the group has met yet.
-  const planned = new Map();
-  for (const [i, j] of pairs) {
-    const a = groups[i].players;
-    const b = groups[j].players;
-    if (a.length !== 8 || b.length !== 8) continue;
-    const bottom = new Set([...a.slice(-4), ...b.slice(-4)].map((p) => String(p.name).toLowerCase()));
-    const plan = buildCrossoverPair(a, b, bottom);
-    if (!plan) continue;
-    // The planner works in {A, B} teams; the night uses {teamA, teamB}.
-    const norm = (round) => round.map((m) => ({ teamA: m.A, teamB: m.B }));
-    const aRounds = plan.aRounds.map(norm);
-    const bRounds = plan.bRounds.map(norm);
-    planned.set(i, { guest: j, aRounds, bRounds, cross: norm(plan.cross) });
-    inside[i] = aRounds;
-    inside[j] = bRounds;
-  }
 
   // Partners and opponents already used in the inside games, so the cross game never
   // repeats them or plays anyone a third time.
@@ -364,16 +343,9 @@ function mixDraw(groups, list, crossGame, distance) {
 
   const cross = new Map();
   for (const [i, j] of pairs) {
-    const nets = [...courts[i], ...courts[j]];
-    if (planned.has(i)) {
-      cross.set(
-        i,
-        planned.get(i).cross.map((m, mi) => ({ ...m, net: nets[mi % nets.length] }))
-      );
-      continue;
-    }
     const a = groups[i].players;
     const b = groups[j].players;
+    const nets = [...courts[i], ...courts[j]];
     const bottom = new Set([...a.slice(-4), ...b.slice(-4)].map((p) => p.name));
     cross.set(
       i,
@@ -390,7 +362,7 @@ function mixDraw(groups, list, crossGame, distance) {
       if (n === crossGame && hostOf.has(i)) {
         games.push({
           game: n,
-          label: `Game ${n} · vs Group ${groups[hostOf.get(i)].groupNum}`,
+          label: `Game ${n} · with Group ${groups[hostOf.get(i)].groupNum}`,
           matches: cross.get(i) || [],
         });
       } else if (n === crossGame && guestOf.has(i)) {
@@ -445,8 +417,9 @@ function buildDraw(players, options = {}) {
   const requested = options.poolGroups === undefined ? 0 : Number(options.poolGroups);
   const poolGroups = Number.isFinite(requested) ? requested : 0;
 
-  // 0 = crossover (Game 2 two levels apart), -1 = help beginners (Game 3 four levels
-  // apart), 1 = each group on its own, RANDOM_SCOPE = the whole night in one pool.
+  // 0 = two games in the group and Game 2 with a group two levels below, -1 = two games
+  // in the group and Game 3 with a group four levels below, 1 = each group on its own,
+  // RANDOM_SCOPE = the whole night in one pool.
   if (groups.length > 1) {
     if (poolGroups >= RANDOM_SCOPE) return randomDraw(groups, list);
     if (poolGroups === 0) return mixDraw(groups, list, 2, 2);

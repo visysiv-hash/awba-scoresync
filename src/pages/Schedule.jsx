@@ -204,9 +204,9 @@ export default function Schedule() {
           : value >= RANDOM_SCOPE
           ? "Re-paired: anyone can partner anyone across the whole night, every game still balanced."
           : value === 0
-          ? "Re-paired: Games 1 and 3 in group, Game 2 two levels apart."
+          ? "Re-paired: Games 1 and 3 in the group, Game 2 with a group two levels down."
           : value === -1
-          ? "Re-paired: Game 3 four levels apart to help beginners."
+          ? "Re-paired: Games 1 and 2 in the group, Game 3 with a group four levels down."
           : "Re-paired within each group — your group list is kept."
       );
     } catch (error) {

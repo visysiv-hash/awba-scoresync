@@ -62,9 +62,9 @@ export default function AppDrawView({ draw }) {
           {draw.poolGroups === -2
             ? " Unique games · automatic group range"
             : draw.poolGroups === 0
-            ? " Game 2 two levels apart"
+            ? " 2 in group + 1 lower"
             : draw.poolGroups === -1
-            ? " Game 3 four levels apart"
+            ? " 2 in group + 1 much lower"
             : " paired within each group"}
         </p>
         <Button size="sm" variant="secondary" onClick={() => window.print()}>

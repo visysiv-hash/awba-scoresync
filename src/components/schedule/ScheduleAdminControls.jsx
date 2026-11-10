@@ -5,8 +5,8 @@ import { RANDOM_SCOPE } from "@/lib/nightDraw";
 // dropdown straight away.
 const SCOPES = [
   { value: -2, label: "Unique games" },
-  { value: 0, label: "Crossover" },
-  { value: -1, label: "Help beginners" },
+  { value: 0, label: "2 in group + 1 lower" },
+  { value: -1, label: "2 in group + 1 much lower" },
   { value: 1, label: "Each group" },
   { value: RANDOM_SCOPE, label: "Random games (balanced)" },
 ];
