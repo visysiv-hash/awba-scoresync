@@ -33,7 +33,7 @@ const PLANS = {
 
 // Tries every line-up for the round and keeps the one with the fewest repeated
 // partners and opponents, then the closest team ratings.
-function bestAssignment(playing, plan, seen) {
+function bestAssignment(playing, plan, seen, strict) {
   const slots = [];
   plan.forEach(([a, b], mi) => {
     for (let i = 0; i < a; i++) slots.push([mi, "A"]);
@@ -67,7 +67,9 @@ function bestAssignment(playing, plan, seen) {
       for (let i = 0; i < all.length; i++) {
         for (let j = i + 1; j < all.length; j++) {
           if (bannedTogether(all[i].name, all[j].name)) c += NEVER_PAIR;
-          if (meetCount(seen, all[i].name, all[j].name) >= 2) c += 400;
+          const met = meetCount(seen, all[i].name, all[j].name);
+          if (met >= 2) c += strict ? REPEAT_MEET * 2 : 400;
+          else if (strict && met === 1) c += REPEAT_MEET;
         }
       }
       const a = teamAvg(t.A);
@@ -135,14 +137,21 @@ const meetCount = (seen, a, b) => (seen.meets ? seen.meets.get(key(a, b)) || 0 :
 // A pairing the night must never make, priced out of reach instead of special-cased.
 const NEVER_PAIR = 1e6;
 
-function roundCost(matches, seen) {
+// "Two in the group and one lower" asks for a clean night: nobody partners or faces
+// the same player twice. A repeat is priced above any rating gap, so the search only
+// accepts one when no line-up can avoid it.
+const REPEAT_MEET = 1e5;
+
+function roundCost(matches, seen, strict) {
   let c = 0;
   for (const m of matches) {
     const all = [...m.A, ...m.B];
     for (let i = 0; i < all.length; i++) {
       for (let j = i + 1; j < all.length; j++) {
         if (bannedTogether(all[i].name, all[j].name)) c += NEVER_PAIR;
-        if (meetCount(seen, all[i].name, all[j].name) >= 2) c += THIRD_MEETING;
+        const met = meetCount(seen, all[i].name, all[j].name);
+        if (met >= 2) c += strict ? REPEAT_MEET * 2 : THIRD_MEETING;
+        else if (met === 1 && strict) c += REPEAT_MEET;
       }
     }
     for (const team of [m.A, m.B]) {
@@ -198,12 +207,12 @@ function nightLineUps(players) {
 
 // The three rounds are chosen together: the best openings are chased to the end, so
 // round two never eats the options round three needs to stay balanced.
-function fullGroupGames(players) {
+function fullGroupGames(players, strict) {
   const lineUps = nightLineUps(players);
   const none = { partners: new Set(), opponents: new Set(), meets: new Map() };
   const ranked = (seen) =>
     lineUps
-      .map((matches) => ({ matches, cost: roundCost(matches, seen) }))
+      .map((matches) => ({ matches, cost: roundCost(matches, seen, strict) }))
       .sort((a, b) => a.cost - b.cost);
 
   let best = null;
@@ -223,7 +232,7 @@ function fullGroupGames(players) {
   }));
 }
 
-function shortGroupGames(players) {
+function shortGroupGames(players, strict) {
   const plan = PLANS[players.length] || [];
   const seen = { partners: new Set(), opponents: new Set(), meets: new Map() };
   const rests = {};
@@ -239,7 +248,7 @@ function shortGroupGames(players) {
     const playing = byRest.slice(0, slots);
     for (const p of players) if (!playing.includes(p)) rests[p.name] = (rests[p.name] || 0) + 1;
 
-    const teams = bestAssignment(playing, plan, seen);
+    const teams = bestAssignment(playing, plan, seen, strict);
     if (!teams) {
       games.push([]);
       continue;
@@ -313,11 +322,11 @@ function levelPartners(count, distance) {
   return pairs;
 }
 
-const insideNight = (players) => {
+const insideNight = (players, strict) => {
   const games =
     players.length === 8
-      ? fullGroupGames(players)
-      : shortGroupGames(players).map((matches, gi) => ({ game: gi + 1, matches }));
+      ? fullGroupGames(players, strict)
+      : shortGroupGames(players, strict).map((matches, gi) => ({ game: gi + 1, matches }));
   return games.map((game) => game.matches || []);
 };
 
@@ -327,7 +336,9 @@ const insideNight = (players) => {
 // stronger group playing a pair from a weaker one can never be a close game.
 function mixDraw(groups, list, crossGame, distance) {
   const courts = groups.map((_, i) => [i * 2 + 1, i * 2 + 2]);
-  const inside = groups.map((g) => insideNight(g.players));
+  // A fresh face every game: both inside rounds and the meeting with the lower group
+  // avoid everyone already partnered or faced tonight.
+  const inside = groups.map((g) => insideNight(g.players, true));
   const pairs = levelPartners(groups.length, distance);
   const hostOf = new Map(pairs);
   const guestOf = new Map(pairs.map(([i, j]) => [j, i]));
@@ -349,7 +360,7 @@ function mixDraw(groups, list, crossGame, distance) {
     const bottom = new Set([...a.slice(-4), ...b.slice(-4)].map((p) => p.name));
     cross.set(
       i,
-      poolRound([...a, ...b], seen, bottom).map((m, mi) => ({ ...m, net: nets[mi % nets.length] }))
+      poolRound([...a, ...b], seen, bottom, true).map((m, mi) => ({ ...m, net: nets[mi % nets.length] }))
     );
   }
 

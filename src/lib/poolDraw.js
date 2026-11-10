@@ -25,6 +25,10 @@ const OPPONENT_REPEAT = 5;
 // life in a group of eight, a third one is what this prices out.
 const THIRD_MEETING = 120;
 
+// Strict nights (two games in the group, one against a lower group) want a new face in
+// every game, so any second meeting outranks every balance difference.
+const REPEAT_MEET = 1e5;
+
 const meetCount = (seen, a, b) => (seen.meets ? seen.meets.get(key(a, b)) || 0 : 0);
 
 const slotRef = (match, idx) => (idx < 2 ? [match.A, idx] : [match.B, idx - 2]);
@@ -33,13 +37,15 @@ const slotRef = (match, idx) => (idx < 2 ? [match.A, idx] : [match.B, idx - 2]);
 // out of reach instead of special-cased, so the search simply never lands on it.
 const FORBIDDEN_PAIR = 1e6;
 
-function matchCost(match, seen, blocked) {
+function matchCost(match, seen, blocked, strict) {
   let c = 0;
   const all = [...match.A, ...match.B];
   for (let i = 0; i < all.length; i++) {
     for (let j = i + 1; j < all.length; j++) {
       if (bannedTogether(all[i].name, all[j].name)) c += FORBIDDEN_PAIR;
-      if (meetCount(seen, all[i].name, all[j].name) >= 2) c += THIRD_MEETING;
+      const met = meetCount(seen, all[i].name, all[j].name);
+      if (met >= 2) c += strict ? REPEAT_MEET * 2 : THIRD_MEETING;
+      else if (met === 1 && strict) c += REPEAT_MEET;
     }
   }
   for (const team of [match.A, match.B]) {
@@ -60,7 +66,8 @@ function matchCost(match, seen, blocked) {
   return c;
 }
 
-const totalCost = (matches, seen) => matches.reduce((s, m) => s + matchCost(m, seen), 0);
+const totalCost = (matches, seen, strict) =>
+  matches.reduce((s, m) => s + matchCost(m, seen, undefined, strict), 0);
 
 // Three deterministic starting line-ups: strongest with weakest, neighbours
 // together, and top half with bottom half. The best of the three is then nudged
@@ -86,8 +93,8 @@ function startLineUp(sorted, mode) {
   return matches;
 }
 
-function improve(matches, seen, blocked) {
-  const cost = matches.map((m) => matchCost(m, seen, blocked));
+function improve(matches, seen, blocked, strict) {
+  const cost = matches.map((m) => matchCost(m, seen, blocked, strict));
   let changed = true;
   let guard = 0;
 
@@ -106,12 +113,12 @@ function improve(matches, seen, blocked) {
             const held = t1[i1];
             t1[i1] = t2[i2];
             t2[i2] = held;
-            const nextI = matchCost(matches[i], seen, blocked);
-            const after = i === j ? nextI : nextI + matchCost(matches[j], seen, blocked);
+            const nextI = matchCost(matches[i], seen, blocked, strict);
+            const after = i === j ? nextI : nextI + matchCost(matches[j], seen, blocked, strict);
 
             if (after < before - 1e-9) {
               cost[i] = nextI;
-              if (i !== j) cost[j] = matchCost(matches[j], seen, blocked);
+              if (i !== j) cost[j] = matchCost(matches[j], seen, blocked, strict);
               changed = true;
             } else {
               t2[i2] = t1[i1];
@@ -126,7 +133,21 @@ function improve(matches, seen, blocked) {
   return { matches, cost: cost.reduce((s, c) => s + c, 0) };
 }
 
-function buildRound(playing, seen, blocked) {
+// How many of the pairs in this round have already met earlier in the night.
+function repeatPairs(matches, seen) {
+  let n = 0;
+  for (const m of matches) {
+    const all = [...m.A, ...m.B];
+    for (let i = 0; i < all.length; i++) {
+      for (let j = i + 1; j < all.length; j++) {
+        if (meetCount(seen, all[i].name, all[j].name) >= 1) n++;
+      }
+    }
+  }
+  return n;
+}
+
+function buildRound(playing, seen, blocked, strict) {
   const sorted = [...playing].sort((a, b) => {
     const ra = a.rating ?? Infinity;
     const rb = b.rating ?? Infinity;
@@ -136,8 +157,21 @@ function buildRound(playing, seen, blocked) {
 
   let best = null;
   for (const mode of ["extremes", "adjacent", "halves"]) {
-    const trial = improve(startLineUp(sorted, mode), seen, blocked);
+    const trial = improve(startLineUp(sorted, mode), seen, blocked, strict);
     if (!best || trial.cost < best.cost) best = trial;
+  }
+
+  // A new face in every game is a rule of its own on strict nights, so while anyone is
+  // still met twice the round is rebuilt from shuffled line-ups.
+  for (let attempt = 0; strict && best && repeatPairs(best.matches, seen) > 0 && attempt < 30; attempt++) {
+    const shuffled = [...sorted];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = (i * 7 + attempt * 13 + 5) % (i + 1);
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const modes = ["extremes", "adjacent", "halves"];
+    const trial = improve(startLineUp(shuffled, modes[attempt % modes.length]), seen, blocked, strict);
+    if (trial.cost < best.cost) best = trial;
   }
   return best.matches;
 }
@@ -199,11 +233,11 @@ const rated = (a, b) => {
 // One balanced round over any set of players — used when two groups meet for a
 // single game. `blocked` names the players who must never end up as partners, which
 // keeps the bottom four of a group apart. Leftovers rest, weakest first.
-export function poolRound(players, seen, blocked) {
+export function poolRound(players, seen, blocked, strict) {
   const pool = players || [];
   const perRound = Math.floor(pool.length / 4) * 4;
   if (perRound < 4) return [];
 
   const playing = [...pool].sort(rated).slice(0, perRound);
-  return buildRound(playing, seen, blocked).map((m) => ({ teamA: m.A, teamB: m.B }));
+  return buildRound(playing, seen, blocked, strict).map((m) => ({ teamA: m.A, teamB: m.B }));
 }
