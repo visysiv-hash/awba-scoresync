@@ -90,25 +90,32 @@ export function playedLevel(rounds) {
   return parseFloat((sum / games).toFixed(2));
 }
 
-// A second opinion on every base group set by hand: the level the player has
-// really been playing at and their points margin there, so a wrong starting
-// group shows up from their own results rather than from the anchor itself.
+// A second opinion on every player's starting group — the one set by hand, or the
+// one the ratings fall back to — measured against the level they have really been
+// playing at and their points margin there, so a wrong starting group shows up
+// from their own results rather than from the anchor itself.
 export function baseGroupChecks(players, baseGroups) {
-  const byName = {};
-  for (const p of players || []) byName[String(p.player || "").trim().toLowerCase()] = p;
+  const manual = {};
+  for (const [key, value] of Object.entries(baseGroups || {})) {
+    const n = Number(value);
+    if (Number.isFinite(n)) manual[String(key).trim().toLowerCase()] = n;
+  }
 
   const rows = [];
-  for (const [key, value] of Object.entries(baseGroups || {})) {
-    const player = byName[String(key).trim().toLowerCase()];
-    if (!player || !Number.isFinite(Number(player.rating))) continue;
-    const base = Number(value);
+  for (const player of players || []) {
+    if (!Number.isFinite(Number(player.rating))) continue;
+    const key = String(player.player || "").trim().toLowerCase();
+    const byHand = manual[key];
+    const isManual = Number.isFinite(byHand);
+    const auto = player.baseGroup == null ? null : Number(player.baseGroup);
+    const base = isManual ? byHand : auto;
     const level = playedLevel(player.rounds);
     const games = Number(player.gp) || 0;
     const margin = games ? parseFloat((Number(player.diff) / games).toFixed(1)) : null;
 
-    let verdict = "Too few games to judge yet";
+    let verdict = base == null ? "No starting group yet" : "Too few games to judge yet";
     let tone = "gray";
-    if (games >= 9 && level != null) {
+    if (base != null && games >= 9 && level != null) {
       const off = parseFloat((level - base).toFixed(2));
       if (off >= 1) {
         verdict = `Playing around group ${Math.round(level)} — base looks a group low`;
@@ -131,13 +138,14 @@ export function baseGroupChecks(players, baseGroups) {
     rows.push({
       player: player.player,
       base,
+      manual: isManual,
       rating: parseFloat(Number(player.rating).toFixed(2)),
       level,
       margin,
       games,
       verdict,
       tone,
-      off: level == null ? 0 : Math.abs(level - base),
+      off: level == null || base == null ? 0 : Math.abs(level - base),
     });
   }
 

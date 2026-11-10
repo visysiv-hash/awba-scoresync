@@ -94,13 +94,19 @@ export default function RatingPreview() {
   const anchors = useMemo(() => anchorChanges(bookedPlayers), [bookedPlayers]);
   const checks = useMemo(() => baseGroupChecks(players, manualGroups), [players, manualGroups]);
 
-  // A block of eight is two nets: whoever fits in the booked nets plays, and any
-  // leftover players rest.
-  const canPlay = spots ? Math.min(bookedPlayers.length, spots) : bookedPlayers.length;
-  const playingBlocks = Math.floor(canPlay / BLOCK_SIZE);
+  // A block of eight is two nets. Everyone booked plays while there is a net for
+  // them; only an over-capacity night leaves players resting. A short trailing
+  // block still plays — the draw tops it up from the block above in the crossover.
+  const overCapacity = spots > 0 && bookedPlayers.length > spots;
+  const playingBlocks = overCapacity
+    ? Math.floor(spots / BLOCK_SIZE)
+    : bands.length;
   const resting = bands
     .filter((b) => b.index > playingBlocks)
     .flatMap((b) => b.players);
+  const lastBand = bands[bands.length - 1];
+  const shortBlock =
+    !overCapacity && lastBand && lastBand.players.length < BLOCK_SIZE ? lastBand : null;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 pb-24">
@@ -122,9 +128,11 @@ export default function RatingPreview() {
         </div>
 
         <p className="text-[11px] text-slate-300 bg-yellow-500/10 border border-yellow-400/30 rounded-lg px-3 py-2 leading-snug">
-          Blocks are built from the players who booked the chosen night, not the whole roster — only the
-          people in the nets play. Blocks are cut at the widest rating gap nearby, so equal players stay
-          together. Nothing is saved.
+          Blocks come only from the players who booked this night, cut at the widest rating gap nearby so
+          equal players stay together. A block is just the starting group of eight — the draw rules run on
+          top exactly as they do now: three games inside the group, and the crossover game against the
+          neighbouring block with both teams balanced. When the bookings don't divide into eights, the short
+          last block is topped up from the block above, so nobody is left out. Nothing is saved.
         </p>
 
         <NightPicker sessions={sessions} value={sessionId} onChange={setSessionId} />
@@ -152,6 +160,7 @@ export default function RatingPreview() {
               Blocks for this night{" "}
               <span className="text-slate-500 font-normal">
                 {session ? `${session.title || "Session"} · ${spots} spots` : "no session chosen"}
+                {` · ${playingBlocks} blocks on ${playingBlocks * 2} nets`}
               </span>
             </h2>
             {bands.length === 0 ? (
@@ -165,9 +174,15 @@ export default function RatingPreview() {
                     <BandBlockCard key={band.index} band={band} inVenue={band.index <= playingBlocks} />
                   ))}
                 </div>
-                {resting.length > 0 && (
+                {shortBlock && (
                   <p className="text-[11px] text-slate-400">
-                    Resting {resting.length}: {resting.map((p) => p.player).join(", ")} — no net left for them.
+                    Block {shortBlock.index} is short with {shortBlock.players.length} — the draw tops it up
+                    from the block above in the crossover game, so everyone still gets their three games.
+                  </p>
+                )}
+                {resting.length > 0 && (
+                  <p className="text-[11px] text-amber-300">
+                    Over capacity by {resting.length} — no net left for {resting.map((p) => p.player).join(", ")}.
                   </p>
                 )}
               </>
@@ -179,8 +194,10 @@ export default function RatingPreview() {
             )}
 
             <h2 className="text-xs font-bold text-slate-300 pt-1">
-              Manual base groups checked against history{" "}
-              <span className="text-slate-500 font-normal">({checks.length} set by hand)</span>
+              Starting groups checked against history{" "}
+              <span className="text-slate-500 font-normal">
+                (every rated player — by hand or auto)
+              </span>
             </h2>
             <BaseGroupCheckList rows={checks} />
 
