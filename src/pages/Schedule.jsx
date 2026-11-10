@@ -374,12 +374,19 @@ export default function Schedule() {
               onChange={(e) => setDate(e.target.value)}
               className="rounded-lg bg-slate-800 border border-slate-700 px-2 py-1.5 text-xs text-white"
             />
-            {dirty && (
-              <Button size="sm" onClick={save} disabled={saving} className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold">
-                {saving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
-                Save
-              </Button>
-            )}
+            {/* The draw can be saved at any time while it is a draft, not only once
+                something has been changed — the button stays in place and simply
+                lights up when there is something new to keep. */}
+            <Button
+              size="sm"
+              onClick={save}
+              disabled={!record || saving}
+              variant={dirty ? undefined : "secondary"}
+              className={dirty ? "bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold" : ""}
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
+              Save draw
+            </Button>
             {isAdmin && (
               <Button
                 size="sm"
