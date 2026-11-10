@@ -4,10 +4,6 @@ import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Not signed in' }, { status: 401 });
-    }
 
     // The night is sent with the edit: a net and match number repeat every week,
     // so without the date the correction could land on another night's game.
