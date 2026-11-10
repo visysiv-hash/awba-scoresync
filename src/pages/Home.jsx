@@ -60,13 +60,14 @@ const tiles = [
 
 
 const adminTiles = [
-{
-  label: "Scheduling",
-  description: "Schedule games for Tuesday Nights",
-  icon: CalendarCheck,
-  to: "/availability",
-  gradient: "from-purple-500 to-purple-700"
-},
+// Old sheet-based scheduling page is hidden; the Schedule tile below is the live one.
+// {
+//   label: "Scheduling",
+//   description: "Schedule games for Tuesday Nights",
+//   icon: CalendarCheck,
+//   to: "/availability",
+//   gradient: "from-purple-500 to-purple-700"
+// },
 {
   label: "Edit Scores",
   description: "Correct submitted scores",
