@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import PageBanner from "@/components/PageBanner";
 import BandBlockCard from "@/components/ratings/BandBlockCard";
-import RatingAnchorList from "@/components/ratings/RatingAnchorList";
+import GroupMismatchList from "@/components/ratings/GroupMismatchList";
 import LevelLadder from "@/components/ratings/LevelLadder";
 import NightPicker from "@/components/ratings/NightPicker";
-import { buildBands, blocksFor, spotsFor, anchorChanges, levelLadder, BLOCK_SIZE, VENUES } from "@/lib/ratingBands";
+import { buildBands, blocksFor, spotsFor, groupMismatches, levelLadder, BLOCK_SIZE, VENUES } from "@/lib/ratingBands";
 import { lookupName } from "@/lib/nameMatch";
 import { todayIso } from "@/lib/nightDraw";
 import { ArrowLeft, FlaskConical, Loader2 } from "lucide-react";
@@ -89,8 +89,8 @@ export default function RatingPreview() {
   }, [bookings, ratingByName]);
 
   const bands = useMemo(() => buildBands(bookedPlayers), [bookedPlayers]);
-  const anchors = useMemo(() => anchorChanges(bookedPlayers), [bookedPlayers]);
   const ladder = useMemo(() => levelLadder(players), [players]);
+  const mismatches = useMemo(() => groupMismatches(players), [players]);
 
   // A block of eight is two nets. Everyone booked plays while there is a net for
   // them; only an over-capacity night leaves players resting. A short trailing
@@ -192,17 +192,20 @@ export default function RatingPreview() {
             )}
 
             <h2 className="text-xs font-bold text-slate-300 pt-1">
+              In the wrong group, based on results{" "}
+              <span className="text-slate-500 font-normal">
+                (every rated player — where their own games say they belong)
+              </span>
+            </h2>
+            <GroupMismatchList rows={mismatches} />
+
+            <h2 className="text-xs font-bold text-slate-300 pt-1">
               Levels from results only{" "}
               <span className="text-slate-500 font-normal">
                 ({ladder.length} players — no starting group used, ranked by the rating their games produced)
               </span>
             </h2>
             <LevelLadder rows={ladder} />
-
-            <h2 className="text-xs font-bold text-slate-300 pt-1">
-              Half-step anchors <span className="text-slate-500 font-normal">(booked players, {anchors.length} would move)</span>
-            </h2>
-            <RatingAnchorList rows={anchors} />
 
             <p className="text-[10px] text-slate-500 pt-1">
               Venue capacity used: {VENUES.map((v) => `${v.name} ${spotsFor(v)} spots / ${blocksFor(v)} blocks`).join(" · ")}

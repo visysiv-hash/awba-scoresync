@@ -80,6 +80,45 @@ export function anchorChanges(players) {
     .sort((a, b) => Math.abs(b.shift) - Math.abs(a.shift));
 }
 
+// The group the results alone say a player belongs in, rounded to a whole number
+// because whole groups are what the Base Groups screen sets. Six is the ceiling, so
+// a player whose rating has climbed past it stays in the top group.
+export function resultsGroup(rating) {
+  const value = Number(rating);
+  if (!Number.isFinite(value)) return null;
+  return Math.min(6, Math.max(1, Math.round(value)));
+}
+
+// Players whose results disagree with the group they are placed in. "clear" marks
+// those a whole group or more away; the rest are a half-step that rounds over.
+export function groupMismatches(players) {
+  return (players || [])
+    .filter(
+      (p) =>
+        !p.provisional &&
+        Number.isFinite(ratingOf(p)) &&
+        (Number(p.gp) || 0) >= 6 &&
+        p.baseGroup != null
+    )
+    .map((p) => {
+      const rating = parseFloat(ratingOf(p).toFixed(2));
+      const base = Number(p.baseGroup);
+      const to = resultsGroup(rating);
+      const drift = parseFloat((rating - base).toFixed(2));
+      return {
+        player: p.player,
+        rating,
+        base,
+        to,
+        gp: Number(p.gp) || 0,
+        drift,
+        clear: Math.abs(drift) >= 1,
+      };
+    })
+    .filter((row) => row.to !== row.base)
+    .sort((a, b) => Math.abs(b.drift) - Math.abs(a.drift));
+}
+
 // The level each player's own results have settled them at — the rolling rating,
 // which started wherever they were placed and has moved game by game since. Their
 // starting group is shown only as the place they left from, never as the answer,
