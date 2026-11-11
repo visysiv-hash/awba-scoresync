@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import PageBanner from "@/components/PageBanner";
 import AdminPinGate from "@/components/AdminPinGate";
 import BaseGroupRow from "@/components/ratings/BaseGroupRow";
+import MostPlayedGroupList from "@/components/ratings/MostPlayedGroupList";
+import { mostPlayedGroup } from "@/lib/mostPlayedGroup";
 import { isAdminUnlocked } from "@/lib/adminUnlock";
 import { saveBaseGroup } from "@/lib/baseGroups";
 import { lookupName } from "@/lib/nameMatch";
@@ -20,38 +22,37 @@ export default function BaseGroups() {
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("group");
   const [saving, setSaving] = useState(null);
+  const [applying, setApplying] = useState(false);
+
+  const load = useCallback(async () => {
+    const [ratings, roster] = await Promise.all([
+      base44.functions.invoke("getAppRatings", {}).then((res) => res.data || {}).catch(() => ({})),
+      base44.functions.invoke("getMemberRoster", {}).then((res) => res.data?.roster || []).catch(() => []),
+    ]);
+    const rated = ratings.players || [];
+    setBaseGroups(ratings.baseGroups || {});
+    // One row per player: rated players first, then members with no results yet.
+    const ratedByKey = {};
+    for (const p of rated) ratedByKey[String(p.player).trim().toLowerCase()] = p;
+    const taken = new Set(Object.keys(ratedByKey));
+    const rows = [...rated];
+    for (const member of roster) {
+      const name = String(member.display_name || "").trim();
+      const key = name.toLowerCase();
+      if (!name || taken.has(key) || lookupName(ratedByKey, name) !== undefined) continue;
+      taken.add(key);
+      rows.push({ player: name, rating: null, currentGroup: null });
+    }
+    rows.sort((a, b) => String(a.player).localeCompare(String(b.player)));
+    setPlayers(rows);
+  }, []);
 
   useEffect(() => {
     if (!unlocked) return;
-    let alive = true;
-    Promise.all([
-      base44.functions.invoke("getAppRatings", {}).then((res) => res.data || {}).catch(() => ({})),
-      base44.functions.invoke("getMemberRoster", {}).then((res) => res.data?.roster || []).catch(() => []),
-    ])
-      .then(([ratings, roster]) => {
-        if (!alive) return;
-        const rated = ratings.players || [];
-        setBaseGroups(ratings.baseGroups || {});
-        // One row per player: rated players first, then members with no results yet.
-        const ratedByKey = {};
-        for (const p of rated) ratedByKey[String(p.player).trim().toLowerCase()] = p;
-        const taken = new Set(Object.keys(ratedByKey));
-        const rows = [...rated];
-        for (const member of roster) {
-          const name = String(member.display_name || "").trim();
-          const key = name.toLowerCase();
-          if (!name || taken.has(key) || lookupName(ratedByKey, name) !== undefined) continue;
-          taken.add(key);
-          rows.push({ player: name, rating: null, currentGroup: null });
-        }
-        rows.sort((a, b) => String(a.player).localeCompare(String(b.player)));
-        setPlayers(rows);
-      })
-      .finally(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [unlocked]);
+    load().finally(() => setLoading(false));
+  }, [unlocked, load]);
+
+  const mostPlayed = useMemo(() => mostPlayedGroup(players), [players]);
 
   const assign = async (player, value) => {
     setSaving(player);
@@ -69,6 +70,24 @@ export default function BaseGroups() {
       toast.error("Couldn't save that base group.");
     } finally {
       setSaving(null);
+    }
+  };
+
+  // Ticked players start from the group they have actually played most, then the
+  // ratings are reloaded so every number reflects the new starting point.
+  const applyMostPlayed = async (moves) => {
+    if (!moves.length) return;
+    setApplying(true);
+    try {
+      for (const move of moves) await saveBaseGroup(move.player, move.to);
+      toast.success(
+        `${moves.length} player${moves.length === 1 ? "" : "s"} now start from the group they played most.`
+      );
+      await load();
+    } catch {
+      toast.error("Couldn't save those groups — nothing was changed.");
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -126,6 +145,16 @@ export default function BaseGroups() {
         >
           <FlaskConical className="w-4 h-4" /> Preview the proposed rating model — nothing is saved
         </Link>
+
+        {!loading && (
+          <div className="space-y-1.5">
+            <h2 className="text-xs font-bold text-slate-300">
+              Played most rounds in another group{" "}
+              <span className="text-slate-500 font-normal">({mostPlayed.length} players)</span>
+            </h2>
+            <MostPlayedGroupList rows={mostPlayed} onApply={applyMostPlayed} applying={applying} />
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
