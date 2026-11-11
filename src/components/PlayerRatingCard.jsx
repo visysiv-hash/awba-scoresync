@@ -1,8 +1,13 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import RatingTrendChart from "./RatingTrendChart";
+import GroupExplanation from "@/components/ratings/GroupExplanation";
+import BaseGroupEditor from "@/components/ratings/BaseGroupEditor";
+import { explainPlacement } from "@/lib/placementExplain";
+import { lookupName } from "@/lib/nameMatch";
+import { getCurrentMember } from "@/lib/currentMember";
 
 function RatingBreakdown({ p }) {
   if (!p.hasStats) {
@@ -87,21 +92,44 @@ export default function PlayerRatingCard({ playerName }) {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(true);
 
+  // Admins get the base group controls and the suggested move; everyone else gets
+  // the explanation alone.
+  const isAdmin = getCurrentMember()?.is_admin === true;
+
+  const load = useCallback(async () => {
+    const res = await base44.functions.invoke("getAppRatings", {});
+    const players = res.data?.players || [];
+    const byName = {};
+    for (const p of players) byName[String(p.player).trim().toLowerCase()] = p;
+    const found = lookupName(byName, playerName);
+    if (!found) return null;
+    const base = lookupName(res.data?.baseGroups || {}, found.player) ?? found.baseGroup ?? null;
+    return {
+      ...found,
+      baseGroup: base == null ? null : Number(base),
+      hasStats: (found.rounds || []).length > 0,
+      baseRating: found.rating,
+    };
+  }, [playerName]);
+
   useEffect(() => {
+    let live = true;
     setLoading(true);
     setPlayerData(null);
-    base44.functions.invoke("getAppRatings", {})
-      .then(res => {
-        const players = res.data?.players || [];
-        const found = players.find(p => p.player.toLowerCase() === playerName.toLowerCase());
-        setPlayerData(found ? {
-          ...found,
-          hasStats: (found.rounds || []).length > 0,
-          baseRating: found.rating,
-        } : null);
-      })
-      .finally(() => setLoading(false));
-  }, [playerName]);
+    load()
+      .then((data) => { if (live) setPlayerData(data); })
+      .finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
+  }, [load]);
+
+  const reload = useCallback(async () => {
+    setPlayerData(await load());
+  }, [load]);
+
+  const detail = useMemo(
+    () => (playerData ? explainPlacement(playerData, playerData.baseGroup) : null),
+    [playerData]
+  );
 
   if (loading) {
     return (
@@ -142,6 +170,18 @@ export default function PlayerRatingCard({ playerName }) {
         </button>
 
         {expanded && <RatingBreakdown p={playerData} />}
+
+        <GroupExplanation detail={detail} admin={isAdmin} />
+
+        {isAdmin && (
+          <BaseGroupEditor
+            player={playerData.player}
+            baseGroup={playerData.baseGroup}
+            placed={detail?.placed ?? null}
+            to={detail?.to ?? null}
+            onSaved={reload}
+          />
+        )}
       </CardContent>
     </Card>
   );

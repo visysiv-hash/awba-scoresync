@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import PageBanner from "../components/PageBanner";
+import PlayerRatingCard from "@/components/PlayerRatingCard";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function PlayerProfile() {
@@ -99,6 +100,11 @@ export default function PlayerProfile() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Rating, and the groups behind it */}
+        <div className="mb-6">
+          <PlayerRatingCard playerName={playerName} />
         </div>
 
         {/* Additional Metrics */}

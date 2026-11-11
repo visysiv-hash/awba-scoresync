@@ -52,6 +52,9 @@ export function explainPlacement(player, baseGroup = null) {
   const to = read ? clampGroup(Math.round(read.level)) : placed;
 
   const reasons = [];
+  // Anything that points at a different group is a suggestion, kept apart from the
+  // plain explanation so only admins are shown it.
+  const suggestions = [];
   if (!groups.length) {
     reasons.push("No games recorded yet, so there is nothing to measure them against.");
     if (placed != null) reasons.push(`Until they play, G${placed} is where their rating starts.`);
@@ -105,7 +108,7 @@ export function explainPlacement(player, baseGroup = null) {
       } else if (to === placed) {
         reasons.push(`Placed in G${placed}, which is exactly where their results point — no change needed.`);
       } else {
-        reasons.push(
+        suggestions.push(
           `Placed in G${placed}, but their results point to G${to} — a move ${to < placed ? "up" : "down"}.`
         );
       }
@@ -156,6 +159,7 @@ export function explainPlacement(player, baseGroup = null) {
     groups,
     mostPlayed,
     reasons,
+    suggestions,
     moves,
   };
 }

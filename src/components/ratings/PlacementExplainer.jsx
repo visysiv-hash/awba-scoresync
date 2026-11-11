@@ -11,7 +11,7 @@ const signed = (n) => `${n > 0 ? "+" : ""}${n}`;
 export default function PlacementExplainer({ player, baseGroup, onClose }) {
   if (!player) return null;
   const detail = explainPlacement(player, baseGroup);
-  const { name, rating, gp, placed, to, groups, anchorGroup, reasons, moves } = detail;
+  const { name, rating, gp, placed, to, groups, anchorGroup, reasons, suggestions = [], moves } = detail;
   const move = placed != null && to != null && to !== placed;
 
   return (
@@ -112,6 +112,17 @@ export default function PlacementExplainer({ player, baseGroup, onClose }) {
             ))}
           </ul>
         </section>
+
+        {suggestions.length > 0 && (
+          <ul className="space-y-1 rounded-lg bg-yellow-400/10 border border-yellow-400/30 px-3 py-2">
+            {suggestions.map((line) => (
+              <li key={line} className="text-[11px] text-yellow-200 leading-snug flex gap-1.5">
+                <span className="text-yellow-500">•</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        )}
 
         <section className="space-y-1">
           <h3 className="text-[11px] font-bold text-slate-300">How they move</h3>
