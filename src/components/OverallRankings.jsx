@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import PlayerPairingModal from "./PlayerPairingModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowDown, Loader2, TrendingUp, ChevronDown, ChevronUp, Info } from "lucide-react";
 import RatingTrendChart from "./RatingTrendChart";
+import GroupExplanation from "@/components/ratings/GroupExplanation";
+import BaseGroupEditor from "@/components/ratings/BaseGroupEditor";
+import { explainPlacement } from "@/lib/placementExplain";
+import { getCurrentMember } from "@/lib/currentMember";
 
 function RatingBreakdown({ p }) {
   if (!p.hasStats) {
@@ -102,20 +106,24 @@ export default function OverallRankings({ groups }) {
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [showExplainer, setShowExplainer] = useState(false);
 
+  // Admins get the base group controls and the suggested move; everyone else gets
+  // the explanation alone.
+  const isAdmin = getCurrentMember()?.is_admin === true;
+
   // Ratings always come from the app's own stored results.
-  useEffect(() => {
-    let cancelled = false;
+  const loadRatings = useCallback(async () => {
     setLoadingRatings(true);
-    base44.functions.invoke("getAppRatings", {})
-      .then(res => {
-        if (cancelled) return;
-        const players = res.data?.players || [];
-        setRatings(players.map(normalizeAppPlayer));
-        setAppRound(res.data?.round ?? null);
-      })
-      .finally(() => { if (!cancelled) setLoadingRatings(false); });
-    return () => { cancelled = true; };
+    try {
+      const res = await base44.functions.invoke("getAppRatings", {});
+      const players = res.data?.players || [];
+      setRatings(players.map(normalizeAppPlayer));
+      setAppRound(res.data?.round ?? null);
+    } finally {
+      setLoadingRatings(false);
+    }
   }, []);
+
+  useEffect(() => { loadRatings(); }, [loadRatings]);
 
   const risingPlayers = ratings.filter(p =>
     p.hasStats && p.currentGroup > 1 && p.rating < p.currentGroup
@@ -258,6 +266,7 @@ export default function OverallRankings({ groups }) {
         <CardContent className="space-y-1 p-3">
           {orderedRatings.map((p, i) => {
             const isExpanded = expandedPlayer === p.player;
+            const detail = isExpanded ? explainPlacement(p) : null;
             const startsGroup = i === 0 || orderedRatings[i - 1].placedGroup !== p.placedGroup;
             return (
               <div key={p.player}>
@@ -296,6 +305,18 @@ export default function OverallRankings({ groups }) {
           <>
             <RatingBreakdown p={p} />
             <RatingTrendChart rounds={p.rounds} overallRating={p.rating} groupBase={p.currentGroup} />
+            <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
+              <GroupExplanation detail={detail} admin={isAdmin} />
+              {isAdmin && (
+                <BaseGroupEditor
+                  player={p.player}
+                  baseGroup={p.baseGroup ?? null}
+                  placed={detail?.placed ?? p.placedGroup}
+                  to={detail?.to ?? null}
+                  onSaved={loadRatings}
+                />
+              )}
+            </div>
           </>
         )}
               </div>
