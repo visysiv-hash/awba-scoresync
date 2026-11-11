@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { getCurrentPlayerName } from "@/lib/currentMember";
+import { getCurrentMember, getCurrentPlayerName } from "@/lib/currentMember";
+import { explainPlacement } from "@/lib/placementExplain";
+import GroupExplanation from "@/components/ratings/GroupExplanation";
 import PageBanner from "@/components/PageBanner";
 import WrappedHero from "@/components/wrapped/WrappedHero";
 import WrappedTrend from "@/components/wrapped/WrappedTrend";
@@ -67,6 +69,11 @@ export default function SeasonWrapped() {
         ) : (
           <div className="space-y-3">
             <WrappedHero data={data} />
+            <GroupExplanation
+              detail={data.placement ? explainPlacement(data.placement) : null}
+              admin={getCurrentMember()?.is_admin === true}
+              title="Why this group"
+            />
             <WrappedTrend trend={data.trend} rating={data.rating} />
             <WrappedBadges badges={data.badges} />
             <WrappedPartners

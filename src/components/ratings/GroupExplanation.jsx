@@ -6,7 +6,7 @@ const signed = (n) => `${n > 0 ? "+" : ""}${n}`;
 
 // Why a player sits in the group they do, read from the groups they have actually
 // played. Move suggestions are only drawn when an admin is looking.
-export default function GroupExplanation({ detail, admin = false }) {
+export default function GroupExplanation({ detail, admin = false, title }) {
   if (!detail) return null;
   const { placed, to, groups, anchorGroup, reasons, suggestions = [], moves = [] } = detail;
 
@@ -14,7 +14,7 @@ export default function GroupExplanation({ detail, admin = false }) {
     <section className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-xs font-bold text-slate-700 flex items-center gap-1">
-          <Info className="w-3.5 h-3.5" /> Why Group {placed ?? "—"}
+          <Info className="w-3.5 h-3.5" /> {title ?? `Why Group ${placed ?? "—"}`}
         </h3>
         {admin && placed != null && to != null && to !== placed && (
           <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 tabular-nums">

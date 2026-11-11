@@ -223,6 +223,14 @@ export default async function (req: Request): Promise<Response> {
         group: entry?.currentGroup ?? null,
         provisional: entry?.provisional ?? false,
       },
+      placement: {
+        player: entry?.player || player,
+        rating: nowRating,
+        gp: entry?.gp ?? 0,
+        baseGroup: entry?.baseGroup ?? startGroups[me] ?? null,
+        currentGroup: entry?.currentGroup ?? null,
+        rounds: (entry?.rounds || []).map((r) => ({ group: r.group, gp: r.gp, diff: r.diff })),
+      },
       totals: {
         games: mine.length,
         wins,
