@@ -125,6 +125,22 @@ export default function OverallRankings({ groups }) {
     p.hasStats && p.currentGroup < 6 && p.rating > p.currentGroup
   );
 
+  // Order by the group a player is placed in (group 1 first — the strongest band),
+  // then by rating inside that group. A bare rating sort would float a climbing
+  // group 2 player above a group 1 player who simply moves more slowly.
+  const placedGroup = (p) => Number(p.baseGroup ?? p.currentGroup ?? 6) || 6;
+  const orderedRatings = (() => {
+    const sorted = [...ratings].sort(
+      (a, b) => placedGroup(a) - placedGroup(b) || Number(a.rating) - Number(b.rating)
+    );
+    const seen = {};
+    return sorted.map((p) => {
+      const group = placedGroup(p);
+      seen[group] = (seen[group] || 0) + 1;
+      return { ...p, placedGroup: group, groupRank: seen[group] };
+    });
+  })();
+
   return (
     <>
     <div className="space-y-4">
@@ -240,16 +256,23 @@ export default function OverallRankings({ groups }) {
           </div>
         </CardHeader>
         <CardContent className="space-y-1 p-3">
-          {ratings.map((p, i) => {
+          {orderedRatings.map((p, i) => {
             const isExpanded = expandedPlayer === p.player;
+            const startsGroup = i === 0 || orderedRatings[i - 1].placedGroup !== p.placedGroup;
             return (
+              <div key={p.player}>
+              {startsGroup && (
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide pt-3 pb-1 first:pt-0">
+                  Group {p.placedGroup}
+                  {p.placedGroup === 1 && <span className="ml-1 normal-case font-normal">— strongest band</span>}
+                </p>
+              )}
               <div
-                key={p.player}
                 className="rounded-lg px-3 py-2 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
                 onClick={() => setExpandedPlayer(isExpanded ? null : p.player)}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-muted-foreground w-6">#{i + 1}</span>
+                  <span className="text-xs font-bold text-muted-foreground w-6">#{p.groupRank}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{p.player}</p>
                     <p className="text-xs text-muted-foreground">
@@ -275,6 +298,7 @@ export default function OverallRankings({ groups }) {
             <RatingTrendChart rounds={p.rounds} overallRating={p.rating} groupBase={p.currentGroup} />
           </>
         )}
+              </div>
               </div>
             );
           })}
