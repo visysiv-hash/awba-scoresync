@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, TrendingUp } from "lucide-react";
+import { SETTLED_SHARE } from "@/lib/mostPlayedGroup";
 
 // Players who have played most of their rounds in a group other than the one they
-// are placed in. Ticking someone starts their rating from that most-played group.
-const SETTLED_SHARE = 0.75;
-
+// are placed in. Ticking someone starts their rating from the group their results
+// point to — the group they played, or one higher if they have been beating it up.
 export default function MostPlayedGroupList({ rows, onApply, applying }) {
   const [picked, setPicked] = useState([]);
 
@@ -19,11 +19,30 @@ export default function MostPlayedGroupList({ rows, onApply, applying }) {
       current.includes(player) ? current.filter((p) => p !== player) : [...current, player]
     );
 
-  // A player is settled in that group once three quarters of their rounds were
-  // played there — below that they have only been passing through it.
-  const settled = rows.filter((r) => r.share >= SETTLED_SHARE).map((r) => r.player);
-  const allSettled = settled.length > 0 && settled.every(isPicked);
-  const moves = rows.filter((r) => isPicked(r.player)).map((r) => ({ player: r.player, to: r.top }));
+  // Two separate calls to action: three quarters of their rounds in that group is a
+  // settled placement, but a player winning it by a wide margin is too strong for it.
+  const dominant = rows.filter((r) => r.dominant);
+  const settled = rows.filter((r) => r.share >= SETTLED_SHARE && !r.dominant);
+  const moves = rows.filter((r) => isPicked(r.player)).map((r) => ({ player: r.player, to: r.to }));
+
+  const tickButton = (list, label) => {
+    const all = list.length > 0 && list.every((r) => isPicked(r.player));
+    return (
+      <button
+        onClick={() =>
+          setPicked((current) => {
+            const names = list.map((r) => r.player);
+            const rest = current.filter((p) => !names.includes(p));
+            return all ? rest : [...new Set([...current, ...names])];
+          })
+        }
+        disabled={!list.length}
+        className="shrink-0 rounded-lg bg-white/10 hover:bg-white/20 px-2 py-1 text-[10px] font-semibold text-slate-200 disabled:opacity-40"
+      >
+        {all ? "Clear" : label}
+      </button>
+    );
+  };
 
   if (!rows.length) {
     return (
@@ -35,16 +54,21 @@ export default function MostPlayedGroupList({ rows, onApply, applying }) {
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] text-slate-300">
-          {settled.length} of {rows.length} played 75% or more of their rounds in that group.
-        </p>
-        <button
-          onClick={() => setPicked(allSettled ? [] : settled)}
-          className="shrink-0 rounded-lg bg-white/10 hover:bg-white/20 px-2 py-1 text-[10px] font-semibold text-slate-200"
-        >
-          {allSettled ? "Clear" : "Tick the 75% group"}
-        </button>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[11px] text-slate-300">
+            <span className="font-semibold text-emerald-300">{dominant.length}</span> are winning their group by 8+ a
+            game — too strong for it
+          </p>
+          {tickButton(dominant, "Tick those")}
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[11px] text-slate-300">
+            <span className="font-semibold text-slate-100">{settled.length}</span> of {rows.length} played 75% or more of
+            their rounds there without dominating it
+          </p>
+          {tickButton(settled, "Tick the 75% group")}
+        </div>
       </div>
 
       <div className="rounded-xl bg-slate-800 border border-slate-700 divide-y divide-slate-700/60 max-h-[420px] overflow-y-auto">
@@ -54,9 +78,11 @@ export default function MostPlayedGroupList({ rows, onApply, applying }) {
             className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer ${
               isPicked(row.player)
                 ? "bg-yellow-400/10"
-                : row.share >= SETTLED_SHARE
-                  ? "bg-white/[0.03]"
-                  : ""
+                : row.dominant
+                  ? "bg-emerald-500/[0.06]"
+                  : row.share >= SETTLED_SHARE
+                    ? "bg-white/[0.03]"
+                    : ""
             }`}
           >
             <input
@@ -69,18 +95,26 @@ export default function MostPlayedGroupList({ rows, onApply, applying }) {
               <p className="text-[11px] text-slate-200 truncate">{row.player}</p>
               <p className="text-[10px] text-slate-500 tabular-nums">
                 {row.plays} of {row.rounds} rounds in G{row.top} · {Math.round(row.share * 100)}%
+                <span className={row.margin > 0 ? "text-emerald-400" : "text-rose-400"}>
+                  {" "}
+                  · {row.margin > 0 ? "+" : ""}
+                  {row.margin} a game
+                </span>
               </p>
             </div>
+            {row.dominant && (
+              <span className="shrink-0 flex items-center gap-0.5 rounded px-1 py-0.5 text-[9px] font-bold bg-emerald-500/20 text-emerald-300">
+                <TrendingUp className="w-2.5 h-2.5" /> UP
+              </span>
+            )}
             <span
               className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                row.top > row.placed ? "bg-sky-500/20 text-sky-300" : "bg-amber-500/20 text-amber-300"
+                row.to < (row.placed ?? row.to) ? "bg-sky-500/20 text-sky-300" : "bg-amber-500/20 text-amber-300"
               }`}
             >
-              G{row.placed ?? "—"} → G{row.top}
+              G{row.placed ?? "—"} → G{row.to}
             </span>
-            <p className="w-12 text-right text-xs font-bold tabular-nums text-white shrink-0">
-              {row.rating ?? "—"}
-            </p>
+            <p className="w-12 text-right text-xs font-bold tabular-nums text-white shrink-0">{row.rating ?? "—"}</p>
           </label>
         ))}
       </div>
@@ -92,7 +126,7 @@ export default function MostPlayedGroupList({ rows, onApply, applying }) {
           className="flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-[11px] font-bold text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {applying && <Loader2 className="w-3 h-3 animate-spin" />}
-          Start {moves.length || "no"} player{moves.length === 1 ? "" : "s"} from their most-played group
+          Start {moves.length || "no"} player{moves.length === 1 ? "" : "s"} from their suggested group
         </button>
       </div>
 

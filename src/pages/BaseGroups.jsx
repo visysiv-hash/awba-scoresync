@@ -81,7 +81,7 @@ export default function BaseGroups() {
     try {
       for (const move of moves) await saveBaseGroup(move.player, move.to);
       toast.success(
-        `${moves.length} player${moves.length === 1 ? "" : "s"} now start from the group they played most.`
+        `${moves.length} player${moves.length === 1 ? "" : "s"} now start from their suggested group.`
       );
       await load();
     } catch {
