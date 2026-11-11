@@ -7,6 +7,9 @@ import { scheduleUniqueness } from "@/lib/scheduleUniqueness";
 // eight plays two doubles games a round; a short group mixes American doubles
 // (one player against two) and singles so nobody sits a round out.
 const PLANS = {
+  11: [4, 4],
+  10: [4, 4],
+  9: [4, 4],
   8: [4, 4],
   7: [4, 3],
   6: [3, 3],

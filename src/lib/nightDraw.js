@@ -22,6 +22,11 @@ export { GENDER_HANDICAP } from "./teamRating";
 
 // Team sizes per match for a group that is not a full eight.
 const PLANS = {
+  // A block topped up past eight (nine to eleven) still plays two courts of doubles
+  // with the spare players resting a round each.
+  11: [[2, 2], [2, 2]],
+  10: [[2, 2], [2, 2]],
+  9: [[2, 2], [2, 2]],
   7: [[2, 2], [1, 2]],
   6: [[1, 2], [1, 2]],
   5: [[1, 2], [1, 1]],

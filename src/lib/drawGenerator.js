@@ -2,6 +2,8 @@
 // groups of eight. Unrated players go last. All pairing decisions live in
 // nightDraw.js, so there is a single pairing engine for every group size.
 
+export const BLOCK_SIZE = 8;
+
 export function buildGroups(players) {
   const rated = (players || [])
     .filter((p) => p.rating !== null && p.rating !== undefined)
@@ -9,11 +11,23 @@ export function buildGroups(players) {
   const unrated = (players || []).filter((p) => p.rating === null || p.rating === undefined);
   const all = [...rated, ...unrated];
 
-  const groups = [];
-  for (let i = 0; i < all.length; i += 8) {
-    groups.push({ groupNum: groups.length + 1, players: all.slice(i, i + 8) });
+  const chunks = [];
+  for (let i = 0; i < all.length; i += BLOCK_SIZE) chunks.push(all.slice(i, i + BLOCK_SIZE));
+
+  // Blocks are cut at eight wherever the numbers allow, never at a stored group's
+  // edge. Three or fewer players left over cannot fill a net, so they join the
+  // blocks before them instead of sitting out or playing a thin game on their own.
+  const tail = chunks.length > 1 ? chunks[chunks.length - 1] : null;
+  if (tail && tail.length < 4) {
+    chunks.pop();
+    // Weakest tail player into the weakest block, so the added players stay in order.
+    tail.slice().reverse().forEach((player, i) => {
+      const target = chunks.length - 1 - (i % chunks.length);
+      chunks[target] = [...chunks[target], player];
+    });
   }
-  return groups;
+
+  return chunks.map((chunk, i) => ({ groupNum: i + 1, players: chunk }));
 }
 
 // Groups from an explicit player order. An admin's swapped list is honoured exactly as

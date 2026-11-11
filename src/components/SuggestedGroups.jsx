@@ -1,21 +1,7 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
-
-function buildGroups(players) {
-  const rated = players.filter(p => p.rating !== null).sort((a, b) => a.rating - b.rating);
-  const unrated = players.filter(p => p.rating === null);
-  const all = [...rated, ...unrated];
-  const groups = [];
-  let i = 0;
-  let groupNum = 1;
-  while (i < all.length) {
-    groups.push({ groupNum, players: all.slice(i, i + 8) });
-    i += 8;
-    groupNum++;
-  }
-  return groups;
-}
+import { buildGroups } from "@/lib/drawGenerator";
 
 function groupAvg(players) {
   const ratedPlayers = players.filter(p => p.rating !== null);
