@@ -103,14 +103,13 @@ export default function PlacementExplainer({ player, baseGroup, onClose }) {
           <h3 className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
             <Info className="w-3 h-3" /> Why G{placed ?? "—"}
           </h3>
-          <ul className="space-y-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2">
+          <div className="space-y-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2">
             {reasons.map((line) => (
-              <li key={line} className="text-[11px] text-slate-300 leading-snug flex gap-1.5">
-                <span className="text-slate-600">•</span>
-                <span>{line}</span>
-              </li>
+              <p key={line} className="text-[11px] leading-relaxed text-slate-300">
+                {line}
+              </p>
             ))}
-          </ul>
+          </div>
         </section>
 
         {suggestions.length > 0 && (

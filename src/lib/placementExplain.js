@@ -1,8 +1,14 @@
 // The full story behind one player's group: every group they have played, how they
 // went in each, which group their results point at, and what would move them.
-import { EVEN_MARGIN, MIN_GAMES, clampGroup, readLevel } from "@/lib/groupFit";
+// The wording is deliberately plain — the tables above carry the numbers, so the
+// sentences only need to say what those numbers mean.
+import { MIN_GAMES, clampGroup, readLevel } from "@/lib/groupFit";
 
-const signed = (n) => `${n > 0 ? "+" : ""}${n}`;
+const listGroups = (list) =>
+  list.map((g) => `group ${g.group}`).reduce((text, name, i) => {
+    if (i === 0) return name;
+    return i === list.length - 1 ? `${text} and ${name}` : `${text}, ${name}`;
+  }, "");
 
 export function explainPlacement(player, baseGroup = null) {
   const gp = Number(player?.gp) || 0;
@@ -64,91 +70,79 @@ export function explainPlacement(player, baseGroup = null) {
   // plain explanation so only admins are shown it.
   const suggestions = [];
   if (!groups.length) {
-    reasons.push("No games recorded yet, so there is nothing to measure them against.");
-    if (placed != null) reasons.push(`Until they play, G${placed} is where their rating starts.`);
+    reasons.push("They haven't played a game yet, so there is nothing to judge them on.");
+    if (placed != null) reasons.push(`Until they do, group ${placed} is where their rating starts.`);
   } else {
-    reasons.push(
-      `Played ${gp} game${gp === 1 ? "" : "s"} across ${
-        groups.length === 1 ? "one group" : `${groups.length} groups`
-      }: ${groups.map((g) => `G${g.group} ${g.games}`).join(", ")}.`
-    );
+    if (anchor) {
+      reasons.push(`Most of their games have been in group ${anchor.group}.`);
+    } else {
+      reasons.push("They've been spread across several groups, with not enough games in any one of them to call it home.");
+    }
 
     if (read) {
-      reasons.push(
-        `Their main group is G${anchor.group} — ${anchor.games} of ${gp} games (${Math.round(
-          (anchor.games / Math.max(1, gp)) * 100
-        )}%), averaging ${signed(anchor.margin)} points a game there.`
-      );
-
       if (read.kind === "outperforming") {
-        reasons.push(
-          `Outscoring G${anchor.group} by ${anchor.margin} points a game means they are too strong for it, so their level is one group up.`
-        );
+        reasons.push("They win there more often than they lose, which is the sign of someone ready for a harder group.");
       } else if (read.kind === "beaten") {
         reasons.push(
-          `Beaten in G${anchor.group} by ${Math.abs(anchor.margin)} points a game means they are over their head there, so their level is one group down.`
+          "They lose there more often than they win, which means they are playing above their level — a group lower suits them better."
         );
       } else if (read.stepUp) {
         reasons.push(
-          `They win G${anchor.group} by ${anchor.margin} points a game, but they are beaten by ${Math.abs(
-            read.stepUp.margin
-          )} in G${read.stepUp.group} over ${read.stepUp.games} games — the step up is not there yet.`
+          `They win in group ${anchor.group}, but when they were given games in the group above they were well beaten, so the step up isn't there yet.`
         );
       } else {
         reasons.push(
-          `A margin of ${signed(
-            anchor.margin
-          )} points a game sits inside the ±${EVEN_MARGIN} band, so G${anchor.group} is the level they hold.`
+          `They come out about level there — winning as much as they lose — so group ${anchor.group} is the right fit.`
         );
       }
 
       const others = groups.filter((g) => g.counted && g.group !== anchor.group);
       if (others.length) {
         reasons.push(
-          `Elsewhere: ${others
-            .map((g) => `G${g.group} ${signed(g.margin)} a game over ${g.games}`)
-            .join(", ")} — real results, but smaller samples than their main group, so they carry less weight.`
+          `They have also played ${listGroups(others)}, but on far fewer games, so those results count for less.`
         );
       }
 
       if (placed == null) {
-        reasons.push("No starting group is set, so their rating starts from the first group they played in.");
+        reasons.push("No starting group is set, so their rating begins wherever they first played.");
       } else if (to === placed) {
-        reasons.push(`Placed in G${placed}, which is exactly where their results point — no change needed.`);
+        reasons.push(`They are placed in group ${placed}, which is exactly where their games point — nothing needs changing.`);
       } else {
         suggestions.push(
-          `Placed in G${placed}, but their results point to G${to} — a move ${to < placed ? "up" : "down"}.`
+          `They are placed in group ${placed}, but their games point at group ${to} — worth a move ${
+            to < placed ? "up" : "down"
+          }.`
         );
       }
     } else {
-      reasons.push(`No group has reached ${MIN_GAMES} games yet, so their results cannot place them.`);
+      reasons.push("No group has enough games behind it yet to place them, so for now their rating is mostly their starting group.");
     }
 
     const short = groups.filter((g) => !g.counted);
     if (short.length) {
-      reasons.push(
-        `Not counted yet: ${short
-          .map((g) => `G${g.group} (${g.games} of ${MIN_GAMES} games)`)
-          .join(", ")} — too small a sample to read.`
-      );
+      reasons.push(`Only a handful of games so far in ${listGroups(short)} — too few to judge.`);
     }
 
     // The same games from the other side: who they played against, and who stood
     // beside them. A margin built away from their own group, or alongside a
     // stronger partner, says less about where they belong.
-    if (ownSplit && otherSplit) {
-      reasons.push(
-        `Against their own group: ${signed(ownSplit.margin)} a game over ${ownSplit.games} games. Against other groups: ${signed(
-          otherSplit.margin
-        )} over ${otherSplit.games}.`
-      );
+    if (ownSplit && otherSplit && ownSplit.games >= 6 && otherSplit.games >= 6) {
+      if (otherSplit.margin - ownSplit.margin >= 3) {
+        reasons.push(
+          "Their better results come against other groups, so the record inside their own group is the honest one."
+        );
+      } else {
+        reasons.push(
+          "Inside their own group and against other groups they measure up about the same, so the results are their own doing."
+        );
+      }
     }
-    if (strongSplit && weakSplit) {
-      reasons.push(
-        `With a stronger partner: ${signed(strongSplit.margin)} a game over ${
-          strongSplit.games
-        } games. With a weaker partner: ${signed(weakSplit.margin)} over ${weakSplit.games}.`
-      );
+    if (strongSplit && weakSplit && strongSplit.games >= 6 && weakSplit.games >= 6) {
+      if (strongSplit.margin - weakSplit.margin >= 4) {
+        reasons.push("They do noticeably better beside a stronger partner, so part of that margin may not be theirs.");
+      } else {
+        reasons.push("They do about as well with a stronger partner as a weaker one, so they aren't leaning on anyone.");
+      }
     }
   }
 
@@ -158,7 +152,7 @@ export function explainPlacement(player, baseGroup = null) {
     const gap = strongSplit.margin - weakSplit.margin;
     if (gap >= 4) {
       suggestions.push(
-        `Leans on a stronger partner: ${gap.toFixed(1)} points a game better alongside one than alongside a weaker partner.`
+        `Leans on a stronger partner — about ${Math.round(gap)} points a game better beside one than beside a weaker partner.`
       );
     }
   }
@@ -166,9 +160,7 @@ export function explainPlacement(player, baseGroup = null) {
     const gap = otherSplit.margin - ownSplit.margin;
     if (gap >= 3) {
       suggestions.push(
-        `Their games outside their own group read ${signed(otherSplit.margin)} a game against ${signed(
-          ownSplit.margin
-        )} inside it — ${gap.toFixed(1)} better away from their own group, so the same-group figure is the honest one.`
+        "Their games outside their own group flatter them, so trust the same-group record over the overall figure."
       );
     }
   }
@@ -178,20 +170,14 @@ export function explainPlacement(player, baseGroup = null) {
   const base = anchor?.group ?? placed ?? null;
   if (base != null) {
     if (base > 1) {
-      moves.push(
-        `Up to G${base - 1}: keep winning G${base} by more than ${EVEN_MARGIN} points a game, and avoid being beaten by more than ${EVEN_MARGIN} in G${
-          base - 1
-        } when they get games there.`
-      );
+      moves.push(`To go up, they need to keep winning in group ${base}, and hold their own when they get games above it.`);
     }
     if (base < 6) {
-      moves.push(
-        `Down to G${base + 1}: be beaten by more than ${EVEN_MARGIN} points a game in G${base} — that is the only thing that moves a player down.`
-      );
+      moves.push(`To go down, they have to be beaten clearly in group ${base} — losing narrowly won't do it.`);
     }
   }
   moves.push(
-    `Where they play most decides it, so ${MIN_GAMES} games in a group before it can become their main group, and every round re-runs this from their own games.`
+    "Whichever group holds most of their games decides it, so a group needs a decent run of games before it becomes their main one."
   );
 
   return {

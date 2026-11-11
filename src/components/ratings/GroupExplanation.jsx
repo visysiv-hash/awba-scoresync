@@ -62,14 +62,13 @@ export default function GroupExplanation({ detail, admin = false, title, collaps
 
       <PlacementSplits splits={splits} />
 
-      <ul className="space-y-1">
+      <div className="space-y-1">
         {reasons.map((line) => (
-          <li key={line} className="text-[11px] text-slate-600 leading-snug flex gap-1.5">
-            <span className="text-slate-400">•</span>
-            <span>{line}</span>
-          </li>
+          <p key={line} className="text-[11px] leading-relaxed text-slate-600">
+            {line}
+          </p>
         ))}
-      </ul>
+      </div>
 
       {admin && suggestions.length > 0 && (
         <ul className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5">
