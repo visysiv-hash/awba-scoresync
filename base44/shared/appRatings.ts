@@ -123,6 +123,16 @@ export function computeAppRatings(
           if (Math.abs(groupDiff) > 0.5) adjustedDiff = side.diff - groupDiff * 2;
         }
 
+        // Who they were alongside and up against tells us as much as the margin:
+        // a big win with a stronger partner, or against a weaker group, is not
+        // proof they hold the group themselves.
+        const partner = side.team.find((n) => n !== name);
+        const partnerGroup = partner ? groupOf(partner, round) : null;
+        // Both opponents must be placed in that round, otherwise a single known
+        // group would read a crossover game as a same-group one.
+        const oppGroups = side.opponents.map((n) => groupOf(n, round)).filter((g) => g != null) as number[];
+        const oppAvg = oppGroups.length === side.opponents.length && oppGroups.length ? avg(oppGroups) : null;
+
         const key = String(name).toLowerCase();
         if (!perPlayer[key]) perPlayer[key] = { player: String(name).trim(), matches: [] };
         perPlayer[key].matches.push({
@@ -131,6 +141,8 @@ export function computeAppRatings(
           base,
           diff: side.diff,
           adjustedDiff,
+          partnerGroup,
+          oppAvg,
         });
       }
     }
@@ -178,6 +190,38 @@ export function computeAppRatings(
 
     const totalDiff = matches.reduce((s, m) => s + m.diff, 0);
 
+    // Their games cut two ways: inside their own group or against other groups,
+    // and alongside a stronger or a weaker partner.
+    const split = (games: number, diff: number) =>
+      games ? { games, margin: parseFloat((diff / games).toFixed(1)) } : null;
+    const bucket = {
+      own: { g: 0, d: 0 },
+      other: { g: 0, d: 0 },
+      strong: { g: 0, d: 0 },
+      weak: { g: 0, d: 0 },
+      same: { g: 0, d: 0 },
+    };
+    for (const m of matches) {
+      if (m.oppAvg != null) {
+        const b = Math.abs(m.oppAvg - m.group) <= 0.5 ? bucket.own : bucket.other;
+        b.g++;
+        b.d += m.diff;
+      }
+      if (m.partnerGroup != null) {
+        const b =
+          m.partnerGroup < m.group ? bucket.strong : m.partnerGroup > m.group ? bucket.weak : bucket.same;
+        b.g++;
+        b.d += m.diff;
+      }
+    }
+    const splits = {
+      ownGroup: split(bucket.own.g, bucket.own.d),
+      otherGroups: split(bucket.other.g, bucket.other.d),
+      strongPartner: split(bucket.strong.g, bucket.strong.d),
+      weakPartner: split(bucket.weak.g, bucket.weak.d),
+      samePartner: split(bucket.same.g, bucket.same.d),
+    };
+
     return {
       player: entry.player,
       rating: parseFloat(rolling.toFixed(2)),
@@ -192,6 +236,7 @@ export function computeAppRatings(
       firstRound: roundsSorted[0].round,
       lastRound: roundsSorted[roundsSorted.length - 1].round,
       rounds: detail,
+      splits,
     };
   });
 

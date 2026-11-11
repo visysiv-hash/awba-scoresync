@@ -73,6 +73,7 @@ export default function SeasonWrapped() {
               detail={data.placement ? explainPlacement(data.placement) : null}
               admin={getCurrentMember()?.is_admin === true}
               title="Why this group"
+              collapsible
             />
             <WrappedTrend trend={data.trend} rating={data.rating} />
             <WrappedBadges badges={data.badges} />

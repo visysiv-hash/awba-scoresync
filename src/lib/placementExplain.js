@@ -51,6 +51,14 @@ export function explainPlacement(player, baseGroup = null) {
   const level = read ? parseFloat(read.level.toFixed(1)) : null;
   const to = read ? clampGroup(Math.round(read.level)) : placed;
 
+  // Their games cut by opponent and by partner: the two ways a margin can flatter
+  // a player who is not actually holding the group themselves.
+  const sp = player?.splits || null;
+  const ownSplit = sp?.ownGroup || null;
+  const otherSplit = sp?.otherGroups || null;
+  const strongSplit = sp?.strongPartner || null;
+  const weakSplit = sp?.weakPartner || null;
+
   const reasons = [];
   // Anything that points at a different group is a suggestion, kept apart from the
   // plain explanation so only admins are shown it.
@@ -124,6 +132,45 @@ export function explainPlacement(player, baseGroup = null) {
           .join(", ")} — too small a sample to read.`
       );
     }
+
+    // The same games from the other side: who they played against, and who stood
+    // beside them. A margin built away from their own group, or alongside a
+    // stronger partner, says less about where they belong.
+    if (ownSplit && otherSplit) {
+      reasons.push(
+        `Against their own group: ${signed(ownSplit.margin)} a game over ${ownSplit.games} games. Against other groups: ${signed(
+          otherSplit.margin
+        )} over ${otherSplit.games}.`
+      );
+    }
+    if (strongSplit && weakSplit) {
+      reasons.push(
+        `With a stronger partner: ${signed(strongSplit.margin)} a game over ${
+          strongSplit.games
+        } games. With a weaker partner: ${signed(weakSplit.margin)} over ${weakSplit.games}.`
+      );
+    }
+  }
+
+  // The two patterns that make a margin look better than the player is: leaning on
+  // a stronger partner, or doing the damage away from their own group.
+  if (strongSplit && weakSplit && strongSplit.games >= 6 && weakSplit.games >= 6) {
+    const gap = strongSplit.margin - weakSplit.margin;
+    if (gap >= 4) {
+      suggestions.push(
+        `Leans on a stronger partner: ${gap.toFixed(1)} points a game better alongside one than alongside a weaker partner.`
+      );
+    }
+  }
+  if (ownSplit && otherSplit && ownSplit.games >= 9 && otherSplit.games >= 6) {
+    const gap = otherSplit.margin - ownSplit.margin;
+    if (gap >= 3) {
+      suggestions.push(
+        `Their games outside their own group read ${signed(otherSplit.margin)} a game against ${signed(
+          ownSplit.margin
+        )} inside it — ${gap.toFixed(1)} better away from their own group, so the same-group figure is the honest one.`
+      );
+    }
   }
 
   // What would move them, in the same terms the list uses.
@@ -157,6 +204,7 @@ export function explainPlacement(player, baseGroup = null) {
     kind: read?.kind || null,
     anchorGroup: anchor?.group ?? null,
     groups,
+    splits: sp,
     mostPlayed,
     reasons,
     suggestions,
