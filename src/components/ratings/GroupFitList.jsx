@@ -64,11 +64,11 @@ export default function GroupFitList({ rows, onApply, applying }) {
               <p className="text-[11px] text-slate-200 truncate">{row.player}</p>
               <p className="text-[10px] text-slate-500 tabular-nums">
                 {row.groups.map((c, i) => (
-                  <span key={c.group} className={c.group === row.to ? "text-slate-200" : ""}>
+                  <span key={c.group} className={c.group === row.anchorGroup ? "text-slate-200" : ""}>
                     {i > 0 && " · "}G{c.group} {marginText(c)}
+                    {c.group === row.anchorGroup && <span className="text-slate-600"> main</span>}
                   </span>
                 ))}
-                {row.level % 1 !== 0 && <span className="text-slate-600"> → level {row.level}</span>}
               </p>
             </div>
             {row.up && (
@@ -98,8 +98,9 @@ export default function GroupFitList({ rows, onApply, applying }) {
       </button>
 
       <p className="text-[10px] text-slate-500">
-        The margin is points a game in that group: around zero means they hold their own there. Their rating is
-        replayed from the base group, so setting one re-derives their whole rating from that starting point.
+        Their main group is the one holding most of their games (marked "main"), and its margin decides it: inside
+        ±3 they hold their own, better than +3 they are too strong for it, worse than −3 they are beaten in it.
+        Setting a group replays their rating from that starting point.
       </p>
     </div>
   );

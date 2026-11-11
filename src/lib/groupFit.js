@@ -1,65 +1,69 @@
-// Where a player's results say they belong, rather than where they have happened to
-// play most of their rounds.
+// Where a player belongs, read from where they actually play.
 //
-// "Margin" is the points a game a player holds in a group: positive means they are
-// outscoring that group, negative means the group is outscoring them. A player is at
-// their level in a group where that margin sits around zero, so:
-//   - an even group they have played enough of is their group (if they are even in
-//     several, the one nearest where they are placed wins, so noise never moves
-//     somebody who is already fine);
-//   - win one group and lose the next and their level is between the two, read off
-//     the gap between them;
-//   - win every group they played and they sit above the best of them (only worth a
-//     move when that is stronger than where they are placed);
-//   - lose every group they played and they sit below the weakest.
+// Every group a player has turned out in gets a margin: the points a game they hold
+// there (positive = outscoring the group, negative = the group is outscoring them).
+// The group holding most of their games is their main group, and its margin is what
+// places them:
+//   - inside ±3 a game they hold their own there, so that is their level;
+//   - winning it by more than 3 they are too strong for it, so their level is one
+//     group up;
+//   - beaten in it by more than 3 they are over their head, so their level is one
+//     group down.
+// A move up is held back when they have also played the group above and been beaten
+// there — that is the "step up is not there yet" case. Outplaying a group that is
+// already weaker than their placement is never a reason to demote them.
 // G1 is elite and G6 is beginner, so "stronger" is a lower number.
-export const MIN_GAMES = 9; // three rounds in a group before its margin means anything
+export const MIN_GAMES = 9; // three rounds in a group before it counts at all
 export const EVEN_MARGIN = 3; // points a game either way still counts as holding your own
 
 export const clampGroup = (n) => Math.min(6, Math.max(1, n));
 
-// The level a set of per-group margins points at, plus which way it was read — the
-// explanation panel and the suggestion list both come from this one place.
-export function levelFromGroups(groups, placed) {
+// The read on one set of counted groups: which group is theirs, and why.
+export function readLevel(groups, placed) {
   if (!groups || !groups.length) return null;
 
-  const even = groups.filter((c) => Math.abs(c.margin) < EVEN_MARGIN);
-  if (even.length) {
-    const at = [...even].sort(
-      (a, b) =>
-        Math.abs(a.group - (placed ?? a.group)) - Math.abs(b.group - (placed ?? b.group)) ||
-        a.group - b.group
-    )[0];
-    return { level: at.group, kind: "even", at };
+  // Their main group: the one holding the most games. Ties go to the group nearest
+  // where they are placed, so a coin-flip never moves anybody.
+  const anchor = [...groups].sort(
+    (a, b) =>
+      b.games - a.games ||
+      Math.abs(a.group - (placed ?? a.group)) - Math.abs(b.group - (placed ?? b.group)) ||
+      a.group - b.group
+  )[0];
+
+  let level = anchor.group;
+  let kind = "holds";
+  let stepUp = null;
+
+  if (anchor.margin > EVEN_MARGIN) {
+    level = anchor.group - 1;
+    kind = "outperforming";
+  } else if (anchor.margin < -EVEN_MARGIN) {
+    level = anchor.group + 1;
+    kind = "beaten";
   }
 
-  if (groups.every((c) => c.margin > 0)) {
-    return { level: groups[0].group - 1, kind: "above", at: groups[0] };
+  // A step up only stands if they have not already been beaten in the group above
+  // over a sample worth reading (a third of their main group).
+  if (level < anchor.group) {
+    const above = groups.find(
+      (c) => c.group === level && c.games >= Math.max(MIN_GAMES, Math.round(anchor.games / 3))
+    );
+    if (above && above.margin < -EVEN_MARGIN) {
+      level = anchor.group;
+      kind = "holds";
+      stepUp = above;
+    }
   }
 
-  if (groups.every((c) => c.margin < 0)) {
-    const weakest = groups[groups.length - 1];
-    return { level: weakest.group + 1, kind: "below", at: weakest };
-  }
-
-  const i = groups.findIndex(
-    (c, idx) => idx < groups.length - 1 && c.margin < 0 && groups[idx + 1].margin > 0
-  );
-  if (i < 0) return null;
-  const weak = groups[i];
-  const strong = groups[i + 1];
-  return {
-    level: weak.group + Math.abs(weak.margin) / (Math.abs(weak.margin) + strong.margin),
-    kind: "between",
-    at: { weak, strong },
-  };
+  return { anchor, level, kind, stepUp };
 }
 
 export function groupFit(players) {
   const rows = [];
 
   for (const p of players || []) {
-    // Points a game in each group they played.
+    // Points a game in each group they have played.
     const perGroup = {};
     for (const r of p.rounds || []) {
       const group = Number(r.group);
@@ -77,27 +81,25 @@ export function groupFit(players) {
       }))
       .filter((c) => c.games >= MIN_GAMES)
       .sort((a, b) => a.group - b.group);
-    if (!groups.length) continue;
 
     const placed = p.baseGroup == null ? null : Number(p.baseGroup);
-    const decided = levelFromGroups(groups, placed);
-    if (!decided) continue;
+    const read = readLevel(groups, placed);
+    if (!read) continue;
 
-    const { level, kind } = decided;
-    // Playing above (or below) the group you are placed in only reads as a move when
-    // it actually is one — otherwise the seed already accounts for it.
-    if (kind === "above" && placed != null && level >= placed) continue;
-    if (kind === "below" && placed != null && level <= placed) continue;
-
-    const to = clampGroup(Math.round(level));
+    const to = clampGroup(Math.round(read.level));
     if (placed === to) continue;
+    // Winning a group they were never placed in, which is already weaker than where
+    // they are, says nothing bad about their placement.
+    if (read.kind === "outperforming" && placed != null && to > placed) continue;
 
     rows.push({
       player: p.player,
       placed,
       to,
       up: placed == null ? null : to < placed,
-      level: parseFloat(level.toFixed(2)),
+      kind: read.kind,
+      anchorGroup: read.anchor.group,
+      anchorGames: read.anchor.games,
       groups,
       rating: p.rating == null ? null : parseFloat(Number(p.rating).toFixed(2)),
       gp: Number(p.gp) || 0,

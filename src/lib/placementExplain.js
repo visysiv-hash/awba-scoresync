@@ -1,6 +1,6 @@
 // The full story behind one player's group: every group they have played, how they
 // went in each, which group their results point at, and what would move them.
-import { EVEN_MARGIN, MIN_GAMES, clampGroup, levelFromGroups } from "@/lib/groupFit";
+import { EVEN_MARGIN, MIN_GAMES, clampGroup, readLevel } from "@/lib/groupFit";
 
 const signed = (n) => `${n > 0 ? "+" : ""}${n}`;
 
@@ -46,9 +46,10 @@ export function explainPlacement(player, baseGroup = null) {
     .sort((a, b) => a.group - b.group);
 
   const mostPlayed = [...groups].sort((a, b) => b.games - a.games || a.group - b.group)[0] || null;
-  const decided = levelFromGroups(groups.filter((g) => g.counted), placed);
-  const level = decided ? parseFloat(decided.level.toFixed(2)) : null;
-  const to = decided ? clampGroup(Math.round(decided.level)) : placed;
+  const read = readLevel(groups.filter((g) => g.counted), placed);
+  const anchor = read?.anchor || null;
+  const level = read ? parseFloat(read.level.toFixed(1)) : null;
+  const to = read ? clampGroup(Math.round(read.level)) : placed;
 
   const reasons = [];
   if (!groups.length) {
@@ -61,50 +62,55 @@ export function explainPlacement(player, baseGroup = null) {
       }: ${groups.map((g) => `G${g.group} ${g.games}`).join(", ")}.`
     );
 
-    if (mostPlayed && groups.length > 1) {
+    if (read) {
       reasons.push(
-        `Most of it in G${mostPlayed.group} — ${mostPlayed.games} of ${gp} games (${mostPlayed.share}%), averaging ${signed(
-          mostPlayed.margin
-        )} points a game there.`
+        `Their main group is G${anchor.group} — ${anchor.games} of ${gp} games (${Math.round(
+          (anchor.games / Math.max(1, gp)) * 100
+        )}%), averaging ${signed(anchor.margin)} points a game there.`
       );
-    }
 
-    if (decided?.kind === "even") {
-      reasons.push(
-        `Their G${decided.at.group} margin of ${signed(decided.at.margin)} points a game is inside the ±${EVEN_MARGIN} band over ${
-          decided.at.games
-        } games — that is the level they hold.`
-      );
-      const others = groups.filter(
-        (g) => g.counted && g.group !== decided.at.group && Math.abs(g.margin) < EVEN_MARGIN
-      );
-      if (others.length) {
+      if (read.kind === "outperforming") {
         reasons.push(
-          `They are also even in ${others.map((g) => `G${g.group}`).join(", ")}, so the group nearest where they are placed wins.`
+          `Outscoring G${anchor.group} by ${anchor.margin} points a game means they are too strong for it, so their level is one group up.`
+        );
+      } else if (read.kind === "beaten") {
+        reasons.push(
+          `Beaten in G${anchor.group} by ${Math.abs(anchor.margin)} points a game means they are over their head there, so their level is one group down.`
+        );
+      } else if (read.stepUp) {
+        reasons.push(
+          `They win G${anchor.group} by ${anchor.margin} points a game, but they are beaten by ${Math.abs(
+            read.stepUp.margin
+          )} in G${read.stepUp.group} over ${read.stepUp.games} games — the step up is not there yet.`
+        );
+      } else {
+        reasons.push(
+          `A margin of ${signed(
+            anchor.margin
+          )} points a game sits inside the ±${EVEN_MARGIN} band, so G${anchor.group} is the level they hold.`
         );
       }
-    } else if (decided?.kind === "between") {
-      reasons.push(
-        `They outscore G${decided.at.weak.group} by ${Math.abs(decided.at.weak.margin)} points a game but are beaten by ${signed(
-          decided.at.strong.margin
-        )} in G${decided.at.strong.group} — their true level is the crossover between the two, about ${level}.`
-      );
-    } else if (decided?.kind === "above") {
-      reasons.push(
-        `They outscore every group they have played, the strongest being G${decided.at.group} at ${signed(
-          decided.at.margin
-        )} points a game — their level sits above it.`
-      );
-    } else if (decided?.kind === "below") {
-      reasons.push(
-        `They are beaten in every group they have played, the weakest being G${decided.at.group} at ${signed(
-          decided.at.margin
-        )} points a game — their level sits below it.`
-      );
+
+      const others = groups.filter((g) => g.counted && g.group !== anchor.group);
+      if (others.length) {
+        reasons.push(
+          `Elsewhere: ${others
+            .map((g) => `G${g.group} ${signed(g.margin)} a game over ${g.games}`)
+            .join(", ")} — real results, but smaller samples than their main group, so they carry less weight.`
+        );
+      }
+
+      if (placed == null) {
+        reasons.push("No starting group is set, so their rating starts from the first group they played in.");
+      } else if (to === placed) {
+        reasons.push(`Placed in G${placed}, which is exactly where their results point — no change needed.`);
+      } else {
+        reasons.push(
+          `Placed in G${placed}, but their results point to G${to} — a move ${to < placed ? "up" : "down"}.`
+        );
+      }
     } else {
-      reasons.push(
-        `No group has reached ${MIN_GAMES} games yet, so their results cannot place them.`
-      );
+      reasons.push(`No group has reached ${MIN_GAMES} games yet, so their results cannot place them.`);
     }
 
     const short = groups.filter((g) => !g.counted);
@@ -115,32 +121,27 @@ export function explainPlacement(player, baseGroup = null) {
           .join(", ")} — too small a sample to read.`
       );
     }
-
-    if (placed == null) {
-      reasons.push("No starting group is set, so their rating starts from the first group they played in.");
-    } else if (decided && to === placed) {
-      reasons.push(`Placed in G${placed}, which is exactly where their results point — no change needed.`);
-    } else if (decided) {
-      reasons.push(
-        `Placed in G${placed}, but their results point to G${to} — a move ${to < placed ? "up" : "down"}.`
-      );
-    }
   }
 
   // What would move them, in the same terms the list uses.
   const moves = [];
-  if (placed != null && placed > 1) {
-    moves.push(
-      `Up to G${placed - 1}: ${MIN_GAMES}+ games there while staying within ${EVEN_MARGIN} points a game or better, and their G${placed} margin no longer above +${EVEN_MARGIN}.`
-    );
-  }
-  if (placed != null && placed < 6) {
-    moves.push(
-      `Down to G${placed + 1}: ${MIN_GAMES}+ games there staying within ${EVEN_MARGIN} points a game, and their G${placed} margin worse than −${EVEN_MARGIN}.`
-    );
+  const base = anchor?.group ?? placed ?? null;
+  if (base != null) {
+    if (base > 1) {
+      moves.push(
+        `Up to G${base - 1}: keep winning G${base} by more than ${EVEN_MARGIN} points a game, and avoid being beaten by more than ${EVEN_MARGIN} in G${
+          base - 1
+        } when they get games there.`
+      );
+    }
+    if (base < 6) {
+      moves.push(
+        `Down to G${base + 1}: be beaten by more than ${EVEN_MARGIN} points a game in G${base} — that is the only thing that moves a player down.`
+      );
+    }
   }
   moves.push(
-    `Every round re-runs this from their own games — ${MIN_GAMES} games in a group before its margin counts at all.`
+    `Where they play most decides it, so ${MIN_GAMES} games in a group before it can become their main group, and every round re-runs this from their own games.`
   );
 
   return {
@@ -150,7 +151,8 @@ export function explainPlacement(player, baseGroup = null) {
     placed,
     level,
     to,
-    kind: decided?.kind || null,
+    kind: read?.kind || null,
+    anchorGroup: anchor?.group ?? null,
     groups,
     mostPlayed,
     reasons,

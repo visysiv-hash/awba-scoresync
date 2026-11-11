@@ -11,7 +11,7 @@ const signed = (n) => `${n > 0 ? "+" : ""}${n}`;
 export default function PlacementExplainer({ player, baseGroup, onClose }) {
   if (!player) return null;
   const detail = explainPlacement(player, baseGroup);
-  const { name, rating, gp, placed, to, groups, mostPlayed, reasons, moves } = detail;
+  const { name, rating, gp, placed, to, groups, anchorGroup, reasons, moves } = detail;
   const move = placed != null && to != null && to !== placed;
 
   return (
@@ -70,7 +70,7 @@ export default function PlacementExplainer({ player, baseGroup, onClose }) {
                       className={
                         g.group === placed
                           ? "bg-yellow-400/10"
-                          : mostPlayed && g.group === mostPlayed.group
+                          : g.group === anchorGroup
                           ? "bg-white/[0.04]"
                           : ""
                       }
@@ -78,6 +78,7 @@ export default function PlacementExplainer({ player, baseGroup, onClose }) {
                       <td className="px-2 py-1 text-slate-200">
                         G{g.group}
                         {g.group === placed && <span className="text-yellow-300"> · placed</span>}
+                        {g.group === anchorGroup && <span className="text-slate-400"> · main</span>}
                         {!g.counted && <span className="text-slate-500"> · {g.games}/{9}</span>}
                       </td>
                       <td className="px-2 py-1 text-right text-slate-300">{g.games}</td>
@@ -92,12 +93,10 @@ export default function PlacementExplainer({ player, baseGroup, onClose }) {
               </table>
             </div>
           )}
-          {mostPlayed && (
-            <p className="text-[10px] text-slate-500">
-              Most rounds in G{mostPlayed.group} — {mostPlayed.share}% of their games. Best and worst are their
-              best and worst single round (points for minus against across that round's games).
-            </p>
-          )}
+          <p className="text-[10px] text-slate-500">
+            Best and worst are their best and worst single round (points for minus against across that round's
+            games). Their main group is the one holding most of their games — that margin is what places them.
+          </p>
         </section>
 
         <section className="space-y-1">
