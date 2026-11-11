@@ -16,7 +16,44 @@
 export const MIN_GAMES = 9; // three rounds in a group before its margin means anything
 export const EVEN_MARGIN = 3; // points a game either way still counts as holding your own
 
-const clampGroup = (n) => Math.min(6, Math.max(1, n));
+export const clampGroup = (n) => Math.min(6, Math.max(1, n));
+
+// The level a set of per-group margins points at, plus which way it was read — the
+// explanation panel and the suggestion list both come from this one place.
+export function levelFromGroups(groups, placed) {
+  if (!groups || !groups.length) return null;
+
+  const even = groups.filter((c) => Math.abs(c.margin) < EVEN_MARGIN);
+  if (even.length) {
+    const at = [...even].sort(
+      (a, b) =>
+        Math.abs(a.group - (placed ?? a.group)) - Math.abs(b.group - (placed ?? b.group)) ||
+        a.group - b.group
+    )[0];
+    return { level: at.group, kind: "even", at };
+  }
+
+  if (groups.every((c) => c.margin > 0)) {
+    return { level: groups[0].group - 1, kind: "above", at: groups[0] };
+  }
+
+  if (groups.every((c) => c.margin < 0)) {
+    const weakest = groups[groups.length - 1];
+    return { level: weakest.group + 1, kind: "below", at: weakest };
+  }
+
+  const i = groups.findIndex(
+    (c, idx) => idx < groups.length - 1 && c.margin < 0 && groups[idx + 1].margin > 0
+  );
+  if (i < 0) return null;
+  const weak = groups[i];
+  const strong = groups[i + 1];
+  return {
+    level: weak.group + Math.abs(weak.margin) / (Math.abs(weak.margin) + strong.margin),
+    kind: "between",
+    at: { weak, strong },
+  };
+}
 
 export function groupFit(players) {
   const rows = [];
@@ -43,32 +80,14 @@ export function groupFit(players) {
     if (!groups.length) continue;
 
     const placed = p.baseGroup == null ? null : Number(p.baseGroup);
-    const even = groups.filter((c) => Math.abs(c.margin) < EVEN_MARGIN);
-    let level = null;
+    const decided = levelFromGroups(groups, placed);
+    if (!decided) continue;
 
-    if (even.length) {
-      const nearest = [...even].sort(
-        (a, b) =>
-          Math.abs(a.group - (placed ?? a.group)) - Math.abs(b.group - (placed ?? b.group)) ||
-          a.group - b.group
-      )[0];
-      level = nearest.group;
-    } else if (groups.every((c) => c.margin > 0)) {
-      level = groups[0].group - 1; // too strong for everything they have played
-      if (placed != null && level >= placed) continue; // already placed above it
-    } else if (groups.every((c) => c.margin < 0)) {
-      level = groups[groups.length - 1].group + 1; // beaten in everything they have played
-      if (placed != null && level <= placed) continue; // already placed below it
-    } else {
-      // Winning one group and losing the next: their level is the gap between them.
-      const at = groups.findIndex(
-        (c, i) => i < groups.length - 1 && c.margin < 0 && groups[i + 1].margin > 0
-      );
-      if (at < 0) continue;
-      const weak = groups[at];
-      const strong = groups[at + 1];
-      level = weak.group + Math.abs(weak.margin) / (Math.abs(weak.margin) + strong.margin);
-    }
+    const { level, kind } = decided;
+    // Playing above (or below) the group you are placed in only reads as a move when
+    // it actually is one — otherwise the seed already accounts for it.
+    if (kind === "above" && placed != null && level >= placed) continue;
+    if (kind === "below" && placed != null && level <= placed) continue;
 
     const to = clampGroup(Math.round(level));
     if (placed === to) continue;

@@ -5,6 +5,7 @@ import PageBanner from "@/components/PageBanner";
 import AdminPinGate from "@/components/AdminPinGate";
 import BaseGroupRow from "@/components/ratings/BaseGroupRow";
 import GroupFitList from "@/components/ratings/GroupFitList";
+import PlacementExplainer from "@/components/ratings/PlacementExplainer";
 import { groupFit } from "@/lib/groupFit";
 import { isAdminUnlocked } from "@/lib/adminUnlock";
 import { saveBaseGroup } from "@/lib/baseGroups";
@@ -23,6 +24,7 @@ export default function BaseGroups() {
   const [sortBy, setSortBy] = useState("group");
   const [saving, setSaving] = useState(null);
   const [applying, setApplying] = useState(false);
+  const [explain, setExplain] = useState(null);
 
   const load = useCallback(async () => {
     const [ratings, roster] = await Promise.all([
@@ -201,10 +203,17 @@ export default function BaseGroups() {
                 baseGroup={lookupName(baseGroups, p.player) ?? null}
                 saving={saving === p.player}
                 onSave={(value) => assign(p.player, value)}
+                onExplain={() => setExplain(p)}
               />
             ))}
           </div>
         )}
+
+        <PlacementExplainer
+          player={explain}
+          baseGroup={explain ? lookupName(baseGroups, explain.player) ?? null : null}
+          onClose={() => setExplain(null)}
+        />
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
-import { Loader2 } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BASE_GROUPS } from "@/lib/baseGroups";
 
-export default function BaseGroupRow({ player, rating, currentGroup, baseGroup, saving, onSave }) {
+export default function BaseGroupRow({ player, rating, currentGroup, baseGroup, saving, onSave, onExplain }) {
   const fixed = baseGroup != null;
   return (
     <div className="flex items-center gap-2 px-3 py-2">
@@ -13,6 +13,14 @@ export default function BaseGroupRow({ player, rating, currentGroup, baseGroup, 
           {fixed && <span className="text-amber-400"> · base fixed</span>}
         </p>
       </div>
+      <button
+        type="button"
+        onClick={() => onExplain?.()}
+        className="shrink-0 rounded p-1 text-slate-500 hover:text-yellow-300 hover:bg-white/10"
+        aria-label={`Why ${player} is in this group`}
+      >
+        <Info className="w-3.5 h-3.5" />
+      </button>
       {saving ? (
         <Loader2 className="w-4 h-4 animate-spin text-yellow-400" />
       ) : (
