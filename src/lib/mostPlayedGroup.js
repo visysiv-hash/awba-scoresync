@@ -20,6 +20,8 @@ export function mostPlayedGroup(players) {
       top,
       plays: counts[top],
       rounds,
+      // How much of their badminton was played in that group: 1 means every round.
+      share: rounds ? counts[top] / rounds : 0,
       rating: p.rating == null ? null : parseFloat(Number(p.rating).toFixed(2)),
       gp: Number(p.gp) || 0,
       shift: placed == null ? null : top - placed,

@@ -3,6 +3,8 @@ import { Loader2 } from "lucide-react";
 
 // Players who have played most of their rounds in a group other than the one they
 // are placed in. Ticking someone starts their rating from that most-played group.
+const SETTLED_SHARE = 0.75;
+
 export default function MostPlayedGroupList({ rows, onApply, applying }) {
   const [picked, setPicked] = useState([]);
 
@@ -17,9 +19,9 @@ export default function MostPlayedGroupList({ rows, onApply, applying }) {
       current.includes(player) ? current.filter((p) => p !== player) : [...current, player]
     );
 
-  // Anyone who has played that group five rounds or more is settled there rather
-  // than just passing through it.
-  const settled = rows.filter((r) => r.plays >= 5).map((r) => r.player);
+  // A player is settled in that group once three quarters of their rounds were
+  // played there — below that they have only been passing through it.
+  const settled = rows.filter((r) => r.share >= SETTLED_SHARE).map((r) => r.player);
   const allSettled = settled.length > 0 && settled.every(isPicked);
   const moves = rows.filter((r) => isPicked(r.player)).map((r) => ({ player: r.player, to: r.top }));
 
@@ -35,13 +37,13 @@ export default function MostPlayedGroupList({ rows, onApply, applying }) {
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] text-slate-300">
-          {settled.length} of {rows.length} have played that group five rounds or more.
+          {settled.length} of {rows.length} played 75% or more of their rounds in that group.
         </p>
         <button
           onClick={() => setPicked(allSettled ? [] : settled)}
           className="shrink-0 rounded-lg bg-white/10 hover:bg-white/20 px-2 py-1 text-[10px] font-semibold text-slate-200"
         >
-          {allSettled ? "Clear" : "Tick the settled ones"}
+          {allSettled ? "Clear" : "Tick the 75% group"}
         </button>
       </div>
 
@@ -50,7 +52,11 @@ export default function MostPlayedGroupList({ rows, onApply, applying }) {
           <label
             key={row.player}
             className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer ${
-              isPicked(row.player) ? "bg-yellow-400/10" : row.plays >= 5 ? "bg-white/[0.03]" : ""
+              isPicked(row.player)
+                ? "bg-yellow-400/10"
+                : row.share >= SETTLED_SHARE
+                  ? "bg-white/[0.03]"
+                  : ""
             }`}
           >
             <input
@@ -62,7 +68,7 @@ export default function MostPlayedGroupList({ rows, onApply, applying }) {
             <div className="flex-1 min-w-0">
               <p className="text-[11px] text-slate-200 truncate">{row.player}</p>
               <p className="text-[10px] text-slate-500 tabular-nums">
-                {row.plays} of {row.rounds} rounds in G{row.top}
+                {row.plays} of {row.rounds} rounds in G{row.top} · {Math.round(row.share * 100)}%
               </p>
             </div>
             <span
