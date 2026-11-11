@@ -4,8 +4,8 @@ import { base44 } from "@/api/base44Client";
 import PageBanner from "@/components/PageBanner";
 import AdminPinGate from "@/components/AdminPinGate";
 import BaseGroupRow from "@/components/ratings/BaseGroupRow";
-import MostPlayedGroupList from "@/components/ratings/MostPlayedGroupList";
-import { mostPlayedGroup } from "@/lib/mostPlayedGroup";
+import GroupFitList from "@/components/ratings/GroupFitList";
+import { groupFit } from "@/lib/groupFit";
 import { isAdminUnlocked } from "@/lib/adminUnlock";
 import { saveBaseGroup } from "@/lib/baseGroups";
 import { lookupName } from "@/lib/nameMatch";
@@ -52,7 +52,7 @@ export default function BaseGroups() {
     load().finally(() => setLoading(false));
   }, [unlocked, load]);
 
-  const mostPlayed = useMemo(() => mostPlayedGroup(players), [players]);
+  const fits = useMemo(() => groupFit(players), [players]);
 
   const assign = async (player, value) => {
     setSaving(player);
@@ -73,9 +73,9 @@ export default function BaseGroups() {
     }
   };
 
-  // Ticked players start from the group they have actually played most, then the
+  // Ticked players start from the group their points margin puts them in, then the
   // ratings are reloaded so every number reflects the new starting point.
-  const applyMostPlayed = async (moves) => {
+  const applyFits = async (moves) => {
     if (!moves.length) return;
     setApplying(true);
     try {
@@ -149,10 +149,10 @@ export default function BaseGroups() {
         {!loading && (
           <div className="space-y-1.5">
             <h2 className="text-xs font-bold text-slate-300">
-              Played most rounds in another group{" "}
-              <span className="text-slate-500 font-normal">({mostPlayed.length} players)</span>
+              Results say they belong in another group{" "}
+              <span className="text-slate-500 font-normal">({fits.length} players)</span>
             </h2>
-            <MostPlayedGroupList rows={mostPlayed} onApply={applyMostPlayed} applying={applying} />
+            <GroupFitList rows={fits} onApply={applyFits} applying={applying} />
           </div>
         )}
 
