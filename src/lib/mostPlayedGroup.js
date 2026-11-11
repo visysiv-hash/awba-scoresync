@@ -29,6 +29,10 @@ export function mostPlayedGroup(players) {
     const rounds = (p.rounds || []).length;
     const margin = here.games ? here.diff / here.games : 0;
     const dominant = here.games >= DOMINANT_GAMES && margin >= DOMINANT_MARGIN;
+    // G1 is elite and G6 is beginner, so "higher" is a lower number. Someone beating
+    // their group up is never seeded into that group or lower: they start one band
+    // stronger than the stronger of where they played and where they are placed.
+    const anchor = Math.min(placed ?? top, top);
     rows.push({
       player: p.player,
       placed,
@@ -42,7 +46,7 @@ export function mostPlayedGroup(players) {
       margin: parseFloat(margin.toFixed(1)),
       // Beating the group comfortably — start them a band higher instead.
       dominant,
-      to: dominant ? Math.max(1, top - 1) : top,
+      to: dominant ? Math.max(1, anchor - 1) : top,
       rating: p.rating == null ? null : parseFloat(Number(p.rating).toFixed(2)),
       gp: Number(p.gp) || 0,
       shift: placed == null ? null : top - placed,
