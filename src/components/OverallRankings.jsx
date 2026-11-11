@@ -292,6 +292,13 @@ export default function OverallRankings({ groups }) {
                     )}
                   </div>
                   <div className="text-right shrink-0 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setExpandedPlayer(p.player); }}
+                      className="shrink-0 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500 hover:bg-slate-100"
+                    >
+                      Why G{p.placedGroup}
+                    </button>
                     <div className="text-right">
                       <span className={`text-sm font-bold ${p.hasStats ? "text-yellow-600" : "text-slate-400"}`}>{p.rating}</span>
                       {p.hasStats && p.baseRating !== p.rating && (
