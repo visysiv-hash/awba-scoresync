@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import RoundScores from "./RoundScores";
 import StarRating from "./StarRating";
+import GamePlayerRatingForm from "./GamePlayerRatingForm";
 import { getCurrentMember } from "@/lib/currentMember";
 
 const emptyRounds = () => [{ score1: "", score2: "", }, { score1: "", score2: "" }];
@@ -28,7 +29,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showZeroConfirm, setShowZeroConfirm] = useState(false);
-  const [rating, setRating] = useState(0);
+  const [playerRatings, setPlayerRatings] = useState({});
 
   // Load prefilled game from search
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
       setTeam2(prefilledGame.team2 || "");
       setRounds(emptyRounds());
       setSubmitted(false);
-      setRating(0);
+      setPlayerRatings({});
       onPrefilledUsed?.();
     }
   }, [prefilledGame]);
@@ -62,7 +63,10 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
       setGameDetails(res.data);
       setTeam1(res.data.team1 || "");
       setTeam2(res.data.team2 || "");
-      setRating(res.data.rating || 0);
+      // Any stars these players already gave this game, so they can change them.
+      const saved = {};
+      for (const r of res.data.player_ratings || []) saved[r.player] = r.rating;
+      setPlayerRatings(saved);
     }
   };
 
@@ -101,7 +105,9 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
       rounds,
       total1,
       total2,
-      rating,
+      player_ratings: Object.entries(playerRatings)
+        .filter(([, stars]) => Number(stars) > 0)
+        .map(([player, stars]) => ({ player, rating: Number(stars) })),
     });
     setSubmitting(false);
     if (res.data?.success) {
