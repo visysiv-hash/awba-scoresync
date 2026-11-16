@@ -3,12 +3,15 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-import { Loader2, Search, ChevronRight } from "lucide-react";
+import { Loader2, Search, ChevronRight, Star } from "lucide-react";
 import { toast } from "sonner";
+import GameRatingDialog from "./GameRatingDialog";
 
 export default function GameSearch({ onSelectGame, submittedScores = {}, query, onQueryChange, results, onResultsChange, autoSearch = false }) {
   const [loading, setLoading] = useState(false);
   const [nightDate, setNightDate] = useState("");
+  const [resultDate, setResultDate] = useState("");
+  const [ratingGame, setRatingGame] = useState(null);
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -25,7 +28,17 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
       toast.error(res.data.error);
     } else {
       onResultsChange(res.data?.results || []);
+      setResultDate(res.data?.date || "");
     }
+  };
+
+  // Stars saved for one game, kept in the list without another search.
+  const handleRated = (game, saved) => {
+    onResultsChange(
+      (results || []).map((g) =>
+        g.net === game.net && g.game === game.game ? { ...g, ...saved } : g
+      )
+    );
   };
 
   // Auto-run the search once on mount when a name is pre-filled (e.g. from member login)
@@ -105,6 +118,29 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
                             <p className="font-semibold">Total: <b>{displayTotal1}</b> – <b>{displayTotal2}</b></p>
                           </div>
                         )}
+                        {isScored && !g.closed && (
+                          <div className="flex items-center justify-between gap-2 border-t pt-1.5">
+                            <span className="flex items-center gap-1 text-xs text-amber-700">
+                              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                              {g.rating
+                                ? `${g.rating}/5 from ${(g.player_ratings || []).length} player${
+                                    (g.player_ratings || []).length === 1 ? "" : "s"
+                                  }`
+                                : "Not rated yet"}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRatingGame(g);
+                              }}
+                            >
+                              Rate game
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       <ChevronRight className="w-4 h-4 text-muted-foreground ml-2 shrink-0" />
                     </div>
@@ -127,6 +163,13 @@ export default function GameSearch({ onSelectGame, submittedScores = {}, query, 
             )}
           </div>
         )}
+
+        <GameRatingDialog
+          game={ratingGame}
+          date={resultDate || nightDate}
+          onOpenChange={(open) => !open && setRatingGame(null)}
+          onSaved={(saved) => ratingGame && handleRated(ratingGame, saved)}
+        />
       </CardContent>
     </Card>
   );

@@ -143,7 +143,7 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
     setTeam2("");
     setRounds(emptyRounds());
     setSubmitted(false);
-    setRating(0);
+    setPlayerRatings({});
   };
 
   return (
@@ -214,11 +214,16 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
 
             <RoundScores rounds={rounds} onChange={setRounds} team1={team1} team2={team2} />
 
-            <div className="space-y-1.5 border-t pt-4">
+            <div className="space-y-2 border-t pt-4">
               <p className="text-sm font-semibold text-center">How was the game?</p>
-              <StarRating value={rating} onChange={setRating} className="justify-center" />
+              <GamePlayerRatingForm
+                team1={team1}
+                team2={team2}
+                value={playerRatings}
+                onChange={setPlayerRatings}
+              />
               <p className="text-xs text-muted-foreground text-center">
-                {rating ? `${rating} out of 5 — tap the same star to clear` : "Optional — tap a star to rate how the game played"}
+                Each player taps their own stars — optional, and still open to add on Match Details until 11:59pm Wednesday.
               </p>
             </div>
 
@@ -259,9 +264,16 @@ export default function ScoreEntry({ prefilledGame, onPrefilledUsed, onScoreSubm
                 <span className="font-bold">{rounds.reduce((s, r) => s + Number(r.score2), 0)}</span> {team2}
               </p>
             </div>
-            {rating > 0 && (
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                Game rated <StarRating value={rating} size="sm" />
+            {Object.entries(playerRatings).some(([, stars]) => Number(stars) > 0) && (
+              <div className="space-y-1">
+                {Object.entries(playerRatings)
+                  .filter(([, stars]) => Number(stars) > 0)
+                  .map(([player, stars]) => (
+                    <div key={player} className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-medium">{player}</span>
+                      <StarRating value={stars} size="sm" />
+                    </div>
+                  ))}
               </div>
             )}
             <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => onScoreSubmitted?.({ goBack: true })}>← Back to Game List</Button>
