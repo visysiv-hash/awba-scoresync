@@ -66,6 +66,8 @@ Deno.serve(async (req) => {
         result.submitted = true;
         result.noResult = isNoResult(stored);
         result.rounds = rounds;
+        result.rating = stored.rating ?? null;
+        result.player_ratings = stored.player_ratings || [];
         result.total1 = stored.score1 ?? rounds.reduce((t, r) => t + (Number(r.score1) || 0), 0);
         result.total2 = stored.score2 ?? rounds.reduce((t, r) => t + (Number(r.score2) || 0), 0);
       }

@@ -12,7 +12,10 @@ Deno.serve(async (req) => {
       { net: Number(netNumber), game: Number(gameNumber) },
       { limit: 5, sort: "-created_date" }
     );
-    const rating = (rated.items || []).find((r: any) => r.rating)?.rating;
+    const saved = (rated.items || []).find((r: any) => r.rating || (r.player_ratings || []).length);
+    const rating = saved?.rating;
+    const player_ratings = saved?.player_ratings || [];
+    const date = saved?.date || "";
 
     // Sheet switched off: the teams come from the saved draw in the app.
     if (!(await sheetsEnabled(base44))) {
@@ -23,7 +26,15 @@ Deno.serve(async (req) => {
       if (!game) {
         return Response.json({ error: `No game found for Net ${netNumber}, Game ${gameNumber}.` });
       }
-      return Response.json({ net: game.net, game: game.game, team1: game.team1, team2: game.team2, rating });
+      return Response.json({
+        net: game.net,
+        game: game.game,
+        team1: game.team1,
+        team2: game.team2,
+        rating,
+        player_ratings,
+        date,
+      });
     }
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
@@ -66,6 +77,8 @@ Deno.serve(async (req) => {
       team1: match[2],
       team2: match[3],
       rating,
+      player_ratings,
+      date,
     });
   } catch (error) {
     console.error("Error:", error.message);

@@ -1,12 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.53';
 import { sheetsEnabled } from "../../shared/sheetSwitch.ts";
 import { deadlinePassed } from "../../shared/noResult.ts";
+import { mergePlayerRatings, ratingAverage } from "../../shared/gameRatings.ts";
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  const { netNumber, gameNumber, team1, team2, rounds, total1, total2, rating } = await req.json();
+  const { netNumber, gameNumber, team1, team2, rounds, total1, total2, rating, player_ratings } = await req.json();
 
-  // Optional 1–5 star rating of how the game played. Anything outside that is ignored.
+  // Each player's own 1–5 stars for how the game played. A single overall rating
+  // is still accepted from older callers.
   const stars = Math.round(Number(rating));
   const ratingOut = stars >= 1 && stars <= 5 ? stars : undefined;
 
@@ -136,14 +138,26 @@ Deno.serve(async (req) => {
     rounds,
     source: "app",
   };
-  if (ratingOut) record.rating = ratingOut;
-
   // One result per game per night: a second submission corrects the first.
   const existing = await base44.asServiceRole.entities.MatchResult.filter(
     { date: scoreDate, net: Number(netNumber), game: Number(gameNumber) },
     { limit: 5 }
   );
   const previous = (existing.items || [])[0];
+
+  // Stars either come in per player or, from an older screen, as one game rating.
+  const rated = mergePlayerRatings(
+    previous?.player_ratings,
+    player_ratings,
+    [...record.team1_players, ...record.team2_players]
+  );
+  if (rated.length) {
+    record.player_ratings = rated;
+    record.rating = ratingAverage(rated);
+  } else if (ratingOut) {
+    record.rating = ratingOut;
+  }
+
   if (previous) {
     await base44.asServiceRole.entities.MatchResult.update(previous.id, record);
   } else {

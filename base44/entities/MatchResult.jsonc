@@ -69,10 +69,28 @@
         }
       }
     },
+    "player_ratings": {
+      "type": "array",
+      "title": "Player Ratings",
+      "description": "Each player's own 1-5 star rating of the game. A player rating again replaces their earlier answer.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "player": {
+            "type": "string",
+            "title": "Player"
+          },
+          "rating": {
+            "type": "number",
+            "title": "Rating (1-5)"
+          }
+        }
+      }
+    },
     "rating": {
       "type": "number",
-      "title": "Game Rating (1\u20135)",
-      "description": "Optional star rating from the players on how much they enjoyed this game."
+      "title": "Game Rating (1-5)",
+      "description": "Average of the players' own star ratings for this game."
     },
     "source": {
       "type": "string",
