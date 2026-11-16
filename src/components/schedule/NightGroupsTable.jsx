@@ -14,6 +14,8 @@ const blocks = (g) => {
     }
     return out;
   }
+  // A short group plays American doubles and singles, so it is listed as one block.
+  if (players.length < 4) return [{ label: "PLAYERS", names: players }];
   return [
     { label: "TOP 4", names: g.top4 || [] },
     { label: "BOTTOM 4", names: g.bottom4 || [] },

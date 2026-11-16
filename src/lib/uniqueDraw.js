@@ -16,7 +16,7 @@ const PLANS = {
   6: [3, 3],
   5: [3, 2],
   4: [4],
-  3: [2],
+  3: [3],
   2: [2],
   1: [],
 };
@@ -53,10 +53,25 @@ function assignToGroups(matches, plans, players, courts) {
 // The admin can nominate who is happy to play American doubles and singles; those
 // formats then go to the nominated players, wherever the night still allows it.
 export function buildUniqueDraw(groups, options = {}) {
-  const plans = groups.map((g) => PLANS[g.players.length] || []);
   const shortFormatOk = americanSet(options.americanDoubles);
-  const courts = groups.map((_, i) => [i * 2 + 1, i * 2 + 2]);
-  const players = groups.flatMap((g, home) =>
+  // A full group fills two courts a round; a short group plays a single game a round
+  // and needs only one, so the net numbers stay in one run with no net left empty.
+  const courts = [];
+  let netNumber = 1;
+  for (const g of groups) {
+    const width = g.players.length >= 4 ? 2 : 1;
+    courts.push(Array.from({ length: width }, (_, k) => netNumber + k));
+    netNumber += width;
+  }
+  // A group of two or three has the same few players in it all night, so it can never
+  // be unique and is left out of the search: its American doubles and singles are
+  // built directly, rotating the lone player so the handicap is shared. Only the full
+  // groups are pooled for the unique draw.
+  const fullGroups = groups.filter((g) => (g.players || []).length >= 4);
+  const fullIndexes = fullGroups.map((g) => groups.indexOf(g));
+  const fullCourts = fullIndexes.map((i) => courts[i]);
+  const plans = fullGroups.map((g) => PLANS[g.players.length] || []);
+  const players = fullGroups.flatMap((g, home) =>
     g.players.map((p, i) => ({ ...p, home, bottom: i >= 4 }))
   );
   const sizes = plans.flat();
@@ -86,7 +101,7 @@ export function buildUniqueDraw(groups, options = {}) {
   // Only encounter preferences can relax. Junior safety is never relaxed.
   for (const rule of ["meetings", "roles", "relaxed"]) {
     if (rule === "meetings" && impossibleEncounters) continue;
-    for (let distance = 0; distance < Math.max(1, groups.length); distance++) {
+    for (let distance = 0; distance < Math.max(1, fullGroups.length); distance++) {
       if (rule === "meetings" && distance === 0 && groups.some((g) => g.players.length === 8)) continue;
       const candidates = candidatesAt(distance);
       const found = searchUniqueRounds(players.length, candidates, sizes, rule);
@@ -103,7 +118,7 @@ export function buildUniqueDraw(groups, options = {}) {
     }
     if (rounds) break;
   }
-  if (!rounds) throw new Error("No legal draw was found for this player list.");
+  if (sizes.length && !rounds) throw new Error("No legal draw was found for this player list.");
 
   const out = groups.map((g, i) => ({
     group: g.groupNum,
@@ -116,31 +131,49 @@ export function buildUniqueDraw(groups, options = {}) {
     bottom4: g.players.slice(4).map((p) => p.name),
     games: [1, 2, 3].map((game) => ({
       game,
-      label: `Game ${game} · ${policy === "relaxed" ? "fallback draw" : "unique games"}`,
+      label:
+        g.players.length < 4
+          ? `Game ${game} · ${g.players.length === 3 ? "American doubles" : "singles"}`
+          : `Game ${game} · ${policy === "relaxed" ? "fallback draw" : "unique games"}`,
       matches: [],
     })),
   }));
 
   const flat = [];
-  rounds.forEach((matches, gi) => {
+  const push = (index, game, teamA, teamB, net) => {
+    out[index].games[game - 1].matches.push({ teamA, teamB, net });
+    flat.push({ game, net, team1: teamA.map((p) => p.name), team2: teamB.map((p) => p.name) });
+  };
+
+  (rounds || []).forEach((matches, gi) => {
     const used = new Set();
-    assignToGroups(matches, plans, players, courts).forEach((groupMatches, g) => {
+    assignToGroups(matches, plans, players, fullCourts).forEach((groupMatches, fg) => {
       for (const match of groupMatches) {
         for (const id of match.ids) {
           if (used.has(id)) throw new Error("A player has two slots in one game.");
           used.add(id);
         }
         const teams = match.teams.map((team) => team.map((id) => players[id]));
-        out[g].games[gi].matches.push({ teamA: teams[0], teamB: teams[1], net: match.net });
-        flat.push({
-          game: gi + 1,
-          net: match.net,
-          team1: teams[0].map((p) => p.name),
-          team2: teams[1].map((p) => p.name),
-        });
+        push(fullIndexes[fg], gi + 1, teams[0], teams[1], match.net);
       }
     });
     if (used.size !== slots) throw new Error("The draw is missing a player slot.");
+  });
+
+  // The short group's own three games: American doubles with a different player alone
+  // each round, or singles, so everyone in it plays all three.
+  groups.forEach((g, i) => {
+    if ((g.players || []).length >= 4) return;
+    const net = courts[i][0];
+    for (let game = 1; game <= 3; game++) {
+      if (g.players.length === 3) {
+        const lone = g.players[(game - 1) % 3];
+        push(i, game, [lone], g.players.filter((p) => p !== lone), net);
+      } else if (g.players.length === 2) {
+        const swap = game % 2 === 0;
+        push(i, game, [g.players[swap ? 1 : 0]], [g.players[swap ? 0 : 1]], net);
+      }
+    }
   });
 
   const info = scheduleUniqueness({

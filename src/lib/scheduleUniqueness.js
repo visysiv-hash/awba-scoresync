@@ -6,6 +6,9 @@ const key = (a, b) => [low(a), low(b)].sort().join("|");
 export function scheduleUniqueness(record) {
   const counts = { partners: new Map(), opponents: new Map(), meetings: new Map() };
   const homes = new Map((record?.groups || []).flatMap((g, i) => (g.players || []).map((name) => [low(name), i])));
+  // A group of two or three is the short-format group: its players meet each other
+  // every round by design, so its repeats are not a sign of a weaker draw.
+  const groupSizes = (record?.groups || []).map((g) => (g.players || []).length);
   let distance = 0;
   const add = (type, a, b) => {
     const k = key(a, b);
@@ -13,12 +16,15 @@ export function scheduleUniqueness(record) {
   };
   for (const match of record?.matches || []) {
     const teams = [match.team1 || [], match.team2 || []];
-    for (const team of teams) for (let i = 0; i < team.length; i++) for (let j = i + 1; j < team.length; j++) add("partners", team[i], team[j]);
-    for (const a of teams[0]) for (const b of teams[1]) add("opponents", a, b);
     const names = teams.flat();
-    const groups = names.map((name) => homes.get(low(name))).filter((g) => g !== undefined);
-    if (groups.length) distance = Math.max(distance, Math.max(...groups) - Math.min(...groups));
-    for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) add("meetings", names[i], names[j]);
+    const matchGroups = [...new Set(names.map((name) => homes.get(low(name))).filter((g) => g !== undefined))];
+    const shortGroup = matchGroups.length > 0 && matchGroups.every((g) => (groupSizes[g] || 0) < 4);
+    if (!shortGroup) {
+      for (const team of teams) for (let i = 0; i < team.length; i++) for (let j = i + 1; j < team.length; j++) add("partners", team[i], team[j]);
+      for (const a of teams[0]) for (const b of teams[1]) add("opponents", a, b);
+      for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) add("meetings", names[i], names[j]);
+    }
+    if (matchGroups.length) distance = Math.max(distance, Math.max(...matchGroups) - Math.min(...matchGroups));
   }
   const repeats = (type) => [...counts[type].values()].reduce((sum, n) => sum + Math.max(0, n - 1), 0);
 

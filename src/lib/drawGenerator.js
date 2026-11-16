@@ -25,17 +25,19 @@ export function buildGroups(players) {
   const chunks = [];
   for (let i = 0; i < all.length; i += BLOCK_SIZE) chunks.push(all.slice(i, i + BLOCK_SIZE));
 
-  // Blocks are cut at eight wherever the numbers allow, never at a stored group's
-  // edge. Three or fewer players left over cannot fill a net, so they join the
-  // blocks before them instead of sitting out or playing a thin game on their own.
+  // Blocks are cut at eight, never stretched past it: a block of eight fills two
+  // courts every round, so everyone in it plays three games. Two or three players
+  // left over become their own short group, where American doubles and singles give
+  // all of them three games as well — stretching a block to nine would only leave
+  // someone resting a round.
   const tail = chunks.length > 1 ? chunks[chunks.length - 1] : null;
-  if (tail && tail.length < 4) {
-    chunks.pop();
-    // Weakest tail player into the weakest block, so the added players stay in order.
-    tail.slice().reverse().forEach((player, i) => {
-      const target = chunks.length - 1 - (i % chunks.length);
-      chunks[target] = [...chunks[target], player];
-    });
+  if (tail && tail.length === 1) {
+    // One player cannot play alone, so the weakest player of the block before is lent
+    // to them: that leaves a short group of two and a group of seven, and nobody in
+    // either group loses a game.
+    const before = chunks[chunks.length - 2];
+    chunks[chunks.length - 2] = before.slice(0, -1);
+    chunks[chunks.length - 1] = [before[before.length - 1], ...tail];
   }
 
   return chunks.map((chunk, i) => ({ groupNum: i + 1, players: chunk }));
