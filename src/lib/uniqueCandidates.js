@@ -26,9 +26,11 @@ export function uniqueCandidates(players, sizes, distance, shortFormatOk) {
     }
     const homes = ids.map((id) => players[id].home);
     const span = Math.max(...homes) - Math.min(...homes);
+    // A short-format game is a volunteer's game: it may borrow players from another
+    // group, because the nomination decides who stands alone (see roleShortGames).
+    if (ids.length < 4 && span > 0 && !ids.some((id) => players[id].nominated)) return;
     const ratings = ids.map((id) => players[id].rating).filter((r) => r !== null && r !== undefined);
     const spread = ratings.length ? Math.max(...ratings) - Math.min(...ratings) : 0;
-    const formatCost = ids.length < 4 ? shortFormatCost(ids.map((id) => players[id]), shortFormatOk) : 0;
     const matches = [];
     for (const teams of splits(ids)) {
       if (!juniorMatchAllowed(...teams.map((team) => team.map((id) => players[id])))) continue;
@@ -37,7 +39,10 @@ export function uniqueCandidates(players, sizes, distance, shortFormatOk) {
       const [a, b] = playerTeams.map(teamAvg);
       const gap = a !== null && b !== null ? Math.abs(a - b) : 0;
       const juniorCost = juniorPreferenceCost(...playerTeams) * 10;
-      matches.push({ ids, teams, span, meetings: pairIds(ids, n),
+      const formatCost = ids.length < 4 ? shortFormatCost(playerTeams, shortFormatOk) : 0;
+      // The player standing alone: the draw keeps each of them to one such turn a night.
+      const lone = ids.length === 3 ? (teams[0].length === 1 ? teams[0][0] : teams[1][0]) : -1;
+      matches.push({ ids, teams, lone, span, meetings: pairIds(ids, n),
         partners: teams.flatMap((team) => pairIds(team, n)),
         opponents: teams[0].flatMap((x) => teams[1].map((y) => Math.min(x, y) * n + Math.max(x, y))),
         cost: gap * gap * 10 + spread * spread * 0.01 + span * 0.0001 + juniorCost + formatCost });

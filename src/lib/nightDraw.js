@@ -11,7 +11,7 @@ import { keepApartDraw, bannedTogether } from "./neverPair";
 import { buildUniqueDraw } from "@/lib/uniqueDraw";
 import { juniorMatchAllowed, assertJuniorDraw } from "@/lib/juniorSafety";
 import { juniorPreferenceCost } from "@/lib/juniorPreference";
-import { americanSet, shortFormatCost } from "@/lib/americanDoubles";
+import { americanSet, shortFormatCost, lonePlayer } from "@/lib/americanDoubles";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -32,7 +32,7 @@ const PLANS = {
   6: [[1, 2], [1, 2]],
   5: [[1, 2], [1, 1]],
   4: [[2, 2]],
-  3: [[1, 1]],
+  3: [[1, 2]],
   2: [[1, 1]],
   1: [],
 };
@@ -40,9 +40,9 @@ const PLANS = {
 // Tries every line-up for the round and keeps the one with the fewest repeated
 // partners and opponents, then the closest team ratings. A game that is not two
 // against two — American doubles or singles — is where the admin's nomination
-// counts: filling it with players who did not put their hand up costs more than any
-// rating gap, so the nominated players get those games whenever the round allows it.
-function bestAssignment(playing, plan, seen, strict, shortFormatOk) {
+// counts: a nominated player belongs on the lonely side of the net, and nobody
+// stands alone twice in a night, so `loneSeen` rules them out completely.
+function bestAssignment(playing, plan, seen, strict, shortFormatOk, loneSeen) {
   const slots = [];
   plan.forEach(([a, b], mi) => {
     for (let i = 0; i < a; i++) slots.push([mi, "A"]);
@@ -64,7 +64,7 @@ function bestAssignment(playing, plan, seen, strict, shortFormatOk) {
   const cost = (teams) => {
     let c = 0;
     for (const t of teams) {
-      if (t.A.length !== 2 || t.B.length !== 2) c += shortFormatCost([...t.A, ...t.B], shortFormatOk);
+      if (t.A.length !== 2 || t.B.length !== 2) c += shortFormatCost([t.A, t.B], shortFormatOk);
       if (t.A.length === 2 && seen.partners.has(key(t.A[0].name, t.A[1].name))) c += 220;
       if (t.B.length === 2 && seen.partners.has(key(t.B[0].name, t.B[1].name))) c += 220;
       for (const x of t.A) {
@@ -94,6 +94,11 @@ function bestAssignment(playing, plan, seen, strict, shortFormatOk) {
     if (depth === slots.length) {
       const teams = teamsFrom();
       if (teams.some((t) => !juniorMatchAllowed(t.A, t.B))) return;
+      // One turn standing alone is the handicap; nobody carries it twice.
+      if (teams.some((t) => {
+        const lone = lonePlayer([t.A, t.B]);
+        return lone && loneSeen && loneSeen.has(String(lone.name || "").trim().toLowerCase());
+      })) return;
       const c = cost(teams);
       if (c < bestCost) {
         bestCost = c;
@@ -247,6 +252,8 @@ function shortGroupGames(players, strict, shortFormatOk) {
   const seen = { partners: new Set(), opponents: new Set(), meets: new Map() };
   const rests = {};
   const games = [];
+  // Whoever has stood alone already keeps the pair side for the rest of the night.
+  const loneSeen = new Set();
 
   for (let g = 1; g <= 3; g++) {
     if (!plan.length) {
@@ -258,12 +265,17 @@ function shortGroupGames(players, strict, shortFormatOk) {
     const playing = byRest.slice(0, slots);
     for (const p of players) if (!playing.includes(p)) rests[p.name] = (rests[p.name] || 0) + 1;
 
-    const teams = bestAssignment(playing, plan, seen, strict, shortFormatOk);
+    const teams = bestAssignment(playing, plan, seen, strict, shortFormatOk, loneSeen)
+      || bestAssignment(playing, plan, seen, strict, shortFormatOk, null);
     if (!teams) {
       games.push([]);
       continue;
     }
     remember(seen, teams);
+    for (const t of teams) {
+      const lone = lonePlayer([t.A, t.B]);
+      if (lone) loneSeen.add(String(lone.name || "").trim().toLowerCase());
+    }
     games.push(teams.map((t) => ({ teamA: t.A, teamB: t.B })));
   }
   return games;

@@ -5,18 +5,27 @@
 // from ever running away. Without the room, a big roster was abandoning the search
 // early and coming back with repeats, or with no draw at all.
 export function searchUniqueRounds(count, candidates, sizes, policy, budget = 40000) {
-  const seen = { meetings: new Uint8Array(count * count), partners: new Uint8Array(count * count), opponents: new Uint8Array(count * count) };
+  const seen = { meetings: new Uint8Array(count * count), partners: new Uint8Array(count * count), opponents: new Uint8Array(count * count), lone: new Uint8Array(count) };
   const byPlayer = Array.from({ length: count }, () => []);
   for (const match of candidates) {
     if (policy === "meetings" && !match.primary) continue;
     for (const id of match.ids) byPlayer[id].push(match);
   }
-  const allowed = (match) => policy === "relaxed" || (policy === "meetings"
-    ? match.meetings.every((key) => !seen.meetings[key])
-    : match.partners.every((key) => !seen.partners[key]) && match.opponents.every((key) => !seen.opponents[key]));
+  // Standing alone in American doubles is the handicap of a short group, and one turn
+  // a night is enough: whoever has done it is out of the lonely side for the rest of
+  // the night, in every policy including the relaxed one.
+  const allowed = (match) => {
+    if (match.lone >= 0 && seen.lone[match.lone]) return false;
+    return policy === "relaxed" || (policy === "meetings"
+      ? match.meetings.every((key) => !seen.meetings[key])
+      : match.partners.every((key) => !seen.partners[key]) && match.opponents.every((key) => !seen.opponents[key]));
+  };
   const mark = (matches, delta) => {
-    for (const match of matches) for (const type of ["meetings", "partners", "opponents"]) {
-      for (const key of match[type]) seen[type][key] += delta;
+    for (const match of matches) {
+      if (match.lone >= 0) seen.lone[match.lone] += delta;
+      for (const type of ["meetings", "partners", "opponents"]) {
+        for (const key of match[type]) seen[type][key] += delta;
+      }
     }
   };
   const repeatCost = (match) => match.partners.reduce((sum, k) => sum + seen.partners[k] * 1e6, 0)
@@ -85,9 +94,12 @@ export function balanceUniqueRounds(rounds, candidates, policy) {
     for (let game = 0; game < rounds.length; game++) {
       const other = Object.fromEntries(["meetings", "partners", "opponents"].map((type) => [type,
         new Set(rounds.flatMap((matches, g) => g === game ? [] : matches.flatMap((m) => m[type]))) ]));
-      const safe = (match) => policy === "relaxed" || (policy === "meetings"
-        ? match.meetings.every((k) => !other.meetings.has(k))
-        : match.partners.every((k) => !other.partners.has(k)) && match.opponents.every((k) => !other.opponents.has(k)));
+      other.lone = new Set(rounds.flatMap((matches, g) => g === game ? []
+        : matches.map((m) => m.lone).filter((id) => id >= 0)));
+      const safe = (match) => (match.lone === undefined || match.lone < 0 || !other.lone.has(match.lone))
+        && (policy === "relaxed" || (policy === "meetings"
+          ? match.meetings.every((k) => !other.meetings.has(k))
+          : match.partners.every((k) => !other.partners.has(k)) && match.opponents.every((k) => !other.opponents.has(k))));
       const score = (match) => match.cost + (policy !== "relaxed" ? 0
         : match.partners.filter((k) => other.partners.has(k)).length * 1e6
           + match.opponents.filter((k) => other.opponents.has(k)).length * 1e5

@@ -2,7 +2,8 @@ import { groupAverage } from "@/lib/drawGenerator";
 import { uniqueCandidates } from "@/lib/uniqueCandidates";
 import { searchUniqueRounds, balanceUniqueRounds } from "@/lib/uniqueSearch";
 import { scheduleUniqueness } from "@/lib/scheduleUniqueness";
-import { americanSet } from "@/lib/americanDoubles";
+import { americanSet, isNominated } from "@/lib/americanDoubles";
+import { juniorMatchAllowed } from "@/lib/juniorSafety";
 
 // Match formats that give every player in the group three games. A full group of
 // eight plays two doubles games a round; a short group mixes American doubles
@@ -50,6 +51,48 @@ function assignToGroups(matches, plans, players, courts) {
   );
 }
 
+const pairKeys = (ids, n) => ids.flatMap((a, i) => ids.slice(i + 1).map((b) => Math.min(a, b) * n + Math.max(a, b)));
+
+// Who stands alone in American doubles. The single player carries the handicap, so
+// the admin's nomination decides it: a nominated player takes the lonely side and is
+// never left in the pair while someone else stands alone. Nobody stands alone twice,
+// a junior only ever stands alone among juniors, and the pair that faces the single
+// is the one whose average sits closest to the single player's own rating.
+function roleShortGames(rounds, players, nominated) {
+  const loneSeen = new Set();
+  const rating = (id) => Number(players[id].rating);
+  const gap = (lone, pair) => {
+    const solo = rating(lone);
+    const duo = pair.reduce((sum, id) => sum + rating(id), 0) / pair.length;
+    return Number.isFinite(solo) && Number.isFinite(duo) ? Math.abs(solo - duo) : 0;
+  };
+  const setRole = (match, lone) => {
+    const pair = match.ids.filter((id) => id !== lone);
+    const teams = [[lone], pair];
+    match.teams = teams;
+    match.lone = lone;
+    match.partners = teams.flatMap((team) => pairKeys(team, players.length));
+    match.opponents = teams[0].flatMap((a) => teams[1].map((b) => Math.min(a, b) * players.length + Math.max(a, b)));
+    match.meetings = pairKeys(match.ids, players.length);
+    loneSeen.add(lone);
+  };
+  for (const round of rounds) {
+    for (const match of round) {
+      if (match.ids.length !== 3) continue;
+      const safe = match.ids.filter((id) => juniorMatchAllowed([players[id]], match.ids.filter((x) => x !== id).map((x) => players[x])));
+      const fresh = safe.filter((id) => !loneSeen.has(id));
+      const pool = fresh.length ? fresh : safe;
+      if (!pool.length) continue;
+      // Nominated first, then the closest pair average, then whoever carried it last.
+      const best = [...pool].sort((a, b) =>
+        Number(isNominated(players[b].name, nominated)) - Number(isNominated(players[a].name, nominated))
+        || gap(a, match.ids.filter((id) => id !== a)) - gap(b, match.ids.filter((id) => id !== b))
+      )[0];
+      setRole(match, best);
+    }
+  }
+}
+
 // The admin can nominate who is happy to play American doubles and singles; those
 // formats then go to the nominated players, wherever the night still allows it.
 export function buildUniqueDraw(groups, options = {}) {
@@ -72,7 +115,8 @@ export function buildUniqueDraw(groups, options = {}) {
   const fullCourts = fullIndexes.map((i) => courts[i]);
   const plans = fullGroups.map((g) => PLANS[g.players.length] || []);
   const players = fullGroups.flatMap((g, home) =>
-    g.players.map((p, i) => ({ ...p, home, bottom: i >= 4 }))
+    // `nominated` lets a short-format game borrow this player from another group.
+    g.players.map((p, i) => ({ ...p, home, bottom: i >= 4, nominated: isNominated(p.name, shortFormatOk) }))
   );
   const sizes = plans.flat();
   const slots = sizes.reduce((sum, size) => sum + size, 0);
@@ -110,6 +154,7 @@ export function buildUniqueDraw(groups, options = {}) {
       // that makes that impossible moves the search on to the next rule instead of
       // failing outright, so the admin always ends up with a night to play.
       const balanced = balanceUniqueRounds(found, candidates, rule);
+      roleShortGames(balanced, players, shortFormatOk);
       if (rule === "meetings" && repeats(balanced, "meetings")) continue;
       if (rule === "roles" && (repeats(balanced, "partners") || repeats(balanced, "opponents"))) continue;
       rounds = balanced;
