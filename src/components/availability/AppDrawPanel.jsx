@@ -57,6 +57,7 @@ export default function AppDrawPanel({ players, onLoadPlayers, loading }) {
       return {
         ...p,
         rating: rated ?? base ?? p.rating ?? null,
+        baseGroup: base != null ? Number(base) : null,
         gender: lookupName(genders, p.name) || null,
         junior: isJunior(lookupName(dobs, p.name)),
         fromApp: rated !== undefined,

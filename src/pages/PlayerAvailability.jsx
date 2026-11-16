@@ -111,6 +111,7 @@ export default function PlayerAvailability() {
         gp: r ? r.gp : 0,
         diff: r ? r.diff : 0,
         currentGroup: r ? r.currentGroup : null,
+        baseGroup: r && r.baseGroup != null ? Number(r.baseGroup) : null,
         hasStats: r ? r.hasStats : false,
       };
     });

@@ -1,6 +1,6 @@
 import { buildNightDraw, toRecord } from "./nightDraw";
 import { memberGenders } from "./memberGenders";
-import { appRatingMap } from "./appRatingMap";
+import { appRatingMap, appBaseGroupMap } from "./appRatingMap";
 import { memberDobs, isJunior } from "./memberDob";
 import { lookupName } from "@/lib/nameMatch";
 
@@ -15,8 +15,9 @@ export async function repairSchedule(record, poolGroups, { resetOrder = false } 
   const savedLists = (record.groups || []).map((g) => g.players || []);
   const names = [...new Set(savedLists.flat())];
 
-  const [ratingMap, genders, dobs] = await Promise.all([
+  const [ratingMap, baseMap, genders, dobs] = await Promise.all([
     appRatingMap().catch(() => ({})),
+    appBaseGroupMap().catch(() => ({})),
     memberGenders().catch(() => ({})),
     memberDobs(record.date, names),
   ]);
@@ -26,6 +27,7 @@ export async function repairSchedule(record, poolGroups, { resetOrder = false } 
     return {
       name,
       rating: ratingMap[key] ?? null,
+      baseGroup: baseMap[key] ?? null,
       gender: genders[key] || null,
       junior: isJunior(lookupName(dobs, name), new Date(`${record.date}T12:00:00`)),
     };

@@ -16,6 +16,21 @@ export async function appRatingMap() {
   return map;
 }
 
+// The group each player is assigned to, keyed the same way. The draw uses it to fill
+// a group with its own players first, calling up the strongest of the group below
+// only when there aren't eight of them.
+export async function appBaseGroupMap() {
+  const res = await base44.functions.invoke("getAppRatings", {});
+  const map = {};
+  for (const p of res.data?.players || []) {
+    if (p.baseGroup != null) map[String(p.player).trim().toLowerCase()] = Number(p.baseGroup);
+  }
+  for (const [name, group] of Object.entries(res.data?.baseGroups || {})) {
+    if (map[name] === undefined && group) map[name] = Number(group);
+  }
+  return map;
+}
+
 // Average rating of a pair; null when neither player has a rating yet.
 export const pairAverage = (names, ratings) => {
   const values = (names || [])

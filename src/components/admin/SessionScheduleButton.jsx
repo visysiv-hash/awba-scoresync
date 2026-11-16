@@ -27,11 +27,19 @@ export default function SessionScheduleButton({ session, players }) {
         memberDobs(session.date, players),
       ]);
       const ratings = {};
-      for (const p of res.data?.players || []) ratings[String(p.player).toLowerCase()] = p.rating;
+      const baseGroups = {};
+      for (const p of res.data?.players || []) {
+        ratings[String(p.player).toLowerCase()] = p.rating;
+        if (p.baseGroup != null) baseGroups[String(p.player).toLowerCase()] = Number(p.baseGroup);
+      }
+      for (const [name, group] of Object.entries(res.data?.baseGroups || {})) {
+        if (baseGroups[name] === undefined && group) baseGroups[name] = Number(group);
+      }
 
       const list = players.map((name) => ({
         name,
         rating: ratings[String(name).toLowerCase()] ?? null,
+        baseGroup: baseGroups[String(name).toLowerCase()] ?? null,
         gender: genders[String(name).toLowerCase()] || null,
         junior: isJunior(dobs[String(name).trim().toLowerCase()], new Date(`${session.date}T12:00:00`)),
       }));

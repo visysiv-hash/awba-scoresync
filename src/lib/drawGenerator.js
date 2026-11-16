@@ -4,10 +4,21 @@
 
 export const BLOCK_SIZE = 8;
 
+// The group a player is assigned to in the app. Without one, the group their rating
+// sits in is used, so an unassigned player still lands in the right band.
+const assignedGroup = (p) => {
+  const group = Number(p.baseGroup);
+  if (Number.isFinite(group) && group >= 1) return group;
+  const rating = Number(p.rating);
+  return Number.isFinite(rating) ? Math.max(1, Math.round(rating)) : 99;
+};
+
 export function buildGroups(players) {
+  // Group first, rating second: a group is filled with its own players before the
+  // strongest of the group below are called up to make up the eight.
   const rated = (players || [])
     .filter((p) => p.rating !== null && p.rating !== undefined)
-    .sort((a, b) => a.rating - b.rating);
+    .sort((a, b) => assignedGroup(a) - assignedGroup(b) || a.rating - b.rating);
   const unrated = (players || []).filter((p) => p.rating === null || p.rating === undefined);
   const all = [...rated, ...unrated];
 
