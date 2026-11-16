@@ -165,9 +165,13 @@ export function buildUniqueDraw(groups, options = {}) {
   groups.forEach((g, i) => {
     if ((g.players || []).length >= 4) return;
     const net = courts[i][0];
+    // Only the player alone meets a pair head-on, and a junior may only do that when
+    // everyone in the game is a junior too, so the lone turn goes to the others first.
+    const adults = g.players.filter((p) => !p.junior);
+    const loneOrder = adults.length ? adults : g.players;
     for (let game = 1; game <= 3; game++) {
       if (g.players.length === 3) {
-        const lone = g.players[(game - 1) % 3];
+        const lone = loneOrder[(game - 1) % loneOrder.length];
         push(i, game, [lone], g.players.filter((p) => p !== lone), net);
       } else if (g.players.length === 2) {
         const swap = game % 2 === 0;

@@ -31,10 +31,12 @@ export function buildGroups(players) {
   // all of them three games as well — stretching a block to nine would only leave
   // someone resting a round.
   const tail = chunks.length > 1 ? chunks[chunks.length - 1] : null;
-  if (tail && tail.length === 1) {
-    // One player cannot play alone, so the weakest player of the block before is lent
-    // to them: that leaves a short group of two and a group of seven, and nobody in
-    // either group loses a game.
+  // A night that ends in one or in three is lent the weakest player of the block
+  // before: one becomes two (singles) and seven, three becomes four (plain doubles)
+  // and seven. Three on its own would have to play American doubles all night, and
+  // a junior can never be the one playing alone against an adult pair — four never
+  // has a lone player, so a junior there is always safe.
+  if (tail && (tail.length === 1 || tail.length === 3)) {
     const before = chunks[chunks.length - 2];
     chunks[chunks.length - 2] = before.slice(0, -1);
     chunks[chunks.length - 1] = [before[before.length - 1], ...tail];
