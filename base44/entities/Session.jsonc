@@ -95,6 +95,14 @@
     "created_by_name": {
       "type": "string",
       "title": "Created By"
+    },
+    "american_doubles": {
+      "type": "array",
+      "title": "Happy To Play American Doubles",
+      "description": "Players happy to play American doubles (one against two) and singles. When this list has names, the draw fills those games with these players only; leave it empty and every player is considered.",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": [

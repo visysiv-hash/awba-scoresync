@@ -10,7 +10,7 @@ import { memberDobs, isJunior } from "@/lib/memberDob";
 
 // Builds the night's draw from a session's confirmed bookings (plus the waitlist
 // when the admin allows it) and saves it to the Schedule for that session's date.
-export default function SessionScheduleButton({ session, players }) {
+export default function SessionScheduleButton({ session, players, americanDoubles = [] }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
@@ -43,9 +43,15 @@ export default function SessionScheduleButton({ session, players }) {
         gender: genders[String(name).toLowerCase()] || null,
         junior: isJunior(dobs[String(name).trim().toLowerCase()], new Date(`${session.date}T12:00:00`)),
       }));
-      const payload = toRecord(buildNightDraw(list), session.date, {
+      // The nomination tells the draw who may play singles and American doubles; it is
+      // saved with the night so re-pairing it later keeps the same players in those games.
+      const nominated = americanDoubles.filter((name) =>
+        list.some((p) => p.name.toLowerCase() === String(name).toLowerCase())
+      );
+      const payload = toRecord(buildNightDraw(list, { americanDoubles: nominated }), session.date, {
         title: session.title,
         time_label: [session.start_time, session.end_time].filter(Boolean).join(" – "),
+        american_doubles: nominated,
       });
 
       const page = await base44.entities.DrawNight.filter({ date: session.date }, { limit: 1 });

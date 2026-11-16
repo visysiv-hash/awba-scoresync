@@ -2,6 +2,7 @@ import { groupAverage } from "@/lib/drawGenerator";
 import { uniqueCandidates } from "@/lib/uniqueCandidates";
 import { searchUniqueRounds, balanceUniqueRounds } from "@/lib/uniqueSearch";
 import { scheduleUniqueness } from "@/lib/scheduleUniqueness";
+import { americanSet } from "@/lib/americanDoubles";
 
 // Match formats that give every player in the group three games. A full group of
 // eight plays two doubles games a round; a short group mixes American doubles
@@ -49,8 +50,11 @@ function assignToGroups(matches, plans, players, courts) {
   );
 }
 
-export function buildUniqueDraw(groups) {
+// The admin can nominate who is happy to play American doubles and singles; those
+// formats then go to the nominated players, wherever the night still allows it.
+export function buildUniqueDraw(groups, options = {}) {
   const plans = groups.map((g) => PLANS[g.players.length] || []);
+  const shortFormatOk = americanSet(options.americanDoubles);
   const courts = groups.map((_, i) => [i * 2 + 1, i * 2 + 2]);
   const players = groups.flatMap((g, home) =>
     g.players.map((p, i) => ({ ...p, home, bottom: i >= 4 }))
@@ -59,7 +63,7 @@ export function buildUniqueDraw(groups) {
   const slots = sizes.reduce((sum, size) => sum + size, 0);
   const cache = new Map();
   const candidatesAt = (distance) => {
-    if (!cache.has(distance)) cache.set(distance, uniqueCandidates(players, sizes, distance));
+    if (!cache.has(distance)) cache.set(distance, uniqueCandidates(players, sizes, distance, shortFormatOk));
     return cache.get(distance);
   };
 

@@ -2,12 +2,17 @@ import { teamAvg } from "@/lib/teamRating";
 import { bannedTogether } from "@/lib/neverPair";
 import { juniorMatchAllowed } from "@/lib/juniorSafety";
 import { juniorPreferenceCost } from "@/lib/juniorPreference";
+import { shortFormatCost } from "@/lib/americanDoubles";
 
 const pairIds = (ids, n) => ids.flatMap((a, i) => ids.slice(i + 1).map((b) => Math.min(a, b) * n + Math.max(a, b)));
 
 // Enumerate actual legal matches, not penalties for illegal ones. The three
 // splits of a quartet share its encounter constraints but have different ratings.
-export function uniqueCandidates(players, sizes, distance) {
+// `shortFormatOk` is the set of players nominated for American doubles and singles.
+// A game of three or two players is one of those formats, so it carries the cost of
+// anyone in it who was not nominated — priced well above any rating gap, so the draw
+// picks nominated players for those games whenever the night can still be balanced.
+export function uniqueCandidates(players, sizes, distance, shortFormatOk) {
   const n = players.length;
   const candidates = [];
   const splits = (ids) => {
@@ -23,6 +28,7 @@ export function uniqueCandidates(players, sizes, distance) {
     const span = Math.max(...homes) - Math.min(...homes);
     const ratings = ids.map((id) => players[id].rating).filter((r) => r !== null && r !== undefined);
     const spread = ratings.length ? Math.max(...ratings) - Math.min(...ratings) : 0;
+    const formatCost = ids.length < 4 ? shortFormatCost(ids.map((id) => players[id]), shortFormatOk) : 0;
     const matches = [];
     for (const teams of splits(ids)) {
       if (!juniorMatchAllowed(...teams.map((team) => team.map((id) => players[id])))) continue;
@@ -34,7 +40,7 @@ export function uniqueCandidates(players, sizes, distance) {
       matches.push({ ids, teams, span, meetings: pairIds(ids, n),
         partners: teams.flatMap((team) => pairIds(team, n)),
         opponents: teams[0].flatMap((x) => teams[1].map((y) => Math.min(x, y) * n + Math.max(x, y))),
-        cost: gap * gap * 10 + spread * spread * 0.01 + span * 0.0001 + juniorCost });
+        cost: gap * gap * 10 + spread * spread * 0.01 + span * 0.0001 + juniorCost + formatCost });
     }
     matches.sort((a, b) => a.cost - b.cost);
     matches.forEach((match, index) => candidates.push({ ...match, primary: index === 0 }));

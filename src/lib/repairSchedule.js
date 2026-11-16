@@ -33,7 +33,8 @@ export async function repairSchedule(record, poolGroups, { resetOrder = false } 
     };
   });
 
-  const options = { poolGroups };
+  // Keep whoever was nominated for American doubles and singles in those games.
+  const options = { poolGroups, americanDoubles: record.american_doubles || [] };
   if (!resetOrder && savedLists.some((list) => list.length)) options.groupLists = savedLists;
 
   const payload = toRecord(buildNightDraw(players, options), record.date);

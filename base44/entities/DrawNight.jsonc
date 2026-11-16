@@ -131,6 +131,14 @@
       "title": "Removed From Schedule",
       "description": "Deleted from the Schedule. Its games disappear from Match Details and Results too, so nothing lingers without a draw.",
       "default": false
+    },
+    "american_doubles": {
+      "type": "array",
+      "title": "Happy To Play American Doubles",
+      "description": "The players nominated for American doubles and singles when this night was drawn, so re-pairing the night keeps them in those games.",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": [

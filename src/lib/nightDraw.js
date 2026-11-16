@@ -11,6 +11,7 @@ import { keepApartDraw, bannedTogether } from "./neverPair";
 import { buildUniqueDraw } from "@/lib/uniqueDraw";
 import { juniorMatchAllowed, assertJuniorDraw } from "@/lib/juniorSafety";
 import { juniorPreferenceCost } from "@/lib/juniorPreference";
+import { americanSet, shortFormatCost } from "@/lib/americanDoubles";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -37,8 +38,11 @@ const PLANS = {
 };
 
 // Tries every line-up for the round and keeps the one with the fewest repeated
-// partners and opponents, then the closest team ratings.
-function bestAssignment(playing, plan, seen, strict) {
+// partners and opponents, then the closest team ratings. A game that is not two
+// against two — American doubles or singles — is where the admin's nomination
+// counts: filling it with players who did not put their hand up costs more than any
+// rating gap, so the nominated players get those games whenever the round allows it.
+function bestAssignment(playing, plan, seen, strict, shortFormatOk) {
   const slots = [];
   plan.forEach(([a, b], mi) => {
     for (let i = 0; i < a; i++) slots.push([mi, "A"]);
@@ -60,6 +64,7 @@ function bestAssignment(playing, plan, seen, strict) {
   const cost = (teams) => {
     let c = 0;
     for (const t of teams) {
+      if (t.A.length !== 2 || t.B.length !== 2) c += shortFormatCost([...t.A, ...t.B], shortFormatOk);
       if (t.A.length === 2 && seen.partners.has(key(t.A[0].name, t.A[1].name))) c += 220;
       if (t.B.length === 2 && seen.partners.has(key(t.B[0].name, t.B[1].name))) c += 220;
       for (const x of t.A) {
@@ -237,7 +242,7 @@ function fullGroupGames(players, strict) {
   }));
 }
 
-function shortGroupGames(players, strict) {
+function shortGroupGames(players, strict, shortFormatOk) {
   const plan = PLANS[players.length] || [];
   const seen = { partners: new Set(), opponents: new Set(), meets: new Map() };
   const rests = {};
@@ -253,7 +258,7 @@ function shortGroupGames(players, strict) {
     const playing = byRest.slice(0, slots);
     for (const p of players) if (!playing.includes(p)) rests[p.name] = (rests[p.name] || 0) + 1;
 
-    const teams = bestAssignment(playing, plan, seen, strict);
+    const teams = bestAssignment(playing, plan, seen, strict, shortFormatOk);
     if (!teams) {
       games.push([]);
       continue;
@@ -268,7 +273,7 @@ function shortGroupGames(players, strict) {
 // worked); 2 or 3 throws that many neighbouring groups into one pool, so any of the
 // 16 or 24 players can be paired with any other and every round is balanced across
 // the whole pool.
-function pooledDraw(groups, list, poolGroups) {
+function pooledDraw(groups, list, poolGroups, shortFormatOk) {
   const out = [];
   let court = 1;
 
@@ -285,7 +290,7 @@ function pooledDraw(groups, list, poolGroups) {
           label: `Game ${g.game} · across ${chunk.length} groups`,
           matches: g.matches,
         }))
-      : shortGroupGames(players).map((matches, gi) => ({
+      : shortGroupGames(players, false, shortFormatOk).map((matches, gi) => ({
           game: gi + 1,
           label: `Game ${gi + 1} · mixed formats`,
           matches,
@@ -327,11 +332,11 @@ function levelPartners(count, distance) {
   return pairs;
 }
 
-const insideNight = (players, strict) => {
+const insideNight = (players, strict, shortFormatOk) => {
   const games =
     players.length === 8
       ? fullGroupGames(players, strict)
-      : shortGroupGames(players, strict).map((matches, gi) => ({ game: gi + 1, matches }));
+      : shortGroupGames(players, strict, shortFormatOk).map((matches, gi) => ({ game: gi + 1, matches }));
   return games.map((game) => game.matches || []);
 };
 
@@ -339,11 +344,11 @@ const insideNight = (players, strict) => {
 // further down the ratings. Both groups' players are pooled for that round, so every
 // team holds one player from each group and the games stay even — a pair from a
 // stronger group playing a pair from a weaker one can never be a close game.
-function mixDraw(groups, list, crossGame, distance) {
+function mixDraw(groups, list, crossGame, distance, shortFormatOk) {
   const courts = groups.map((_, i) => [i * 2 + 1, i * 2 + 2]);
   // A fresh face every game: both inside rounds and the meeting with the lower group
   // avoid everyone already partnered or faced tonight.
-  const inside = groups.map((g) => insideNight(g.players, true));
+  const inside = groups.map((g) => insideNight(g.players, true, shortFormatOk));
   const pairs = levelPartners(groups.length, distance);
   const hostOf = new Map(pairs);
   const guestOf = new Map(pairs.map(([i, j]) => [j, i]));
@@ -413,8 +418,8 @@ function mixDraw(groups, list, crossGame, distance) {
 // anyone — but every round is still chosen on pair strength, so the games stay even.
 export const RANDOM_SCOPE = 99;
 
-function randomDraw(groups, list) {
-  const pooled = pooledDraw(groups, list, groups.length);
+function randomDraw(groups, list, shortFormatOk) {
+  const pooled = pooledDraw(groups, list, groups.length, shortFormatOk);
   return {
     ...pooled,
     poolGroups: RANDOM_SCOPE,
@@ -432,22 +437,23 @@ function buildDraw(players, options = {}) {
   const groups = groupsFor(list, options);
   const requested = options.poolGroups === undefined ? 0 : Number(options.poolGroups);
   const poolGroups = Number.isFinite(requested) ? requested : 0;
+  const shortFormatOk = americanSet(options.americanDoubles);
 
   // 0 = two games in the group and Game 2 with a group two levels below, -1 = two games
   // in the group and Game 3 with a group four levels below, 1 = each group on its own,
   // RANDOM_SCOPE = the whole night in one pool.
   if (groups.length > 1) {
-    if (poolGroups >= RANDOM_SCOPE) return randomDraw(groups, list);
-    if (poolGroups === 0) return mixDraw(groups, list, 2, 2);
-    if (poolGroups === -1) return mixDraw(groups, list, 3, 4);
-    if (poolGroups > 1) return pooledDraw(groups, list, Math.min(3, poolGroups));
+    if (poolGroups >= RANDOM_SCOPE) return randomDraw(groups, list, shortFormatOk);
+    if (poolGroups === 0) return mixDraw(groups, list, 2, 2, shortFormatOk);
+    if (poolGroups === -1) return mixDraw(groups, list, 3, 4, shortFormatOk);
+    if (poolGroups > 1) return pooledDraw(groups, list, Math.min(3, poolGroups), shortFormatOk);
   }
 
   const out = groups.map((g, i) => {
     const complete = g.players.length === 8;
     const games = complete
       ? fullGroupGames(g.players)
-      : shortGroupGames(g.players).map((matches, gi) => ({
+      : shortGroupGames(g.players, false, shortFormatOk).map((matches, gi) => ({
           game: gi + 1,
           label: `Game ${gi + 1} · mixed formats`,
           matches,
@@ -473,7 +479,7 @@ const drawFor = (players, options) => {
   // Unique draws are validated as a whole and must never pass through the
   // legacy unconstrained post-draw swap, which can reintroduce repeats.
   if (options.poolGroups === undefined || Number(options.poolGroups) === -2) {
-    return buildUniqueDraw(groupsFor(players || [], options));
+    return buildUniqueDraw(groupsFor(players || [], options), options);
   }
   return keepApartDraw(buildDraw(players, options));
 };

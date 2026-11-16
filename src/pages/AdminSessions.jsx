@@ -4,6 +4,7 @@ import AdminPinGate from "../components/AdminPinGate";
 import { isAdminUnlocked } from "@/lib/adminUnlock";
 import AddGuestModal from "../components/admin/AddGuestModal";
 import SessionScheduleButton from "../components/admin/SessionScheduleButton";
+import AmericanDoublesDialog from "../components/admin/AmericanDoublesDialog";
 import PageBanner from "../components/PageBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil, Copy, UserPlus, UserCheck } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, RefreshCw, Pencil, Copy, UserPlus, UserCheck, Users } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { addWeeks } from "date-fns";
 import { getCurrentMember } from "../lib/currentMember";
@@ -60,6 +61,8 @@ export default function AdminSessions() {
   const [guestSession, setGuestSession] = useState(null);
   // Waitlisted players stay out of the draw unless the admin opts them in.
   const [waitlistIncluded, setWaitlistIncluded] = useState({});
+  // The session whose American doubles / singles nomination is being edited.
+  const [nominateSession, setNominateSession] = useState(null);
 
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
@@ -777,11 +780,25 @@ export default function AdminSessions() {
                         </Button>
                         <SessionScheduleButton
                           session={session}
+                          americanDoubles={session.american_doubles || []}
                           players={[
                             ...confirmed,
                             ...(waitlistIncluded[session.id] ? waitlisted : []),
                           ].map(b => b.user_name)}
                         />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => setNominateSession(session)}
+                          title="Nominate who is happy to play American doubles and singles when a group is short of eight"
+                        >
+                          <Users className="w-3.5 h-3.5" />
+                          American doubles
+                          <span className="ml-0.5 rounded bg-slate-200 px-1 text-[10px] font-bold text-slate-700 tabular-nums">
+                            {(session.american_doubles || []).length || "all"}
+                          </span>
+                        </Button>
                         {bks.length === 0 && <span className="text-xs text-muted-foreground">No bookings yet.</span>}
                       </div>
                       {bks.length > 0 && (
@@ -975,6 +992,24 @@ export default function AdminSessions() {
           })}
         </div>
       </div>
+
+      {nominateSession && (
+        <AmericanDoublesDialog
+          session={nominateSession}
+          players={[
+            ...sessionBookings(nominateSession.id).filter(b => b.status === "confirmed"),
+            ...(waitlistIncluded[nominateSession.id]
+              ? sessionBookings(nominateSession.id).filter(b => b.status === "waitlisted")
+              : []),
+          ]
+            .map(b => b.user_name)
+            .filter((name, i, all) => all.indexOf(name) === i)}
+          onClose={() => setNominateSession(null)}
+          onSaved={(names) =>
+            setSessions(prev => prev.map(s => (s.id === nominateSession.id ? { ...s, american_doubles: names } : s)))
+          }
+        />
+      )}
 
       {guestSession && (
         <AddGuestModal
