@@ -26,8 +26,8 @@ export async function repairSchedule(record, poolGroups, { resetOrder = false } 
     const key = String(name).toLowerCase();
     return {
       name,
-      rating: ratingMap[key] ?? null,
-      baseGroup: baseMap[key] ?? null,
+      rating: lookupName(ratingMap, name) ?? null,
+      baseGroup: lookupName(baseMap, name) ?? null,
       gender: genders[key] || null,
       junior: isJunior(lookupName(dobs, name), new Date(`${record.date}T12:00:00`)),
     };

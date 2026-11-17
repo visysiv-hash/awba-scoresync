@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { buildNightDraw, toRecord } from "@/lib/nightDraw";
 import { memberGenders } from "@/lib/memberGenders";
 import { memberDobs, isJunior } from "@/lib/memberDob";
+import { lookupName } from "@/lib/nameMatch";
 
 // Builds the night's draw from a session's confirmed bookings (plus the waitlist
 // when the admin allows it) and saves it to the Schedule for that session's date.
@@ -38,8 +39,8 @@ export default function SessionScheduleButton({ session, players, americanDouble
 
       const list = players.map((name) => ({
         name,
-        rating: ratings[String(name).toLowerCase()] ?? null,
-        baseGroup: baseGroups[String(name).toLowerCase()] ?? null,
+        rating: lookupName(ratings, name) ?? null,
+        baseGroup: lookupName(baseGroups, name) ?? null,
         gender: genders[String(name).toLowerCase()] || null,
         junior: isJunior(dobs[String(name).trim().toLowerCase()], new Date(`${session.date}T12:00:00`)),
       }));

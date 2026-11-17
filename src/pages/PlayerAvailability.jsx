@@ -8,6 +8,7 @@ import SchedulingMethodSwitch from "../components/availability/SchedulingMethodS
 import AppDrawPanel from "../components/availability/AppDrawPanel";
 import PageBanner from "../components/PageBanner";
 import { getCurrentMember } from "../lib/currentMember";
+import { lookupName } from "@/lib/nameMatch";
 import { toast } from "sonner";
 
 export default function PlayerAvailability() {
@@ -104,7 +105,9 @@ export default function PlayerAvailability() {
 
   const merged = useMemo(() => {
     return availablePlayers.map(name => {
-      const r = ratingMap[name];
+      // The ratings hold the sheet's full name ("Gavin Chang") while the booking may
+      // only carry the display name ("Gavin"), so the lookup matches either way.
+      const r = lookupName(ratingMap, name);
       return {
         name,
         rating: r ? r.rating : null,
@@ -190,7 +193,7 @@ export default function PlayerAvailability() {
       for (const p of ratingsList) map[p.player] = p;
 
       const names = todayPlayers
-        .map((name) => ({ name, rating: map[name]?.rating ?? null }))
+        .map((name) => ({ name, rating: lookupName(map, name)?.rating ?? null }))
         .sort((a, b) => {
           if (a.rating === null && b.rating === null) return 0;
           if (a.rating === null) return 1;
