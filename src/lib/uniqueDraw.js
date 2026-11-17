@@ -7,14 +7,14 @@ import { juniorMatchAllowed } from "@/lib/juniorSafety";
 
 // Match formats that give every player in the group three games. A full group of
 // eight plays two doubles games a round; a short group mixes American doubles
-// (one player against two) and singles so nobody sits a round out.
+// (one player against two) and singles so nobody sits a round out. A six is built
+// separately (see below): one singles and one doubles a round.
 const PLANS = {
   11: [4, 4],
   10: [4, 4],
   9: [4, 4],
   8: [4, 4],
   7: [4, 3],
-  6: [3, 3],
   5: [3, 2],
   4: [4],
   3: [3],
@@ -52,6 +52,16 @@ function assignToGroups(matches, plans, players, courts) {
 }
 
 const pairKeys = (ids, n) => ids.flatMap((a, i) => ids.slice(i + 1).map((b) => Math.min(a, b) * n + Math.max(a, b)));
+
+// Strongest first, unrated last, so the singles and the doubles in a leftover group
+// are picked from neighbouring ratings.
+const byRating = (list) => [...(list || [])].sort((a, b) => {
+  const x = Number(a.rating);
+  const y = Number(b.rating);
+  if (!Number.isFinite(x)) return Number.isFinite(y) ? 1 : 0;
+  if (!Number.isFinite(y)) return -1;
+  return x - y;
+});
 
 // Who stands alone in American doubles. The single player carries the handicap, so
 // the admin's nomination decides it: a nominated player takes the lonely side and is
@@ -109,11 +119,14 @@ export function buildUniqueDraw(groups, options = {}) {
     courts.push(Array.from({ length: width }, (_, k) => netNumber + k));
     netNumber += width;
   }
+  // A group of six is the leftover block on a busy night: too few faces in it to stay
+  // fresh all night, so it is left out of the search and built directly below as one
+  // singles and one doubles a round. The groups that can play a fresh draw are pooled.
+  const sixIndexes = groups.map((g, i) => ((g.players || []).length === 6 ? i : -1)).filter((i) => i >= 0);
   // A group of two or three has the same few players in it all night, so it can never
-  // be unique and is left out of the search: its American doubles and singles are
-  // built directly, rotating the lone player so the handicap is shared. Only the full
-  // groups are pooled for the unique draw.
-  const fullGroups = groups.filter((g) => (g.players || []).length >= 4);
+  // be unique and is left out of the search too: its American doubles and singles are
+  // built directly, rotating the lone player so the handicap is shared.
+  const fullGroups = groups.filter((g, i) => (g.players || []).length >= 4 && !sixIndexes.includes(i));
   const fullIndexes = fullGroups.map((g) => groups.indexOf(g));
   const fullCourts = fullIndexes.map((i) => courts[i]);
   const plans = fullGroups.map((g) => PLANS[g.players.length] || []);
@@ -189,7 +202,9 @@ export function buildUniqueDraw(groups, options = {}) {
     games: [1, 2, 3].map((game) => ({
       game,
       label:
-        g.players.length < 4
+        g.players.length === 6
+          ? `Game ${game} · singles & doubles`
+          : g.players.length < 4
           ? `Game ${game} · ${g.players.length === 3 ? "American doubles" : "singles"}`
           : `Game ${game} · ${policy === "relaxed" ? "fallback draw" : "unique games"}`,
       matches: [],
@@ -215,6 +230,21 @@ export function buildUniqueDraw(groups, options = {}) {
       }
     });
     if (used.size !== slots) throw new Error("The draw is missing a player slot.");
+  });
+
+  // The leftover six: one singles and one doubles a round on its two courts, so every
+  // player plays all three games. The singles pairs the two closest ratings that have
+  // not had their turn alone, and the four left over play an even doubles (strongest
+  // with weakest) — so the short block is balanced without a lone player against a pair.
+  sixIndexes.forEach((i) => {
+    const list = byRating(groups[i].players);
+    const [singleNet, doublesNet] = courts[i];
+    for (let game = 1; game <= 3; game++) {
+      const solo = [list[(game - 1) * 2], list[(game - 1) * 2 + 1]];
+      const rest = list.filter((p) => !solo.includes(p));
+      push(i, game, [solo[0]], [solo[1]], singleNet);
+      push(i, game, [rest[0], rest[3]], [rest[1], rest[2]], doublesNet);
+    }
   });
 
   // The short group's own three games: American doubles with a different player alone
@@ -243,6 +273,8 @@ export function buildUniqueDraw(groups, options = {}) {
 
   const info = scheduleUniqueness({
     groups: out.map((g) => ({ players: g.players.map((p) => p.name) })),
+    // Every match is inspected, but a group short of eight is exempt inside: it meets
+    // the same few players by design, so its repeats say nothing about the full groups.
     matches: flat,
   });
   // The night always comes back with a draw. If the games as displayed don't hold
@@ -251,6 +283,7 @@ export function buildUniqueDraw(groups, options = {}) {
   if ((policy === "meetings" && info.meetings) || (policy === "roles" && (info.partners || info.opponents))) {
     policy = "relaxed";
     for (const group of out) {
+      if (group.players.length === 6) continue;
       for (const game of group.games) game.label = `Game ${game.game} · fallback draw`;
     }
   }
