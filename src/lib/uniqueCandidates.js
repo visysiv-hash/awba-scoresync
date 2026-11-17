@@ -2,7 +2,7 @@ import { teamAvg } from "@/lib/teamRating";
 import { bannedTogether } from "@/lib/neverPair";
 import { juniorMatchAllowed } from "@/lib/juniorSafety";
 import { juniorPreferenceCost } from "@/lib/juniorPreference";
-import { shortFormatCost } from "@/lib/americanDoubles";
+import { shortFormatCost, isNominated } from "@/lib/americanDoubles";
 
 const pairIds = (ids, n) => ids.flatMap((a, i) => ids.slice(i + 1).map((b) => Math.min(a, b) * n + Math.max(a, b)));
 
@@ -12,7 +12,7 @@ const pairIds = (ids, n) => ids.flatMap((a, i) => ids.slice(i + 1).map((b) => Ma
 // A game of three or two players is one of those formats, so it carries the cost of
 // anyone in it who was not nominated — priced well above any rating gap, so the draw
 // picks nominated players for those games whenever the night can still be balanced.
-export function uniqueCandidates(players, sizes, distance, shortFormatOk) {
+export function uniqueCandidates(players, sizes, distance, shortFormatOk, volunteersOnly = false) {
   const n = players.length;
   const candidates = [];
   const splits = (ids) => {
@@ -32,7 +32,20 @@ export function uniqueCandidates(players, sizes, distance, shortFormatOk) {
     const ratings = ids.map((id) => players[id].rating).filter((r) => r !== null && r !== undefined);
     const spread = ratings.length ? Math.max(...ratings) - Math.min(...ratings) : 0;
     const matches = [];
+    // Whoever stands alone in American doubles has to be a player who put their hand
+    // up: when one of the three was nominated, only that player may take the lonely
+    // side. A game with nobody nominated falls back as before, so the night always fills.
+    const volunteers = !shortFormatOk || !shortFormatOk.size
+      ? []
+      : ids.filter((id) => isNominated(players[id].name, shortFormatOk));
+    // With nominations on, an American doubles game is offered only when it holds a
+    // volunteer. The draw is searched this way first, so nobody else ever stands alone.
+    if (volunteersOnly && ids.length === 3 && shortFormatOk && shortFormatOk.size && !volunteers.length) return;
     for (const teams of splits(ids)) {
+      if (ids.length === 3 && volunteers.length) {
+        const solo = teams.find((team) => team.length === 1);
+        if (!solo || !volunteers.includes(solo[0])) continue;
+      }
       if (!juniorMatchAllowed(...teams.map((team) => team.map((id) => players[id])))) continue;
       if (span && teams.some((team) => team.length === 2 && players[team[0]].bottom && players[team[1]].bottom && players[team[0]].home === players[team[1]].home)) continue;
       const playerTeams = teams.map((team) => team.map((id) => players[id]));

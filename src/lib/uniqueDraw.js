@@ -80,13 +80,16 @@ function roleShortGames(rounds, players, nominated) {
     for (const match of round) {
       if (match.ids.length !== 3) continue;
       const safe = match.ids.filter((id) => juniorMatchAllowed([players[id]], match.ids.filter((x) => x !== id).map((x) => players[x])));
-      const fresh = safe.filter((id) => !loneSeen.has(id));
-      const pool = fresh.length ? fresh : safe;
+      // Only a nominated player stands alone. A game with nobody nominated keeps its
+      // own players as the last resort so a night is never left with no draw at all.
+      const volunteers = safe.filter((id) => isNominated(players[id].name, nominated));
+      const allowed = volunteers.length ? volunteers : safe;
+      const fresh = allowed.filter((id) => !loneSeen.has(id));
+      const pool = fresh.length ? fresh : allowed;
       if (!pool.length) continue;
-      // Nominated first, then the closest pair average, then whoever carried it last.
+      // A fresh volunteer first, then the closest pair average.
       const best = [...pool].sort((a, b) =>
-        Number(isNominated(players[b].name, nominated)) - Number(isNominated(players[a].name, nominated))
-        || gap(a, match.ids.filter((id) => id !== a)) - gap(b, match.ids.filter((id) => id !== b))
+        gap(a, match.ids.filter((id) => id !== a)) - gap(b, match.ids.filter((id) => id !== b))
       )[0];
       setRole(match, best);
     }
@@ -121,10 +124,6 @@ export function buildUniqueDraw(groups, options = {}) {
   const sizes = plans.flat();
   const slots = sizes.reduce((sum, size) => sum + size, 0);
   const cache = new Map();
-  const candidatesAt = (distance) => {
-    if (!cache.has(distance)) cache.set(distance, uniqueCandidates(players, sizes, distance, shortFormatOk));
-    return cache.get(distance);
-  };
 
   // How many times a pair of players is repeated inside a found draw.
   const repeats = (found, field) => {
@@ -142,26 +141,39 @@ export function buildUniqueDraw(groups, options = {}) {
   // A quartet cannot meet four fresh people in a later round when the whole pool
   // has fewer than four matches (pigeonhole principle).
   const impossibleEncounters = sizes.includes(4) && sizes.length < 4;
-  // Only encounter preferences can relax. Junior safety is never relaxed.
-  for (const rule of ["meetings", "roles", "relaxed"]) {
-    if (rule === "meetings" && impossibleEncounters) continue;
-    for (let distance = 0; distance < Math.max(1, fullGroups.length); distance++) {
-      if (rule === "meetings" && distance === 0 && groups.some((g) => g.players.length === 8)) continue;
-      const candidates = candidatesAt(distance);
-      const found = searchUniqueRounds(players.length, candidates, sizes, rule);
-      if (!found) continue;
-      // A draw only counts when it meets the rule it was searched under; a roster
-      // that makes that impossible moves the search on to the next rule instead of
-      // failing outright, so the admin always ends up with a night to play.
-      const balanced = balanceUniqueRounds(found, candidates, rule);
-      roleShortGames(balanced, players, shortFormatOk);
-      if (rule === "meetings" && repeats(balanced, "meetings")) continue;
-      if (rule === "roles" && (repeats(balanced, "partners") || repeats(balanced, "opponents"))) continue;
-      rounds = balanced;
-      policy = rule;
-      break;
+  // The night is searched twice: first with the American doubles games kept to the
+  // players who volunteered to stand alone, then, only if that night cannot be made,
+  // with everyone eligible again so the admin is never left without a draw.
+  const run = (volunteersOnly) => {
+    const candidatesAt = (distance) => {
+      const key = `${volunteersOnly}:${distance}`;
+      if (!cache.has(key)) cache.set(key, uniqueCandidates(players, sizes, distance, shortFormatOk, volunteersOnly));
+      return cache.get(key);
+    };
+    // Only encounter preferences can relax. Junior safety is never relaxed.
+    for (const rule of ["meetings", "roles", "relaxed"]) {
+      if (rule === "meetings" && impossibleEncounters) continue;
+      for (let distance = 0; distance < Math.max(1, fullGroups.length); distance++) {
+        if (rule === "meetings" && distance === 0 && groups.some((g) => g.players.length === 8)) continue;
+        const candidates = candidatesAt(distance);
+        const found = searchUniqueRounds(players.length, candidates, sizes, rule);
+        if (!found) continue;
+        // A draw only counts when it meets the rule it was searched under; a roster
+        // that makes that impossible moves the search on to the next rule instead of
+        // failing outright, so the admin always ends up with a night to play.
+        const balanced = balanceUniqueRounds(found, candidates, rule);
+        roleShortGames(balanced, players, shortFormatOk);
+        if (rule === "meetings" && repeats(balanced, "meetings")) continue;
+        if (rule === "roles" && (repeats(balanced, "partners") || repeats(balanced, "opponents"))) continue;
+        return { rounds: balanced, policy: rule };
+      }
     }
-    if (rounds) break;
+    return null;
+  };
+  const searched = run(true) || run(false);
+  if (searched) {
+    rounds = searched.rounds;
+    policy = searched.policy;
   }
   if (sizes.length && !rounds) throw new Error("No legal draw was found for this player list.");
 
@@ -212,8 +224,12 @@ export function buildUniqueDraw(groups, options = {}) {
     const net = courts[i][0];
     // Only the player alone meets a pair head-on, and a junior may only do that when
     // everyone in the game is a junior too, so the lone turn goes to the others first.
-    const adults = g.players.filter((p) => !p.junior);
-    const loneOrder = adults.length ? adults : g.players;
+    // The admin's nomination decides it: a nominated player stands alone, never anyone
+    // who did not put their hand up.
+    const volunteers = g.players.filter((p) => isNominated(p.name, shortFormatOk));
+    const raised = volunteers.length ? volunteers : g.players;
+    const adults = raised.filter((p) => !p.junior);
+    const loneOrder = adults.length ? adults : raised;
     for (let game = 1; game <= 3; game++) {
       if (g.players.length === 3) {
         const lone = loneOrder[(game - 1) % loneOrder.length];

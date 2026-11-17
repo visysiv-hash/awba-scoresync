@@ -11,7 +11,7 @@ import { keepApartDraw, bannedTogether } from "./neverPair";
 import { buildUniqueDraw } from "@/lib/uniqueDraw";
 import { juniorMatchAllowed, assertJuniorDraw } from "@/lib/juniorSafety";
 import { juniorPreferenceCost } from "@/lib/juniorPreference";
-import { americanSet, shortFormatCost, lonePlayer } from "@/lib/americanDoubles";
+import { americanSet, shortFormatCost, lonePlayer, isNominated } from "@/lib/americanDoubles";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -248,7 +248,12 @@ function fullGroupGames(players, strict) {
 }
 
 function shortGroupGames(players, strict, shortFormatOk) {
-  const plan = PLANS[players.length] || [];
+  // American doubles and singles are a volunteer's games. A group with nobody on the
+  // nomination list plays plain doubles and rests the spare players, so the lonely
+  // side is never handed to someone who did not put their hand up.
+  const noVolunteer = shortFormatOk && shortFormatOk.size
+    && !players.some((p) => isNominated(p.name, shortFormatOk));
+  const plan = noVolunteer && players.length >= 4 ? [[2, 2]] : (PLANS[players.length] || []);
   const seen = { partners: new Set(), opponents: new Set(), meets: new Map() };
   const rests = {};
   const games = [];
