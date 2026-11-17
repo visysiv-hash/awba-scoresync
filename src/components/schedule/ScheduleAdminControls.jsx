@@ -32,6 +32,7 @@ export default function ScheduleAdminControls({
   swapMode,
   onSwapMode,
   onReplacePlayer,
+  onAddSingles,
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 no-print">
@@ -69,6 +70,18 @@ export default function ScheduleAdminControls({
       {onReplacePlayer && (
         <button type="button" onClick={onReplacePlayer} disabled={busy} className={chip(false)}>
           Player change
+        </button>
+      )}
+
+      {onAddSingles && (
+        <button
+          type="button"
+          onClick={onAddSingles}
+          disabled={busy}
+          title="Give a singles player a partner, so that game is played as doubles"
+          className={chip(false)}
+        >
+          Add player to singles
         </button>
       )}
 

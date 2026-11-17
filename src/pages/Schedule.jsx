@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { swapPlayer, swapInGame, todayIso, RANDOM_SCOPE } from "@/lib/nightDraw";
 import ReplacePlayerDialog from "@/components/schedule/ReplacePlayerDialog";
+import AddSinglesPlayerDialog from "@/components/schedule/AddSinglesPlayerDialog";
 import SchedulePdfExport from "@/components/schedule/SchedulePdfExport";
 import { repairSchedule } from "@/lib/repairSchedule";
 import { appRatingMap } from "@/lib/appRatingMap";
@@ -69,6 +70,7 @@ export default function Schedule() {
   const [scopeBusy, setScopeBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showReplace, setShowReplace] = useState(false);
+  const [showSingles, setShowSingles] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [ratings, setRatings] = useState({});
   const [publishing, setPublishing] = useState(false);
@@ -224,6 +226,28 @@ export default function Schedule() {
       return true;
     } catch (error) {
       toast.error(error.message);
+      return false;
+    }
+  };
+
+  // A member joins a singles game as the partner of the player on their own, so that
+  // game is played as doubles. The draw is already published, so the change is saved
+  // straight away and every other game is left exactly as it was.
+  const addSinglesPlayer = async (next) => {
+    if (!next) return false;
+    try {
+      juniorSafety.assertSafe(next);
+    } catch (error) {
+      toast.error(error.message);
+      return false;
+    }
+    try {
+      await base44.entities.DrawNight.update(record.id, { matches: next.matches });
+      setRecord((r) => ({ ...r, matches: next.matches }));
+      toast.success("Player added — that game is doubles now and the published draw is updated.");
+      return true;
+    } catch {
+      toast.error("Couldn't update the draw.");
       return false;
     }
   };
@@ -492,6 +516,7 @@ export default function Schedule() {
                 swapMode={swapMode}
                 onSwapMode={changeSwapMode}
                 onReplacePlayer={() => setShowReplace(true)}
+                onAddSingles={record.published === false ? null : () => setShowSingles(true)}
               />
             )}
             {isAdmin && (
@@ -571,6 +596,14 @@ export default function Schedule() {
           record={record}
           onApply={applyPlayerChange}
           onClose={() => setShowReplace(false)}
+        />
+      )}
+
+      {showSingles && record && (
+        <AddSinglesPlayerDialog
+          record={record}
+          onApply={addSinglesPlayer}
+          onClose={() => setShowSingles(false)}
         />
       )}
 
