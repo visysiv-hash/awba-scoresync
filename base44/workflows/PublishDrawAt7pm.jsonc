@@ -1,0 +1,45 @@
+{
+  "name": "Publish Draw At 7pm",
+  "description": "Every Tuesday at 7:00pm, tonight's draw is published automatically if the admin has not published it yet, so players can always see their games.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 19 * * 2",
+      "one_time_date": null,
+      "timezone": "Australia/Sydney",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "publish_draw_at_7pm",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "publish_draw": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoPublishDraw",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Publish tonight's draw",
+            "description": "Only if still a draft"
+          }
+        }
+      }
+    ]
+  }
+}
