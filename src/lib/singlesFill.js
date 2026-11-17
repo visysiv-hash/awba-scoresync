@@ -1,7 +1,7 @@
 // A game is open when a side has only one player in it: adding someone there makes
 // that side a pair, so the game is played as doubles — and only those games move.
-// The one check is how much a player is already playing: nobody is added past three
-// games for the night, so a player who is one game short can still be dropped in.
+// Both sides of a game can be filled in one go, and the one check is how much a
+// player is already playing: nobody goes past three games for the night.
 const lone = (team) => (team || []).length === 1;
 
 export const MAX_GAMES = 3;
@@ -9,23 +9,7 @@ export const MAX_GAMES = 3;
 export const singlesMatches = (record) =>
   (record?.matches || []).filter((m) => lone(m.team1) || lone(m.team2));
 
-export const roundNumbers = (record) => [
-  ...new Set((record?.matches || []).map((m) => Number(m.game)).filter((n) => Number.isFinite(n))),
-].sort((a, b) => a - b);
-
-// Every place a player could be added: one option per player sitting on their own,
-// named with the partner they would join and who they would face.
-export const openPartners = (record) =>
-  singlesMatches(record).flatMap((m) => [
-    ...(lone(m.team1)
-      ? [{ net: m.net, game: Number(m.game), side: "team1", partner: m.team1[0], against: m.team2 || [] }]
-      : []),
-    ...(lone(m.team2)
-      ? [{ net: m.net, game: Number(m.game), side: "team2", partner: m.team2[0], against: m.team1 || [] }]
-      : []),
-  ]);
-
-export const optionKey = (p) => `${p.net}|${p.game}|${p.side}`;
+export const gameKey = (m) => `${m.net}|${m.game}`;
 
 const same = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
 const onTeam = (match, name) =>
@@ -34,38 +18,34 @@ const onTeam = (match, name) =>
 export const gamesPlayed = (record, name) =>
   name ? (record?.matches || []).filter((m) => onTeam(m, name)).length : 0;
 
-// `picks` are the chosen places ({ net, game, side }) — one per game of the night.
-export function addSinglesPlayer(record, { player, picks }) {
-  const name = String(player || "").trim();
-  if (!name) throw new Error("Choose a player from the member list.");
+// `additions` are the filled sides: { net, game, side, player }.
+export function addPlayersToGames(record, additions) {
+  const list = (additions || []).filter((a) => a && String(a.player || "").trim());
+  if (!list.length) throw new Error("Pick a player for at least one side.");
 
-  const chosen = (picks || []).filter(Boolean);
-  if (!chosen.length) throw new Error("Choose where they play at least one game.");
-
-  const already = gamesPlayed(record, name);
-  if (already >= MAX_GAMES) {
-    throw new Error(`${name} is already playing ${already} games tonight — that's the maximum.`);
+  // Games each player would have on the night, counting the ones they already play.
+  const counts = new Map();
+  for (const a of list) {
+    const name = String(a.player).trim();
+    const key = name.toLowerCase();
+    const before = counts.has(key) ? counts.get(key) : gamesPlayed(record, name);
+    if (before >= MAX_GAMES) {
+      throw new Error(`${name} is already playing ${before} games tonight — that's the maximum.`);
+    }
+    counts.set(key, before + 1);
   }
-  if (already + chosen.length > MAX_GAMES) {
-    throw new Error(
-      `${name} already has ${already} game${already === 1 ? "" : "s"} tonight and can only play ${MAX_GAMES}. Pick ${MAX_GAMES - already} game${MAX_GAMES - already === 1 ? "" : "s"}.`
-    );
-  }
 
-  const seen = new Set();
   let matches = record.matches || [];
-  for (const p of chosen) {
-    const key = `${p.net}|${p.game}`;
-    if (seen.has(key)) throw new Error("The same game was picked twice.");
-    seen.add(key);
+  for (const a of list) {
+    const name = String(a.player).trim();
     const target = matches.find(
-      (m) => Number(m.net) === Number(p.net) && Number(m.game) === Number(p.game)
+      (m) => Number(m.net) === Number(a.net) && Number(m.game) === Number(a.game)
     );
     if (!target) throw new Error("That game is not on the schedule any more.");
     if (onTeam(target, name)) throw new Error(`${name} is already in that game.`);
-    const team = target[p.side] || [];
-    if (team.length !== 1) throw new Error("Only a player on their own can be given a partner.");
-    matches = matches.map((m) => (m === target ? { ...m, [p.side]: [...team, name] } : m));
+    const team = target[a.side] || [];
+    if (team.length !== 1) throw new Error(`Net ${a.net} Game ${a.game} already has two players there.`);
+    matches = matches.map((m) => (m === target ? { ...m, [a.side]: [...team, name] } : m));
   }
 
   return { ...record, matches };
