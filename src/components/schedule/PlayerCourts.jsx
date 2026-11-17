@@ -1,13 +1,9 @@
-// Alphabetical player list with the nets each player is on tonight, like the
-// printed sheet's "FirstName / Court Numbers" columns.
+// Alphabetical player list with the nets each player is on tonight, in game order,
+// like the printed sheet's "FirstName / Court Numbers" columns.
+import { playerNets } from "@/lib/playerNets";
+
 export default function PlayerCourts({ matches = [], className = "" }) {
-  const nets = {};
-  for (const m of matches) {
-    for (const n of [...(m.team1 || []), ...(m.team2 || [])]) {
-      (nets[n] = nets[n] || new Set()).add(Number(m.net));
-    }
-  }
-  const rows = Object.keys(nets).sort((a, b) => a.localeCompare(b));
+  const rows = playerNets(matches);
 
   return (
     <div className={`rounded-xl border border-slate-700 bg-slate-800 p-2 print:p-1 print:border-black/60 ${className}`}>
@@ -25,11 +21,11 @@ export default function PlayerCourts({ matches = [], className = "" }) {
             <span>Net numbers</span>
           </div>
         ))}
-        {rows.map((n) => (
-          <div key={n} className="flex justify-between gap-3 text-[11px] print:text-[9px] leading-snug print:leading-tight text-slate-200 border-b border-slate-700/50 print:border-black">
-            <span>{n}</span>
+        {rows.map(({ name, nets }) => (
+          <div key={name} className="flex justify-between gap-3 text-[11px] print:text-[9px] leading-snug print:leading-tight text-slate-200 border-b border-slate-700/50 print:border-black">
+            <span>{name}</span>
             <span className="font-bold text-yellow-400">
-              {[...nets[n]].sort((a, b) => a - b).join(" & ")}
+              {nets.length ? nets.join(" & ") : "—"}
             </span>
           </div>
         ))}

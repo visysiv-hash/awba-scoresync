@@ -3,6 +3,7 @@
 // per net with pair averages, and an alphabetical player-to-net list underneath.
 import { jsPDF } from "jspdf";
 import { pairAverage } from "@/lib/appRatingMap";
+import { playerNets } from "@/lib/playerNets";
 
 const PAGE = { w: 210, h: 297, m: 8 };
 const BLOCK_FILL = [254, 215, 170];
@@ -90,22 +91,9 @@ const drawNet = (doc, x, y, w, net, matches, ratings) => {
   return h;
 };
 
-// Alphabetical player list with the nets each player is on, in columns.
+// Alphabetical player list with the nets each player is on, listed in game order, in columns.
 const drawPlayerNets = (doc, x, y, w, matches) => {
-  const byPlayer = new Map();
-  matches.forEach((m) => {
-    [...teamsOf(m, "team1"), ...teamsOf(m, "team2")].forEach((name) => {
-      if (!name) return;
-      if (!byPlayer.has(name)) byPlayer.set(name, new Set());
-      byPlayer.get(name).add(Number(m.net));
-    });
-  });
-  const players = [...byPlayer.entries()]
-    .map((entry) => ({
-      name: entry[0],
-      nets: [...entry[1]].filter(Number.isFinite).sort((a, b) => a - b),
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const players = playerNets(matches);
   if (!players.length) return;
 
   doc.setFont("helvetica", "bold");
