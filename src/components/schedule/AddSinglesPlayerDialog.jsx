@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Search, X } from "lucide-react";
-import { openPartners, roundNumbers, optionKey, addSinglesPlayer } from "@/lib/singlesFill";
+import { openPartners, roundNumbers, optionKey, addSinglesPlayer, gamesPlayed, MAX_GAMES } from "@/lib/singlesFill";
 
 // Someone turns up who was not in the draw: give them a partner in each game of the
 // night. The partner is chosen per game, so the same player can stand with a different
@@ -42,6 +42,8 @@ export default function AddSinglesPlayerDialog({ record, onApply, onClose }) {
         .filter((m) => `${m.display_name || ""} ${m.full_name || ""}`.toLowerCase().includes(q))
         .slice(0, 6);
 
+  const played = gamesPlayed(record, player);
+
   const chosen = rounds
     .map((round) => ({ round, option: options.find((o) => o.game === round && optionKey(o) === picks[round]) }))
     .filter((row) => row.option);
@@ -69,7 +71,7 @@ export default function AddSinglesPlayerDialog({ record, onApply, onClose }) {
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
           <div>
             <h2 className="text-sm font-bold text-white">Add a player to the singles games</h2>
-            <p className="text-[11px] text-slate-400">Choose their partner in each game — that game is then doubles.</p>
+            <p className="text-[11px] text-slate-400">Pick who they play with in each game. A player can play up to {MAX_GAMES} games.</p>
           </div>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-white">
             <X className="w-4 h-4" />
@@ -78,7 +80,7 @@ export default function AddSinglesPlayerDialog({ record, onApply, onClose }) {
 
         <div className="p-4 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Player from the member list</label>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Player to add</label>
             <div className="flex items-center gap-2 rounded-lg bg-slate-900 border border-slate-700 px-2">
               <Search className="w-3.5 h-3.5 text-slate-500 shrink-0" />
               <input
@@ -88,7 +90,15 @@ export default function AddSinglesPlayerDialog({ record, onApply, onClose }) {
                 className="w-full bg-transparent py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none"
               />
             </div>
-            {player && <p className="text-xs font-semibold text-yellow-400">{player} selected</p>}
+            {player && (
+              <p className="text-xs font-semibold text-yellow-400">
+                {player} selected
+                <span className="font-normal text-slate-400">
+                  {" "}· {played ? `already playing ${played} game${played === 1 ? "" : "s"}` : "not playing yet"}
+                  {" "}· can be added to {Math.max(0, MAX_GAMES - played)} more
+                </span>
+              </p>
+            )}
             {loadingRoster && (
               <p className="text-[11px] text-slate-400 flex items-center gap-1">
                 <Loader2 className="w-3 h-3 animate-spin" /> Loading members…
@@ -130,7 +140,8 @@ export default function AddSinglesPlayerDialog({ record, onApply, onClose }) {
                     <option value="">{rowOptions.length ? "Rest this game" : "No singles game"}</option>
                     {rowOptions.map((o) => (
                       <option key={optionKey(o)} value={optionKey(o)}>
-                        Net {o.net} — partner {o.partner}
+                        Net {o.net} — with {o.partner}
+                        {o.against.length ? `, vs ${o.against.join(" & ")}` : ""}
                       </option>
                     ))}
                   </select>
