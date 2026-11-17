@@ -2,7 +2,7 @@ import { teamAvg } from "@/lib/teamRating";
 import { bannedTogether } from "@/lib/neverPair";
 import { juniorMatchAllowed } from "@/lib/juniorSafety";
 import { juniorPreferenceCost } from "@/lib/juniorPreference";
-import { shortFormatCost, isNominated } from "@/lib/americanDoubles";
+import { shortFormatCost, shortBalanceCost, isNominated } from "@/lib/americanDoubles";
 
 const pairIds = (ids, n) => ids.flatMap((a, i) => ids.slice(i + 1).map((b) => Math.min(a, b) * n + Math.max(a, b)));
 
@@ -53,12 +53,14 @@ export function uniqueCandidates(players, sizes, distance, shortFormatOk, volunt
       const gap = a !== null && b !== null ? Math.abs(a - b) : 0;
       const juniorCost = juniorPreferenceCost(...playerTeams) * 10;
       const formatCost = ids.length < 4 ? shortFormatCost(playerTeams, shortFormatOk) : 0;
+      // American doubles is a handicap: the player alone has to be the stronger side.
+      const balanceCost = ids.length < 4 ? shortBalanceCost(playerTeams) : 0;
       // The player standing alone: the draw keeps each of them to one such turn a night.
       const lone = ids.length === 3 ? (teams[0].length === 1 ? teams[0][0] : teams[1][0]) : -1;
       matches.push({ ids, teams, lone, span, meetings: pairIds(ids, n),
         partners: teams.flatMap((team) => pairIds(team, n)),
         opponents: teams[0].flatMap((x) => teams[1].map((y) => Math.min(x, y) * n + Math.max(x, y))),
-        cost: gap * gap * 10 + spread * spread * 0.01 + span * 0.0001 + juniorCost + formatCost });
+        cost: gap * gap * 10 + spread * spread * 0.01 + span * 0.0001 + juniorCost + formatCost + balanceCost });
     }
     matches.sort((a, b) => a.cost - b.cost);
     matches.forEach((match, index) => candidates.push({ ...match, primary: index === 0 }));

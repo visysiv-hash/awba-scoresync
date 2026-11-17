@@ -11,7 +11,7 @@ import { keepApartDraw, bannedTogether } from "./neverPair";
 import { buildUniqueDraw } from "@/lib/uniqueDraw";
 import { juniorMatchAllowed, assertJuniorDraw } from "@/lib/juniorSafety";
 import { juniorPreferenceCost } from "@/lib/juniorPreference";
-import { americanSet, shortFormatCost, lonePlayer, isNominated } from "@/lib/americanDoubles";
+import { americanSet, shortFormatCost, shortBalanceCost, lonePlayer, isNominated } from "@/lib/americanDoubles";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -64,7 +64,11 @@ function bestAssignment(playing, plan, seen, strict, shortFormatOk, loneSeen) {
   const cost = (teams) => {
     let c = 0;
     for (const t of teams) {
-      if (t.A.length !== 2 || t.B.length !== 2) c += shortFormatCost([t.A, t.B], shortFormatOk);
+      if (t.A.length !== 2 || t.B.length !== 2) {
+        c += shortFormatCost([t.A, t.B], shortFormatOk);
+        // The player alone has to be the stronger side of a one-against-two game.
+        c += shortBalanceCost([t.A, t.B]);
+      }
       if (t.A.length === 2 && seen.partners.has(key(t.A[0].name, t.A[1].name))) c += 220;
       if (t.B.length === 2 && seen.partners.has(key(t.B[0].name, t.B[1].name))) c += 220;
       for (const x of t.A) {

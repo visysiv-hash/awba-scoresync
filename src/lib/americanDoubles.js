@@ -4,6 +4,8 @@
 // to stand alone. The nomination is priced into the draw by role: a nominated player
 // belongs on the lonely side of the net, never in the pair, and a player who never
 // put their hand up should not be the one out there alone.
+import { teamAvg } from "@/lib/teamRating";
+
 export const SHORT_FORMAT_COST = 1e4;
 
 export const americanSet = (names) =>
@@ -46,3 +48,24 @@ export function shortFormatCost(teams, ok) {
 }
 
 export const isNominated = (name, ok) => Boolean(ok && ok.size && ok.has(nameOf(name)));
+
+// A one-against-two game is only a fair game when the player standing alone is the
+// stronger side, and only by a little: ratings run lowest = strongest, so the lone
+// player's rating has to sit a touch BELOW the pair's average. Scoring the gap
+// without a direction let a weak player be sent out alone against a stronger pair,
+// simply because that gap was numerically smaller. Now the wrong way round costs
+// far more than being a little too strong, so the draw turns the handicap around.
+const LONE_EDGE = 0.5;
+const WRONG_WAY = 400;
+const TOO_STRONG = 40;
+
+export function shortBalanceCost(teams) {
+  const sizes = sizesOf(teams);
+  if (sizes.length !== 2 || Math.min(...sizes) !== 1 || Math.max(...sizes) !== 2) return 0;
+  const solo = teamAvg(sizes[0] === 1 ? teams[0] : teams[1]);
+  const pair = teamAvg(sizes[0] === 1 ? teams[1] : teams[0]);
+  if (solo === null || pair === null) return 0;
+  // Positive means the pair is the stronger side, which is the wrong way round.
+  const off = solo - pair + LONE_EDGE;
+  return off > 0 ? WRONG_WAY * off * off + 200 * off : TOO_STRONG * off * off;
+}
