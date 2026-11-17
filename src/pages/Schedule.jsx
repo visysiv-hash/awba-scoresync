@@ -244,7 +244,7 @@ export default function Schedule() {
     try {
       await base44.entities.DrawNight.update(record.id, { matches: next.matches });
       setRecord((r) => ({ ...r, matches: next.matches }));
-      toast.success("Player added — that game is doubles now and the published draw is updated.");
+      toast.success("Player added — those games are doubles now and the published draw is updated.");
       return true;
     } catch {
       toast.error("Couldn't update the draw.");

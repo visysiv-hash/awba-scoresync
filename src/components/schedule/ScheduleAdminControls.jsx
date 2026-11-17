@@ -78,10 +78,10 @@ export default function ScheduleAdminControls({
           type="button"
           onClick={onAddSingles}
           disabled={busy}
-          title="Give a singles player a partner, so that game is played as doubles"
+          title="Add a member to the night and choose their partner in each singles game"
           className={chip(false)}
         >
-          Add player to singles
+          Add singles player
         </button>
       )}
 
