@@ -6,7 +6,8 @@ import { base44 } from "@/api/base44Client";
 import ScoreEntry from "../components/ScoreEntry";
 import GameSearch from "../components/GameSearch";
 import PageBanner from "../components/PageBanner";
-import { getCurrentPlayerName } from "../lib/currentMember";
+import LowRatingsReview from "../components/ratings/LowRatingsReview";
+import { getCurrentMember, getCurrentPlayerName } from "../lib/currentMember";
 
 export default function MatchDetails() {
   const location = useLocation();
@@ -15,6 +16,7 @@ export default function MatchDetails() {
   const [submittedScores, setSubmittedScores] = useState({});
   const [searchQuery, setSearchQuery] = useState(() => getCurrentPlayerName());
   const [searchResults, setSearchResults] = useState(null);
+  const isAdmin = getCurrentMember()?.is_admin === true;
 
   const handleSelectGame = (game) => {
     setPrefilledGame(game);
@@ -80,6 +82,8 @@ export default function MatchDetails() {
             />
           </TabsContent>
         </Tabs>
+
+        {isAdmin && <LowRatingsReview />}
       </div>
     </div>
   );
