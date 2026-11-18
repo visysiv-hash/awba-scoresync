@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, ArrowRight, CheckCircle2, ScanSearch, Wand2 } from "lucide-react";
 import { pairAverage } from "@/lib/appRatingMap";
 import { reviewDraw, WIDE_GAP } from "@/lib/drawReview";
+import PairingHistoryReview from "@/components/schedule/PairingHistoryReview";
 
 const at = (w) => `Net ${w.net} Game ${w.game}`;
 
@@ -56,7 +57,8 @@ export default function DrawReviewCard({ record, ratings = {}, onApplySplit, onA
           <div>
             <p className="text-sm font-bold text-white">Review this draw</p>
             <p className="text-[11px] text-slate-400">
-              Check the games on screen for lopsided pairs and pairs who meet again
+              Check the games on screen for lopsided pairs, pairs who meet again, and pairings
+              that rated low before
             </p>
           </div>
         </div>
@@ -190,6 +192,8 @@ export default function DrawReviewCard({ record, ratings = {}, onApplySplit, onA
               ))}
             </div>
           )}
+
+          <PairingHistoryReview record={record} />
 
           {repeats && (
             <p className="text-[11px] text-slate-400">
