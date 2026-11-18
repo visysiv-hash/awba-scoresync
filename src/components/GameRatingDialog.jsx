@@ -6,6 +6,20 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import GamePlayerRatingForm from "./GamePlayerRatingForm";
 import GameRatingsSummary from "./GameRatingsSummary";
+import { getCurrentMember, getCurrentPlayerName } from "@/lib/currentMember";
+import { gamePlayers } from "@/lib/teamNames";
+
+const norm = (n) => String(n || "").trim().toLowerCase();
+
+// The logged-in player's own name inside this game, so their stars are the only ones
+// they see. Admin reviewers see everybody's.
+const ownNameIn = (game) => {
+  const me = norm(getCurrentPlayerName());
+  if (!me) return "";
+  return gamePlayers(game.team1, game.team2).find((n) => norm(n) === me)
+    || gamePlayers(game.team1, game.team2).find((n) => norm(n).startsWith(`${me} `))
+    || "";
+};
 
 /**
  * Rate a game whose scores are already in. Each player gives their own stars and
@@ -14,13 +28,19 @@ import GameRatingsSummary from "./GameRatingsSummary";
 export default function GameRatingDialog({ game, date, onOpenChange, onSaved }) {
   const [ratings, setRatings] = useState({});
   const [saving, setSaving] = useState(false);
+  const isAdmin = getCurrentMember()?.is_admin === true;
+  const ownName = game ? ownNameIn(game) : "";
 
   useEffect(() => {
     if (!game) return;
     const saved = {};
-    for (const r of game.player_ratings || []) saved[r.player] = r.rating;
+    for (const r of game.player_ratings || []) {
+      // A player only ever sees and sends their own stars; the committee sees all.
+      if (!isAdmin && norm(r.player) !== norm(ownName)) continue;
+      saved[r.player] = r.rating;
+    }
     setRatings(saved);
-  }, [game]);
+  }, [game, isAdmin, ownName]);
 
   const handleSave = async () => {
     const list = Object.entries(ratings).map(([player, rating]) => ({ player, rating }));
@@ -63,17 +83,35 @@ export default function GameRatingDialog({ game, date, onOpenChange, onSaved }) 
             <span className="text-red-600">{game.team2}</span>
           </div>
 
-          <GamePlayerRatingForm team1={game.team1} team2={game.team2} value={ratings} onChange={setRatings} />
+          {isAdmin ? (
+            <GamePlayerRatingForm team1={game.team1} team2={game.team2} value={ratings} onChange={setRatings} />
+          ) : ownName ? (
+            <GamePlayerRatingForm
+              team1={game.team1}
+              team2={game.team2}
+              value={ratings}
+              onChange={setRatings}
+              only={ownName}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground text-center">
+              Only the players in this game can rate it.
+            </p>
+          )}
 
-          <GameRatingsSummary
-            team1={game.team1}
-            team2={game.team2}
-            playerRatings={game.player_ratings}
-            rating={game.rating}
-          />
+          {isAdmin && (
+            <GameRatingsSummary
+              team1={game.team1}
+              team2={game.team2}
+              playerRatings={game.player_ratings}
+              rating={game.rating}
+            />
+          )}
 
           <p className="text-xs text-muted-foreground text-center">
-            Tap your own name's stars. Ratings stay open until 11:59pm Wednesday.
+            {isAdmin
+              ? "Players rate their own game until 11:59pm Wednesday."
+              : "Tap your own stars. Ratings stay open until 11:59pm Wednesday."}
           </p>
 
           <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleSave} disabled={saving}>
