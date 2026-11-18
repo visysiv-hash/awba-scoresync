@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import GamePlayerRatingForm from "./GamePlayerRatingForm";
+import GameRatingsSummary from "./GameRatingsSummary";
 
 /**
  * Rate a game whose scores are already in. Each player gives their own stars and
@@ -63,6 +64,13 @@ export default function GameRatingDialog({ game, date, onOpenChange, onSaved }) 
           </div>
 
           <GamePlayerRatingForm team1={game.team1} team2={game.team2} value={ratings} onChange={setRatings} />
+
+          <GameRatingsSummary
+            team1={game.team1}
+            team2={game.team2}
+            playerRatings={game.player_ratings}
+            rating={game.rating}
+          />
 
           <p className="text-xs text-muted-foreground text-center">
             Tap your own name's stars. Ratings stay open until 11:59pm Wednesday.
