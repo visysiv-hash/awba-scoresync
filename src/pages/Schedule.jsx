@@ -30,6 +30,7 @@ import {
 import { swapPlayer, swapInGame, todayIso, RANDOM_SCOPE } from "@/lib/nightDraw";
 import ReplacePlayerDialog from "@/components/schedule/ReplacePlayerDialog";
 import AddSinglesPlayerDialog from "@/components/schedule/AddSinglesPlayerDialog";
+import AmericanDoublesDialog from "@/components/admin/AmericanDoublesDialog";
 import SchedulePdfExport from "@/components/schedule/SchedulePdfExport";
 import { repairSchedule } from "@/lib/repairSchedule";
 import { appRatingMap } from "@/lib/appRatingMap";
@@ -71,6 +72,7 @@ export default function Schedule() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showReplace, setShowReplace] = useState(false);
   const [showSingles, setShowSingles] = useState(false);
+  const [showAmerican, setShowAmerican] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [ratings, setRatings] = useState({});
   const [publishing, setPublishing] = useState(false);
@@ -250,6 +252,25 @@ export default function Schedule() {
       toast.error("Couldn't update the draw.");
       return false;
     }
+  };
+
+  // The nomination decides who plays the one-against-two games, so changing it re-pairs
+  // the night straight away with the reach the admin already chose.
+  const saveAmericanDoubles = async (names) => {
+    if (!record) return;
+    const next = { ...record, american_doubles: names };
+    const repaired = await repairSchedule(next, scope);
+    juniorSafety.assertSafe({ ...next, ...repaired });
+    setRecord({ ...next, ...repaired });
+    setDirty(true);
+    setPicked(null);
+    setPickedGame(null);
+    // Keep the session's own list in step for the next time the night is drawn.
+    base44.entities.Session.filter({ date })
+      .then((page) => Promise.all((page.items || []).map((s) =>
+        base44.entities.Session.update(s.id, { american_doubles: names })
+      )))
+      .catch(() => {});
   };
 
   // Re-pair the night with a different reach: each group of eight on its own, or any
@@ -517,6 +538,8 @@ export default function Schedule() {
                 onSwapMode={changeSwapMode}
                 onReplacePlayer={() => setShowReplace(true)}
                 onAddSingles={record.published === false ? null : () => setShowSingles(true)}
+                onAmericanDoubles={() => setShowAmerican(true)}
+                americanCount={(record.american_doubles || []).length}
               />
             )}
             {isAdmin && (
@@ -596,6 +619,16 @@ export default function Schedule() {
           record={record}
           onApply={applyPlayerChange}
           onClose={() => setShowReplace(false)}
+        />
+      )}
+
+      {showAmerican && record && (
+        <AmericanDoublesDialog
+          initial={record.american_doubles || []}
+          players={[...new Set((record.groups || []).flatMap((g) => g.players || []))]}
+          onSave={saveAmericanDoubles}
+          onClose={() => setShowAmerican(false)}
+          onSaved={() => {}}
         />
       )}
 

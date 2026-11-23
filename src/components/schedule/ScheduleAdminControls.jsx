@@ -33,6 +33,8 @@ export default function ScheduleAdminControls({
   onSwapMode,
   onReplacePlayer,
   onAddSingles,
+  onAmericanDoubles,
+  americanCount,
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 no-print">
@@ -70,6 +72,21 @@ export default function ScheduleAdminControls({
       {onReplacePlayer && (
         <button type="button" onClick={onReplacePlayer} disabled={busy} className={chip(false)}>
           Player change
+        </button>
+      )}
+
+      {onAmericanDoubles && (
+        <button
+          type="button"
+          onClick={onAmericanDoubles}
+          disabled={busy}
+          title="Nominate who is happy to play American doubles (one against two) and singles"
+          className={chip(false)}
+        >
+          American doubles
+          <span className="ml-1 rounded bg-white/15 px-1 text-[10px] font-bold tabular-nums">
+            {americanCount || "all"}
+          </span>
         </button>
       )}
 

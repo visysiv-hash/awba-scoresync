@@ -8,8 +8,8 @@ import { toast } from "sonner";
 // Lets the admin nominate the players who are happy to play American doubles (one
 // player against two) and singles. Those formats only appear when a group is short of
 // eight, and when a list is saved the draw fills them with these players only.
-export default function AmericanDoublesDialog({ session, players, onClose, onSaved }) {
-  const [picked, setPicked] = useState(() => session.american_doubles || []);
+export default function AmericanDoublesDialog({ session, players, initial, onClose, onSaved, onSave }) {
+  const [picked, setPicked] = useState(() => initial || session?.american_doubles || []);
   const [saving, setSaving] = useState(false);
 
   const has = (name) => picked.some((n) => n.toLowerCase() === name.toLowerCase());
@@ -19,7 +19,9 @@ export default function AmericanDoublesDialog({ session, players, onClose, onSav
   const save = async () => {
     setSaving(true);
     try {
-      await base44.entities.Session.update(session.id, { american_doubles: picked });
+      // The schedule passes its own save, so the nomination can be set from either page.
+      if (onSave) await onSave(picked);
+      else await base44.entities.Session.update(session.id, { american_doubles: picked });
       onSaved(picked);
       toast.success(
         picked.length
