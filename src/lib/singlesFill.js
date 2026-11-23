@@ -1,13 +1,13 @@
-// A game is open when a side has only one player in it: adding someone there makes
-// that side a pair, so the game is played as doubles — and only those games move.
-// Both sides of a game can be filled in one go, and the one check is how much a
-// player is already playing: nobody goes past three games for the night.
+// A game is open when both sides have only one player in it: adding someone there makes
+// that side a pair, so the game is played as doubles — and only those games move. A game
+// that already has a pair on one side is American doubles, not a singles waiting to be
+// filled, so it is left alone.
 const lone = (team) => (team || []).length === 1;
 
 export const MAX_GAMES = 3;
 
 export const singlesMatches = (record) =>
-  (record?.matches || []).filter((m) => lone(m.team1) || lone(m.team2));
+  (record?.matches || []).filter((m) => lone(m.team1) && lone(m.team2));
 
 export const gameKey = (m) => `${m.net}|${m.game}`;
 

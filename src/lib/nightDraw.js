@@ -29,9 +29,9 @@ const PLANS = {
   10: [[2, 2], [2, 2]],
   9: [[2, 2], [2, 2]],
   7: [[2, 2], [1, 2]],
-  // Six plays a singles and a doubles a round: everyone plays all three games and
-  // nobody stands alone against a pair.
-  6: [[1, 1], [2, 2]],
+  // Six plays two American doubles a round, one on each of its two courts: everyone
+  // plays all three games and each player takes the lonely side once.
+  6: [[1, 2], [1, 2]],
   5: [[1, 2], [1, 1]],
   4: [[2, 2]],
   3: [[1, 2]],
@@ -259,10 +259,12 @@ function shortGroupGames(players, strict, shortFormatOk) {
   // side is never handed to someone who did not put their hand up.
   const noVolunteer = shortFormatOk && shortFormatOk.size
     && !players.some((p) => isNominated(p.name, shortFormatOk));
-  // Only a game that puts one player alone against a pair needs a volunteer; singles
-  // and doubles do not, so a six keeps its singles even with no nomination.
+  // A game that puts one player alone against a pair needs a volunteer, so a group with
+  // nobody nominated plays plain doubles and rests the spare players. A block of six is
+  // the exception: two American doubles a round is the only way all six play three games
+  // on two courts, so it is drawn that way whether or not anyone nominated.
   const planned = PLANS[players.length] || [];
-  const needsVolunteer = planned.some(([a, b]) => a !== b);
+  const needsVolunteer = players.length !== 6 && planned.some(([a, b]) => a !== b);
   const plan = noVolunteer && needsVolunteer && players.length >= 4 ? [[2, 2]] : planned;
   const seen = { partners: new Set(), opponents: new Set(), meets: new Map() };
   const rests = {};

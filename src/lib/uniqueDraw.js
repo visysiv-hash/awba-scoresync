@@ -8,7 +8,7 @@ import { juniorMatchAllowed } from "@/lib/juniorSafety";
 // Match formats that give every player in the group three games. A full group of
 // eight plays two doubles games a round; a short group mixes American doubles
 // (one player against two) and singles so nobody sits a round out. A six is built
-// separately (see below): one singles and one doubles a round.
+// separately (see below): two American doubles a round, one on each of its courts.
 const PLANS = {
   11: [4, 4],
   10: [4, 4],
@@ -104,6 +104,53 @@ function roleShortGames(rounds, players, nominated) {
       setRole(match, best);
     }
   }
+}
+
+// The leftover six plays two American doubles a round, one on each of its two courts:
+// three players a court, one against a pair. Everyone plays all three games, and each
+// player takes the lonely side exactly once so the handicap is shared. The pair facing
+// a single player is the one whose average sits closest to theirs, a nominated player
+// stands alone before anyone else, and a junior only ever faces two juniors.
+function sixRounds(players, nominated) {
+  const list = byRating(players);
+  const rank = (p) => (isNominated(p.name, nominated) ? 0 : p.junior ? 2 : 1);
+  const order = [...list].sort((a, b) => rank(a) - rank(b));
+  // A junior may only stand alone among juniors, so unless the block has three of them
+  // the lonely turns go to everyone else and one player carries a second one.
+  const juniors = list.filter((p) => p.junior).length;
+  const eligible = order.filter((p) => !p.junior || juniors >= 3);
+  const pool = eligible.length ? eligible : order;
+  const lones = Array.from({ length: 6 }, (_, i) => pool[i % pool.length]);
+
+  const cost = (lone, pair) => {
+    const safe = juniorMatchAllowed([lone], pair) ? 0 : 1000;
+    const solo = Number(lone.rating);
+    const duo = pair.reduce((sum, p) => sum + Number(p.rating), 0) / pair.length;
+    if (!Number.isFinite(solo) || !Number.isFinite(duo)) return safe;
+    // The single player carries the handicap, so they should be the stronger side and
+    // as close to the pair's average as the block allows.
+    return safe + Math.abs(solo - duo) + Math.max(0, solo - duo) * 2;
+  };
+
+  // The three ways the four players not standing alone make two pairs.
+  const splits = (four) => [
+    [[four[0], four[1]], [four[2], four[3]]],
+    [[four[0], four[2]], [four[1], four[3]]],
+    [[four[0], four[3]], [four[1], four[2]]],
+  ];
+
+  return [1, 2, 3].map((game) => {
+    const alone = [lones[(game - 1) * 2], lones[(game - 1) * 2 + 1]];
+    const rest = list.filter((p) => !alone.includes(p));
+    let best = null;
+    for (const [x, y] of splits(rest)) {
+      for (const [first, second] of [[x, y], [y, x]]) {
+        const total = cost(alone[0], first) + cost(alone[1], second);
+        if (!best || total < best.total) best = { total, games: [[alone[0], first], [alone[1], second]] };
+      }
+    }
+    return best.games;
+  });
 }
 
 // The admin can nominate who is happy to play American doubles and singles; those
@@ -203,7 +250,7 @@ export function buildUniqueDraw(groups, options = {}) {
       game,
       label:
         g.players.length === 6
-          ? `Game ${game} · singles & doubles`
+          ? `Game ${game} · American doubles`
           : g.players.length < 4
           ? `Game ${game} · ${g.players.length === 3 ? "American doubles" : "singles"}`
           : `Game ${game} · ${policy === "relaxed" ? "fallback draw" : "unique games"}`,
@@ -232,19 +279,13 @@ export function buildUniqueDraw(groups, options = {}) {
     if (used.size !== slots) throw new Error("The draw is missing a player slot.");
   });
 
-  // The leftover six: one singles and one doubles a round on its two courts, so every
-  // player plays all three games. The singles pairs the two closest ratings that have
-  // not had their turn alone, and the four left over play an even doubles (strongest
-  // with weakest) — so the short block is balanced without a lone player against a pair.
+  // The leftover six: two American doubles a round, one on each of its two courts.
   sixIndexes.forEach((i) => {
-    const list = byRating(groups[i].players);
-    const [singleNet, doublesNet] = courts[i];
-    for (let game = 1; game <= 3; game++) {
-      const solo = [list[(game - 1) * 2], list[(game - 1) * 2 + 1]];
-      const rest = list.filter((p) => !solo.includes(p));
-      push(i, game, [solo[0]], [solo[1]], singleNet);
-      push(i, game, [rest[0], rest[3]], [rest[1], rest[2]], doublesNet);
-    }
+    const [firstNet, secondNet] = courts[i];
+    sixRounds(groups[i].players, shortFormatOk).forEach((games, gi) => {
+      push(i, gi + 1, [games[0][0]], games[0][1], firstNet);
+      push(i, gi + 1, [games[1][0]], games[1][1], secondNet);
+    });
   });
 
   // The short group's own three games: American doubles with a different player alone
