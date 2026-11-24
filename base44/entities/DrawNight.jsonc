@@ -139,6 +139,22 @@
       "items": {
         "type": "string"
       }
+    },
+    "last_groups_format": {
+      "type": "string",
+      "title": "Last Two Groups Format",
+      "description": "How the night's last two groups play: ordinary doubles, American doubles (one against two) or singles.",
+      "enum": [
+        "doubles",
+        "american",
+        "singles"
+      ],
+      "enumColors": [
+        "gray",
+        "blue",
+        "purple"
+      ],
+      "default": "doubles"
     }
   },
   "required": [

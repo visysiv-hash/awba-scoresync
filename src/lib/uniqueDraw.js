@@ -3,6 +3,7 @@ import { uniqueCandidates } from "@/lib/uniqueCandidates";
 import { searchUniqueRounds, balanceUniqueRounds } from "@/lib/uniqueSearch";
 import { scheduleUniqueness } from "@/lib/scheduleUniqueness";
 import { americanSet, isNominated } from "@/lib/americanDoubles";
+import { isShortGroupFormat } from "@/lib/lastGroupsFormat";
 import { juniorMatchAllowed } from "@/lib/juniorSafety";
 
 // Match formats that give every player in the group three games. A full group of
@@ -174,14 +175,24 @@ export function buildUniqueDraw(groups, options = {}) {
     courts.push(Array.from({ length: width }, (_, k) => netNumber + k));
     netNumber += width;
   }
+  // The admin can put the last two groups on a short format of their own. They are left
+  // out of the pooled search and built apart (see applyLastGroupsFormat), so their
+  // players never turn up in another group's game.
+  const forcedIndexes = isShortGroupFormat(options.lastGroupsFormat)
+    ? groups.map((g, i) => ((g.players || []).length >= 4 ? i : -1)).filter((i) => i >= 0).slice(-2)
+    : [];
   // A group of six is the leftover block on a busy night: too few faces in it to stay
   // fresh all night, so it is left out of the search and built directly below as one
   // singles and one doubles a round. The groups that can play a fresh draw are pooled.
-  const sixIndexes = groups.map((g, i) => ((g.players || []).length === 6 ? i : -1)).filter((i) => i >= 0);
+  const sixIndexes = groups
+    .map((g, i) => ((g.players || []).length === 6 ? i : -1))
+    .filter((i) => i >= 0 && !forcedIndexes.includes(i));
   // A group of two or three has the same few players in it all night, so it can never
   // be unique and is left out of the search too: its American doubles and singles are
   // built directly, rotating the lone player so the handicap is shared.
-  const fullGroups = groups.filter((g, i) => (g.players || []).length >= 4 && !sixIndexes.includes(i));
+  const fullGroups = groups.filter(
+    (g, i) => (g.players || []).length >= 4 && !sixIndexes.includes(i) && !forcedIndexes.includes(i)
+  );
   const fullIndexes = fullGroups.map((g) => groups.indexOf(g));
   const fullCourts = fullIndexes.map((i) => courts[i]);
   const plans = fullGroups.map((g) => PLANS[g.players.length] || []);

@@ -10,6 +10,13 @@ export function scheduleUniqueness(record) {
   // six playing one of each): its players meet each other every round by design, so
   // its repeats are not a sign of a weaker draw.
   const groupSizes = (record?.groups || []).map((g) => (g.players || []).length);
+  // The admin can put the last two groups on American doubles or singles: they meet the
+  // same few players by design, so their repeats say nothing about the rest of the night.
+  const forced = new Set(
+    record?.last_groups_format === "american" || record?.last_groups_format === "singles"
+      ? groupSizes.map((size, i) => (size >= 4 ? i : -1)).filter((i) => i >= 0).slice(-2)
+      : []
+  );
   let distance = 0;
   const add = (type, a, b) => {
     const k = key(a, b);
@@ -19,7 +26,8 @@ export function scheduleUniqueness(record) {
     const teams = [match.team1 || [], match.team2 || []];
     const names = teams.flat();
     const matchGroups = [...new Set(names.map((name) => homes.get(low(name))).filter((g) => g !== undefined))];
-    const shortGroup = matchGroups.length > 0 && matchGroups.every((g) => (groupSizes[g] || 0) < 8);
+    const shortGroup = matchGroups.length > 0
+      && matchGroups.every((g) => (groupSizes[g] || 0) < 8 || forced.has(g));
     if (!shortGroup) {
       for (const team of teams) for (let i = 0; i < team.length; i++) for (let j = i + 1; j < team.length; j++) add("partners", team[i], team[j]);
       for (const a of teams[0]) for (const b of teams[1]) add("opponents", a, b);

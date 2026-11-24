@@ -273,6 +273,30 @@ export default function Schedule() {
       .catch(() => {});
   };
 
+  // The night's last two groups can play American doubles or singles instead of ordinary
+  // doubles. The rest of the night is re-paired exactly as it already was.
+  const changeLastGroups = async (value) => {
+    if (!record || scopeBusy) return;
+    setScopeBusy(true);
+    try {
+      const next = { ...record, last_groups_format: value };
+      const repaired = await repairSchedule(next, scope);
+      setRecord({ ...next, ...repaired });
+      setDirty(true);
+      setPicked(null);
+      setPickedGame(null);
+      toast.success(
+        value === "doubles"
+          ? "The last two groups play ordinary doubles again — press Save to keep it."
+          : `The last two groups now play ${value === "singles" ? "singles" : "American doubles"} — press Save to keep it.`
+      );
+    } catch (error) {
+      toast.error(error.message || "Couldn't change the last two groups.");
+    } finally {
+      setScopeBusy(false);
+    }
+  };
+
   // Re-pair the night with a different reach: each group of eight on its own, or any
   // player from 16 or 24 paired with any other and every round balanced across them.
   // The group list is the admin's own arrangement, so a re-pair keeps whatever players
@@ -281,8 +305,11 @@ export default function Schedule() {
     if (!record || scopeBusy) return;
     setScopeBusy(true);
     try {
-      const next = await repairSchedule(record, value, { resetOrder });
-      setRecord((r) => ({ ...r, ...next }));
+      // A short format for the last two groups only applies to a unique draw, so any
+      // other pairing method puts them back on ordinary doubles.
+      const target = { ...record, last_groups_format: value === -2 ? record.last_groups_format : "doubles" };
+      const next = await repairSchedule(target, value, { resetOrder });
+      setRecord((r) => ({ ...r, ...next, last_groups_format: target.last_groups_format }));
       setScope(value);
       setDirty(true);
       setPicked(null);
@@ -344,6 +371,7 @@ export default function Schedule() {
       await base44.entities.DrawNight.update(record.id, {
         groups: record.groups, matches: record.matches,
         variant: record.variant, pairing_scope: record.pairing_scope,
+        last_groups_format: record.last_groups_format || "doubles",
       });
       setDirty(false);
       toast.success("Schedule saved.");
@@ -540,6 +568,9 @@ export default function Schedule() {
                 onAddSingles={record.published === false ? null : () => setShowSingles(true)}
                 onAmericanDoubles={() => setShowAmerican(true)}
                 americanCount={(record.american_doubles || []).length}
+                lastFormat={record.last_groups_format || "doubles"}
+                onLastFormat={changeLastGroups}
+                lastFormatLocked={scope !== -2}
               />
             )}
             {isAdmin && (

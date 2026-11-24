@@ -35,6 +35,9 @@ export default function ScheduleAdminControls({
   onAddSingles,
   onAmericanDoubles,
   americanCount,
+  lastFormat,
+  onLastFormat,
+  lastFormatLocked,
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 no-print">
@@ -88,6 +91,25 @@ export default function ScheduleAdminControls({
             {americanCount || "all"}
           </span>
         </button>
+      )}
+
+      {onLastFormat && (
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Last two groups</p>
+          <select
+            value={lastFormat || "doubles"}
+            onChange={(e) => onLastFormat(e.target.value)}
+            disabled={busy || lastFormatLocked}
+            title={lastFormatLocked
+              ? "Choose Unique games as the pairing method to put the last two groups on a short format"
+              : "Play the night's last two groups as ordinary doubles, American doubles (one against two) or singles"}
+            className="rounded-lg bg-slate-800 border border-slate-700 px-2 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          >
+            <option value="doubles">Doubles</option>
+            <option value="american">American doubles</option>
+            <option value="singles">Singles</option>
+          </select>
+        </div>
       )}
 
       {onAddSingles && (

@@ -12,6 +12,7 @@ import { buildUniqueDraw } from "@/lib/uniqueDraw";
 import { juniorMatchAllowed, assertJuniorDraw } from "@/lib/juniorSafety";
 import { juniorPreferenceCost } from "@/lib/juniorPreference";
 import { americanSet, shortFormatCost, shortBalanceCost, lonePlayer, isNominated } from "@/lib/americanDoubles";
+import { applyLastGroupsFormat } from "@/lib/lastGroupsFormat";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -516,7 +517,11 @@ const drawFor = (players, options) => {
 // Everyone stays in the same rating-based draw. Junior matchups are a soft
 // preference; only the American-doubles safety restriction is mandatory.
 export function buildNightDraw(players, options = {}) {
-  return assertJuniorDraw(drawFor(players || [], options));
+  const draw = drawFor(players || [], options);
+  // The admin can put the night's last two groups on a short format — American doubles
+  // or singles — whatever the rest of the night is paired as.
+  applyLastGroupsFormat(draw, options.lastGroupsFormat, americanSet(options.americanDoubles));
+  return assertJuniorDraw(draw);
 }
 
 export function flattenMatches(draw) {
