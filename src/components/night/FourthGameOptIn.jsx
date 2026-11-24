@@ -6,6 +6,9 @@ import { getCurrentMember } from "@/lib/currentMember";
 
 // Tonight's date in Melbourne time, matching how sessions are stored.
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
+// The 4th game only runs on the scheduled Tuesday nights, so it is offered on a Tuesday.
+const isTuesday = () =>
+  new Date().toLocaleDateString("en-AU", { timeZone: "Australia/Melbourne", weekday: "long" }) === "Tuesday";
 const low = (value) => String(value || "").trim().toLowerCase();
 
 // Players booked in for tonight can put their hand up for one more game after the
@@ -19,7 +22,7 @@ export default function FourthGameOptIn() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!email) {
+    if (!email || !isTuesday()) {
       setLoading(false);
       return;
     }
@@ -70,7 +73,7 @@ export default function FourthGameOptIn() {
     <div className="rounded-xl bg-white/10 border border-white/15 px-3 py-2.5 flex items-center justify-between gap-3">
       <div className="min-w-0">
         <p className="text-sm font-bold text-white flex items-center gap-1.5">
-          <PlusCircle className="w-4 h-4 text-yellow-400" /> Optional 4th game
+          <PlusCircle className="w-4 h-4 text-yellow-400" /> Optional 4th game tonight
         </p>
         <p className="text-[11px] text-slate-300 leading-snug mt-0.5">
           One more game after the three scheduled games, mixing the grades. Just for fun — never scored, never counted.
