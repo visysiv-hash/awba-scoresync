@@ -163,6 +163,40 @@
       "items": {
         "type": "number"
       }
+    },
+    "extra_games": {
+      "type": "array",
+      "title": "Optional 4th Game",
+      "description": "The mixed-grade games drawn for the players who opted in after the three scheduled games. They show in Match Details for that night only, are never scored and never count in results or rankings.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "net": {
+            "type": "number",
+            "title": "Court"
+          },
+          "team1": {
+            "type": "array",
+            "title": "Team 1",
+            "items": {
+              "type": "string"
+            }
+          },
+          "team2": {
+            "type": "array",
+            "title": "Team 2",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "extra_published": {
+      "type": "boolean",
+      "title": "4th Game Published",
+      "description": "The optional 4th game only appears in Match Details once the admin publishes it.",
+      "default": false
     }
   },
   "required": [

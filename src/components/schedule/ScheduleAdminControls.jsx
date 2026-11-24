@@ -34,6 +34,8 @@ export default function ScheduleAdminControls({
   onReplacePlayer,
   onAddSingles,
   onAmericanDoubles,
+  onFourthGame,
+  fourthCount,
   americanCount,
   lastFormat,
   onLastFormat,
@@ -91,6 +93,21 @@ export default function ScheduleAdminControls({
           American doubles
           <span className="ml-1 rounded bg-white/15 px-1 text-[10px] font-bold tabular-nums">
             {americanCount || "all"}
+          </span>
+        </button>
+      )}
+
+      {onFourthGame && (
+        <button
+          type="button"
+          onClick={onFourthGame}
+          disabled={busy}
+          title="Draw the optional 4th game for the players who opted in — mixed grades, never scored"
+          className={chip(false)}
+        >
+          4th game
+          <span className="ml-1 rounded bg-white/15 px-1 text-[10px] font-bold tabular-nums">
+            {fourthCount || 0}
           </span>
         </button>
       )}

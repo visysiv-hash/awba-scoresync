@@ -13,6 +13,7 @@ import MyBookingsCard from "../components/MyBookingsCard";
 import CheckInButton from "../components/checkin/CheckInButton";
 import HomeCheckInBoard from "../components/checkin/HomeCheckInBoard";
 import NightProgress from "../components/night/NightProgress";
+import FourthGameOptIn from "../components/night/FourthGameOptIn";
 
 const tiles = [
 {
@@ -227,6 +228,11 @@ export default function Home() {
         {/* Member self check-in */}
         <div className="mt-2">
           <CheckInButton />
+        </div>
+
+        {/* Optional 4th game opt-in — only shows when you're booked in tonight */}
+        <div className="mt-2">
+          <FourthGameOptIn />
         </div>
 
         {/* Admin arrival board — no PIN needed here */}

@@ -48,6 +48,12 @@
     "checked_in_at": {
       "type": "string",
       "title": "Checked In At"
+    },
+    "fourth_game": {
+      "type": "boolean",
+      "title": "In For The 4th Game",
+      "description": "Opted in to the optional 4th game after the three scheduled games. Just for fun: it is never scored and never counts in results or rankings.",
+      "default": false
     }
   },
   "required": [

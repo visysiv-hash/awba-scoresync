@@ -32,6 +32,7 @@ import ReplacePlayerDialog from "@/components/schedule/ReplacePlayerDialog";
 import AddSinglesPlayerDialog from "@/components/schedule/AddSinglesPlayerDialog";
 import AmericanDoublesDialog from "@/components/admin/AmericanDoublesDialog";
 import SinglesNetsDialog from "@/components/schedule/SinglesNetsDialog";
+import FourthGameDialog from "@/components/schedule/FourthGameDialog";
 import SchedulePdfExport from "@/components/schedule/SchedulePdfExport";
 import { repairSchedule } from "@/lib/repairSchedule";
 import { appRatingMap } from "@/lib/appRatingMap";
@@ -75,6 +76,7 @@ export default function Schedule() {
   const [showSingles, setShowSingles] = useState(false);
   const [showAmerican, setShowAmerican] = useState(false);
   const [showSinglesNets, setShowSinglesNets] = useState(false);
+  const [showFourth, setShowFourth] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [ratings, setRatings] = useState({});
   const [publishing, setPublishing] = useState(false);
@@ -600,6 +602,8 @@ export default function Schedule() {
                 lastFormatLocked={scope !== -2}
                 singlesNets={record.singles_nets || []}
                 onSinglesNets={() => setShowSinglesNets(true)}
+                onFourthGame={() => setShowFourth(true)}
+                fourthCount={(record.extra_games || []).length}
               />
             )}
             {isAdmin && (
@@ -697,6 +701,14 @@ export default function Schedule() {
           record={record}
           onSave={saveSinglesNets}
           onClose={() => setShowSinglesNets(false)}
+        />
+      )}
+
+      {showFourth && record && (
+        <FourthGameDialog
+          record={record}
+          onSaved={(extra) => setRecord((r) => ({ ...r, ...extra }))}
+          onClose={() => setShowFourth(false)}
         />
       )}
 

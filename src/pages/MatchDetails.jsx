@@ -7,6 +7,7 @@ import ScoreEntry from "../components/ScoreEntry";
 import GameSearch from "../components/GameSearch";
 import PageBanner from "../components/PageBanner";
 import LowRatingsReview from "../components/ratings/LowRatingsReview";
+import FourthGameCard from "../components/FourthGameCard";
 import { getCurrentMember, getCurrentPlayerName } from "../lib/currentMember";
 
 export default function MatchDetails() {
@@ -82,6 +83,10 @@ export default function MatchDetails() {
             />
           </TabsContent>
         </Tabs>
+
+        <div className="mt-4">
+          <FourthGameCard />
+        </div>
 
         {isAdmin && <LowRatingsReview />}
       </div>
