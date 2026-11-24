@@ -102,7 +102,7 @@ export default function ScheduleAdminControls({
           type="button"
           onClick={onFourthGame}
           disabled={busy}
-          title="Draw the optional 4th game for the players who opted in — mixed grades, never scored"
+          title="Draw the optional 4th game once the three games are done — tick whoever is still there, mixed grades, never scored"
           className={chip(false)}
         >
           4th game
