@@ -13,6 +13,7 @@ import { juniorMatchAllowed, assertJuniorDraw } from "@/lib/juniorSafety";
 import { juniorPreferenceCost } from "@/lib/juniorPreference";
 import { americanSet, shortFormatCost, shortBalanceCost, lonePlayer, isNominated } from "@/lib/americanDoubles";
 import { applyLastGroupsFormat } from "@/lib/lastGroupsFormat";
+import { applySinglesNets } from "@/lib/singlesNets";
 
 const key = (a, b) => {
   const x = String(a || "").trim().toLowerCase();
@@ -521,6 +522,8 @@ export function buildNightDraw(players, options = {}) {
   // The admin can put the night's last two groups on a short format — American doubles
   // or singles — whatever the rest of the night is paired as.
   applyLastGroupsFormat(draw, options.lastGroupsFormat, americanSet(options.americanDoubles));
+  // The nets the admin picked play doubles wherever their players allow it, singles for the rest.
+  applySinglesNets(draw, options.singlesNets);
   return assertJuniorDraw(draw);
 }
 

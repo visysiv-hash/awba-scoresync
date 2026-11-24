@@ -143,7 +143,7 @@
     "last_groups_format": {
       "type": "string",
       "title": "Last Two Groups Format",
-      "description": "How the night's last two groups play: ordinary doubles, American doubles (one against two) or singles.",
+      "description": "How the night's last two groups play: ordinary doubles or American doubles (one against two).",
       "enum": [
         "doubles",
         "american",
@@ -155,6 +155,14 @@
         "purple"
       ],
       "default": "doubles"
+    },
+    "singles_nets": {
+      "type": "array",
+      "title": "Singles Games On These Nets",
+      "description": "The nets whose players share one block: each round those nets play as many doubles games as their players allow, and singles only for the games a doubles four cannot fill.",
+      "items": {
+        "type": "number"
+      }
     }
   },
   "required": [

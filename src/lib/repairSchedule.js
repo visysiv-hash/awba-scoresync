@@ -39,6 +39,7 @@ export async function repairSchedule(record, poolGroups, { resetOrder = false } 
     poolGroups,
     americanDoubles: record.american_doubles || [],
     lastGroupsFormat: record.last_groups_format,
+    singlesNets: record.singles_nets || [],
   };
   if (!resetOrder && savedLists.some((list) => list.length)) options.groupLists = savedLists;
 

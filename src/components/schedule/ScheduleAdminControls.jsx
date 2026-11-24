@@ -38,6 +38,8 @@ export default function ScheduleAdminControls({
   lastFormat,
   onLastFormat,
   lastFormatLocked,
+  singlesNets,
+  onSinglesNets,
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 no-print">
@@ -107,9 +109,25 @@ export default function ScheduleAdminControls({
           >
             <option value="doubles">Doubles</option>
             <option value="american">American doubles</option>
-            <option value="singles">Singles</option>
           </select>
         </div>
+      )}
+
+      {onSinglesNets && (
+        <button
+          type="button"
+          onClick={onSinglesNets}
+          disabled={busy || lastFormatLocked}
+          title={lastFormatLocked
+            ? "Choose Unique games as the pairing method to pick the nets that play singles"
+            : "Pick the nets whose players share a block: doubles wherever there are enough players, singles for the rest"}
+          className={chip(false)}
+        >
+          Singles games
+          <span className="ml-1 rounded bg-white/15 px-1 text-[10px] font-bold tabular-nums">
+            {singlesNets?.length || 0}
+          </span>
+        </button>
       )}
 
       {onAddSingles && (

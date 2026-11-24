@@ -31,6 +31,7 @@ import { swapPlayer, swapInGame, todayIso, RANDOM_SCOPE } from "@/lib/nightDraw"
 import ReplacePlayerDialog from "@/components/schedule/ReplacePlayerDialog";
 import AddSinglesPlayerDialog from "@/components/schedule/AddSinglesPlayerDialog";
 import AmericanDoublesDialog from "@/components/admin/AmericanDoublesDialog";
+import SinglesNetsDialog from "@/components/schedule/SinglesNetsDialog";
 import SchedulePdfExport from "@/components/schedule/SchedulePdfExport";
 import { repairSchedule } from "@/lib/repairSchedule";
 import { appRatingMap } from "@/lib/appRatingMap";
@@ -73,6 +74,7 @@ export default function Schedule() {
   const [showReplace, setShowReplace] = useState(false);
   const [showSingles, setShowSingles] = useState(false);
   const [showAmerican, setShowAmerican] = useState(false);
+  const [showSinglesNets, setShowSinglesNets] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [ratings, setRatings] = useState({});
   const [publishing, setPublishing] = useState(false);
@@ -297,6 +299,30 @@ export default function Schedule() {
     }
   };
 
+  // The nets the admin picks share one block of players: those nets play doubles wherever
+  // their players allow it, and singles only for the games a doubles four cannot fill.
+  const saveSinglesNets = async (nets) => {
+    if (!record || scopeBusy) return;
+    setScopeBusy(true);
+    try {
+      const next = { ...record, singles_nets: nets };
+      const repaired = await repairSchedule(next, scope);
+      setRecord({ ...next, ...repaired });
+      setDirty(true);
+      setPicked(null);
+      setPickedGame(null);
+      toast.success(
+        nets.length
+          ? "Those nets now play doubles with singles only where needed — press Save to keep it."
+          : "Singles games cleared — the nets are back as they were drawn."
+      );
+    } catch (error) {
+      toast.error(error.message || "Couldn't change the singles games.");
+    } finally {
+      setScopeBusy(false);
+    }
+  };
+
   // Re-pair the night with a different reach: each group of eight on its own, or any
   // player from 16 or 24 paired with any other and every round balanced across them.
   // The group list is the admin's own arrangement, so a re-pair keeps whatever players
@@ -372,6 +398,7 @@ export default function Schedule() {
         groups: record.groups, matches: record.matches,
         variant: record.variant, pairing_scope: record.pairing_scope,
         last_groups_format: record.last_groups_format || "doubles",
+        singles_nets: record.singles_nets || [],
       });
       setDirty(false);
       toast.success("Schedule saved.");
@@ -571,6 +598,8 @@ export default function Schedule() {
                 lastFormat={record.last_groups_format || "doubles"}
                 onLastFormat={changeLastGroups}
                 lastFormatLocked={scope !== -2}
+                singlesNets={record.singles_nets || []}
+                onSinglesNets={() => setShowSinglesNets(true)}
               />
             )}
             {isAdmin && (
@@ -660,6 +689,14 @@ export default function Schedule() {
           onSave={saveAmericanDoubles}
           onClose={() => setShowAmerican(false)}
           onSaved={() => {}}
+        />
+      )}
+
+      {showSinglesNets && record && (
+        <SinglesNetsDialog
+          record={record}
+          onSave={saveSinglesNets}
+          onClose={() => setShowSinglesNets(false)}
         />
       )}
 
