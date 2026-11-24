@@ -25,6 +25,7 @@ export default function FourthGameDialog({ record, onSaved, onClose }) {
   const [drawn, setDrawn] = useState(record.extra_games || []);
   const [sittingOut, setSittingOut] = useState([]);
   const [published, setPublished] = useState(record.extra_published === true);
+  const [swapping, setSwapping] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const groups = {};
@@ -73,7 +74,56 @@ export default function FourthGameDialog({ record, onSaved, onClose }) {
     })));
     setSittingOut(result.sittingOut);
     setPublished(false);
+    setSwapping(null);
   };
+
+  // Two players trade places inside the 4th game only. The three scored games are a
+  // different list entirely and are never touched by this.
+  const swap = (name) => {
+    if (!swapping) {
+      setSwapping(name);
+      return;
+    }
+    if (low(swapping) === low(name)) {
+      setSwapping(null);
+      return;
+    }
+    const swapIn = (names) =>
+      (names || []).map((n) =>
+        low(n) === low(swapping) ? name : low(n) === low(name) ? swapping : n
+      );
+    setDrawn((games) => games.map((g) => ({ ...g, team1: swapIn(g.team1), team2: swapIn(g.team2) })));
+    setPublished(false);
+    toast.success(`${swapping} and ${name} swapped — press Publish to keep it.`);
+    setSwapping(null);
+  };
+
+  const nameButton = (name) => {
+    const on = swapping && low(swapping) === low(name);
+    return (
+      <button
+        key={name}
+        type="button"
+        onClick={() => swap(name)}
+        className={`rounded px-1 font-semibold transition-colors ${
+          on ? "bg-yellow-300 text-slate-900" : "hover:bg-slate-100"
+        }`}
+      >
+        {name}
+      </button>
+    );
+  };
+
+  const team = (names) => (
+    <span className="flex flex-wrap items-center gap-1">
+      {(names || []).map((n, idx) => (
+        <span key={n} className="flex items-center gap-1">
+          {idx > 0 && <span className="text-slate-400">&</span>}
+          {nameButton(n)}
+        </span>
+      ))}
+    </span>
+  );
 
   // The first look at the list draws the games straight away, so the admin only has to
   // check it and publish. Changing the list and pressing Draw again re-pairs it.
@@ -144,19 +194,23 @@ export default function FourthGameDialog({ record, onSaved, onClose }) {
                 {drawn.map((game, i) => (
                   <div key={i} className="rounded-lg border border-slate-200 px-3 py-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Net {game.net}</p>
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="font-semibold">
-                        {(game.team1 || []).join(" & ")}
-                        <span className="ml-1 text-xs font-normal text-slate-400">{avg(pairAverage(game.team1 || [], ratings))}</span>
+                    <div className="flex items-center justify-between gap-2 text-sm text-slate-900">
+                      <span className="flex items-center gap-1">
+                        {team(game.team1)}
+                        <span className="text-xs font-normal text-slate-400">{avg(pairAverage(game.team1 || [], ratings))}</span>
                       </span>
                       <span className="text-slate-400 text-xs">vs</span>
-                      <span className="font-semibold text-right">
-                        {(game.team2 || []).join(" & ")}
-                        <span className="ml-1 text-xs font-normal text-slate-400">{avg(pairAverage(game.team2 || [], ratings))}</span>
+                      <span className="flex items-center gap-1 justify-end">
+                        {team(game.team2)}
+                        <span className="text-xs font-normal text-slate-400">{avg(pairAverage(game.team2 || [], ratings))}</span>
                       </span>
                     </div>
                   </div>
                 ))}
+                <p className="text-[11px] text-slate-500">
+                  Tap one name, then another, to swap those two players. Only this 4th game changes — the night's three
+                  games, scores and rankings are left exactly as they are.
+                </p>
               </div>
             )}
 
