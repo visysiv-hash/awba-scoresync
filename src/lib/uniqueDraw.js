@@ -108,28 +108,21 @@ function roleShortGames(rounds, players, nominated) {
 
 // The leftover six plays two American doubles a round, one on each of its two courts:
 // three players a court, one against a pair. Everyone plays all three games, and each
-// player takes the lonely side exactly once so the handicap is shared. The pair facing
-// a single player is the one whose average sits closest to theirs, a nominated player
-// stands alone before anyone else, and a junior only ever faces two juniors.
+// player takes the lonely side once so the handicap is shared. The pair facing a single
+// player is the one whose average sits closest to theirs, a nominated player stands
+// alone before anyone else, and a junior only ever faces two juniors: a game that would
+// put a junior alone against an adult pair is never offered at all, so the block is
+// always drawn instead of being rejected.
 function sixRounds(players, nominated) {
   const list = byRating(players);
-  const rank = (p) => (isNominated(p.name, nominated) ? 0 : p.junior ? 2 : 1);
-  const order = [...list].sort((a, b) => rank(a) - rank(b));
-  // A junior may only stand alone among juniors, so unless the block has three of them
-  // the lonely turns go to everyone else and one player carries a second one.
-  const juniors = list.filter((p) => p.junior).length;
-  const eligible = order.filter((p) => !p.junior || juniors >= 3);
-  const pool = eligible.length ? eligible : order;
-  const lones = Array.from({ length: 6 }, (_, i) => pool[i % pool.length]);
 
   const cost = (lone, pair) => {
-    const safe = juniorMatchAllowed([lone], pair) ? 0 : 1000;
     const solo = Number(lone.rating);
     const duo = pair.reduce((sum, p) => sum + Number(p.rating), 0) / pair.length;
-    if (!Number.isFinite(solo) || !Number.isFinite(duo)) return safe;
+    if (!Number.isFinite(solo) || !Number.isFinite(duo)) return 0;
     // The single player carries the handicap, so they should be the stronger side and
     // as close to the pair's average as the block allows.
-    return safe + Math.abs(solo - duo) + Math.max(0, solo - duo) * 2;
+    return Math.abs(solo - duo) + Math.max(0, solo - duo) * 2;
   };
 
   // The three ways the four players not standing alone make two pairs.
@@ -139,16 +132,31 @@ function sixRounds(players, nominated) {
     [[four[0], four[3]], [four[1], four[2]]],
   ];
 
-  return [1, 2, 3].map((game) => {
-    const alone = [lones[(game - 1) * 2], lones[(game - 1) * 2 + 1]];
-    const rest = list.filter((p) => !alone.includes(p));
+  // How often each player has taken the lonely side. A second turn is heavily penalised
+  // so everyone gets one, and a junior takes their turn early: a junior can only stand
+  // alone while two other juniors are still free to face them, so the turns run out.
+  const turns = new Map(list.map((p) => [p, 0]));
+
+  return [1, 2, 3].map(() => {
     let best = null;
-    for (const [x, y] of splits(rest)) {
-      for (const [first, second] of [[x, y], [y, x]]) {
-        const total = cost(alone[0], first) + cost(alone[1], second);
-        if (!best || total < best.total) best = { total, games: [[alone[0], first], [alone[1], second]] };
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const alone = [list[i], list[j]];
+        const rest = list.filter((p) => !alone.includes(p));
+        for (const [x, y] of splits(rest)) {
+          for (const [first, second] of [[x, y], [y, x]]) {
+            // The lonely side is only ever handed out in a game it may be played in.
+            if (!juniorMatchAllowed([alone[0]], first) || !juniorMatchAllowed([alone[1]], second)) continue;
+            const repeat = alone.reduce((sum, p) => sum + (turns.get(p) || 0) * 500, 0);
+            const early = alone.reduce((sum, p) => sum + (p.junior && !turns.get(p) ? -200 : 0), 0);
+            const willing = alone.filter((p) => !isNominated(p.name, nominated)).length * 50;
+            const total = cost(alone[0], first) + cost(alone[1], second) + repeat + early + willing;
+            if (!best || total < best.total) best = { total, games: [[alone[0], first], [alone[1], second]] };
+          }
+        }
       }
     }
+    for (const [lone] of best.games) turns.set(lone, (turns.get(lone) || 0) + 1);
     return best.games;
   });
 }
